@@ -21,6 +21,12 @@ const ProfilePage = () => {
         { id: 4, title: "Wireless Mouse", price: "$30", image: "🖱️", category: "Electronics", status: "Active", views: 12 }
     ];
 
+    const userReviews = [
+        { id: 1, rating: 5, text: "Great seller, item was exactly as described and fast shipping!", date: "2024-07-28" },
+        { id: 2, rating: 4, text: "Quick to respond and the product was in good condition. Would recommend.", date: "2024-07-25" },
+        { id: 3, rating: 5, text: "Excellent communication and a smooth transaction. Couldn't be happier!", date: "2024-07-20" },
+    ];
+
     useEffect(() => {
         const fetchProfileData = async () => {
             try {
@@ -107,6 +113,18 @@ const ProfilePage = () => {
     const handleCancel = () => {
         // Reset any unsaved changes
         setIsEditing(false);
+    };
+
+    const renderStarRating = (rating) => {
+        const stars = [];
+        for (let i = 0; i < 5; i++) {
+            stars.push(
+                <span key={i} className={`star-icon ${i < rating ? 'filled' : ''}`}>
+                    ★
+                </span>
+            );
+        }
+        return <div className="star-rating">{stars}</div>;
     };
 
     return (
@@ -228,8 +246,24 @@ const ProfilePage = () => {
                             </div>
                         </div>
                     </div>
+                    
+                    <div className="reviews-section">
+                        <div className="reviews-header">
+                            <h2 className="reviews-section-title">Recent Reviews</h2>
+                        </div>
+                        <div className="user-reviews-grid">
+                            {userReviews.map((review) => (
+                                <div key={review.id} className="review-card">
+                                    {renderStarRating(review.rating)}
+                                    <p className="review-text">{review.text}</p>
+                                    <div className="review-meta">
+                                        <span className="review-date">{review.date}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
 
-                    {/* My Listings Section */}
                     <div className="listings-section">
                         <div className="listings-header">
                             <h2 className="listings-section-title">My Listings</h2>
