@@ -4,8 +4,10 @@ const express = require('express');
 const cors = require('cors');
 const mysql=require('mysql2/promise');
 const routes = require('./routes/routes.js');
+const authRoutes = require('./routes/authRoutes.js');
+
 const app = express();
-const port = 5151;
+const port = 5151; //the port that we use in order the SERVER to run on it ( backend ) 
 
 app.use(cors());
 app.use(express.json());
@@ -24,23 +26,27 @@ async function initializeDB() {
         queueLimit: 0
     });
     console.log('Database pool is created tho');
-}
+};
 
-app.use('/api', routes);
+(async () => {
+  await initializeDB();
 
-app.use((req, res, next) => {
-    req.pool = pool;
-    next();
-});
+  app.use((req, res, next) => {
+      req.pool = pool;
+      next();
+  });
 
-app.get('/', (req, res) => {
-  res.send('API is working!');
-});
+  app.use('/api', routes);
+  app.use('/api/auth', authRoutes);
 
-app.listen(port, async () => {
-    await initializeDB();
-  console.log(`Server running at http://localhost:${port}`);
-});
+  app.get('/', (req, res) => {
+    res.send('API is working!');
+  });
+
+  app.listen(port, () => {
+      console.log(`Server running at http://localhost:${port}`);
+  });
+})();
 
 app.get('/api/test-db', async(req, res) => { 
     try {
