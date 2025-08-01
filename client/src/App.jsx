@@ -12,32 +12,86 @@ function App() {
   const [fullName, setFullName] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    console.log('No token found, user might not be logged in');
-    return;
-  }
-
-  fetch('http://localhost:5151/api/fullname', {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  })
-  .then(res => {
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    return res.json();
-  })
-  .then(data => {
-    setFullName(data.fullname);
-  })
-  .catch(err => {
-    console.error('Failed to fetch user info:', err);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    itemName: '',
+    description: '',
+    price: '',
+    image: null
   });
-}, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('No token found, user might not be logged in');
+      return;
+    }
+
+    fetch('http://localhost:5151/api/fullname', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        setFullName(data.fullname);
+      })
+      .catch(err => {
+        console.error('Failed to fetch user info:', err);
+      });
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFormData(prev => ({
+          ...prev,
+          image: file
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Here you would typically send the data to your backend
+    console.log('Form submitted:', formData);
+    // Reset form and close modal
+    setFormData({
+      itemName: '',
+      description: '',
+      price: '',
+      image: null
+    });
+    setIsModalOpen(false);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setFormData({
+      itemName: '',
+      description: '',
+      price: '',
+      image: null
+    });
+  };
 
   const listings = [
     { id: 1, title: "Calculus Textbook", price: "$45", seller: "Sarah M.", image: "📚", category: "Textbooks" },
@@ -61,7 +115,7 @@ function App() {
             <div className="logo-section">
               <h1 className="logo-text">Student Trade</h1>
             </div>
-            
+
             {/* Search Bar */}
             <div className="search-container">
               <div className="search-input-wrapper">
@@ -75,7 +129,7 @@ function App() {
 
             {/* User Prof*/}
             <div className="user-section">
-              <button className="post-item-btn">
+              <button className="post-item-btn" onClick={() => setIsModalOpen(true)}>
                 <span>Post Item</span>
               </button>
               <div className="user-profile" onClick={() => navigate('/profilepage')}>
@@ -88,53 +142,27 @@ function App() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="main-content">
         <div className="content-wrapper">
-          {/* Sidebar */}
           <aside className="sidebar">
             <h3 className="sidebar-title">Quick Actions</h3>
             <div className="quick-actions">
               <button className="quick-action-btn">
-                📚 My Listings
+                My Listings
               </button>
               <button className="quick-action-btn">
-                ❤️ Saved Items
+                Messages
               </button>
               <button className="quick-action-btn">
-                💬 Messages
+                Settings
               </button>
               <button className="quick-action-btn">
-                ⚙️ Settings
+                Log Out
               </button>
-            </div>
-            
-            <div className="categories-section">
-              <h4 className="categories-title">Categories</h4>
-              <div className="categories-list">
-                <div className="category-item">📖 Textbooks</div>
-                <div className="category-item">💻 Electronics</div>
-                <div className="category-item">🪑 Furniture</div>
-                <div className="category-item">🧪 Lab Equipment</div>
-                <div className="category-item">🏠 Appliances</div>
-                <div className="category-item">⚽ Sports</div>
-              </div>
             </div>
           </aside>
 
-          {/* Main Listings Area */}
           <div className="listings-container">
-            <div className="listings-header">
-              <h2 className="listings-title">Latest Listings</h2>
-              <div className="filter-buttons">
-                <button className="filter-btn active">All</button>
-                <button className="filter-btn inactive">Textbooks</button>
-                <button className="filter-btn inactive">Electronics</button>
-                <button className="filter-btn inactive">Furniture</button>
-              </div>
-            </div>
-            
-            {/* Listings Grid - 2 columns */}
             <div className="listings-grid">
               {listings.map((listing) => (
                 <div key={listing.id} className="listing-card">
@@ -151,6 +179,94 @@ function App() {
           </div>
         </div>
       </main>
+
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <div className="modal-header">
+              <h3 className="modal-title">Post New Item</h3>
+              <button className="modal-close-btn" onClick={closeModal}>
+              </button>
+            </div>
+
+            <form className="modal-form" onSubmit={handleSubmit}>
+              {/* Item Name */}
+              <div className="form-group">
+                <label className="form-label">Item Name</label>
+                <input
+                  type="text"
+                  name="itemName"
+                  value={formData.itemName}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  placeholder="Enter item name..."
+                  required
+                />
+              </div>
+
+              {/* Description */}
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  className="form-textarea"
+                  placeholder="Describe your item..."
+                  rows="3"
+                  required
+                />
+              </div>
+
+              {/* Price */}
+              <div className="form-group">
+                <label className="form-label">Price</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  required
+                />
+              </div>
+
+              {/* Image Upload */}
+              <div className="form-group">
+                <label className="form-label">Add Picture</label>
+                <div className="image-upload-container">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="image-input"
+                    id="image-upload"
+                  />
+                  <label htmlFor="image-upload" className="image-upload-label">
+                    {formData.imagePreview ? (
+                      <img src={formData.imagePreview} alt="Preview" className="image-preview" />
+                    ) : (
+                      <div className="upload-placeholder">
+                        <span className="upload-text">Click to upload image</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              {/* Form Buttons */}
+              <div className="form-buttons">
+                <button type="button" className="cancel-btn" onClick={closeModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="submit-btn">
+                  Post Item
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import './ProfilePage.css';
+import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
+    const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
     const [profileData, setProfileData] = useState({
         fullname: '',
@@ -113,8 +115,8 @@ const ProfilePage = () => {
             <header className="profile-header">
                 <div className="profile-header-content">
                     <h1 className="profile-page-title">My Profile</h1>
-                    <button className="settings-btn">
-                        <span>Settings</span>
+                    <button className="settings-btn" onClick={ () => navigate('/')}>
+                        <span>Back</span>
                     </button>
                 </div>
             </header>
