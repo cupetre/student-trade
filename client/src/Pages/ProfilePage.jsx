@@ -10,6 +10,8 @@ const ProfilePage = () => {
         email: '',
         bio: '',
         created_at: '',
+        profilePicture: null,        
+        profilePicturePreview: null
     });
 
     const token = localStorage.getItem('token');
@@ -29,24 +31,27 @@ const ProfilePage = () => {
 
     useEffect(() => {
         const fetchProfileData = async () => {
+
             try {
-                const endpoints = ['fullname', 'email', 'bio', 'created_at'];
-                const responses = await Promise.all(
-                    endpoints.map(endpoint =>
-                        fetch(`http://localhost:5151/api/${endpoint}`, {
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            }
-                        }).then(res => res.json())
-                    )
-                );
+                const token = localStorage.getItem('token');
+                const response = await fetch(`http://localhost:5151/api/getprofile`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error("failed to fetch the prof data");
+
+                const data = await response.json();
 
                 setProfileData({
-                    fullname: responses[0].fullname,
-                    email: responses[1].email,
-                    bio: responses[2].bio,
-                    created_at: responses[3].created_at
+                    fullname: data.fullname,
+                    email: data.email,
+                    bio: data.bio,
+                    created_at: data.created_at,
+                    profilePicturePreview: data.profile_picture
+                        ? `http://localhost:5151${data.profile_picture}`
+                        : null,
                 });
 
             } catch (err) {
@@ -58,32 +63,38 @@ const ProfilePage = () => {
 
     }, []);
 
+
     const handleSave = async () => {
+
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5151/api/profile`, {
+            const formData = new FormData();
+
+            formData.append('fullname', profileData.fullname);
+            formData.append('email', profileData.email);
+            formData.append('bio', profileData.bio);
+
+            if (profileData.profilePicture) {
+                formData.append('profilePicture', profileData.profilePicture);
+            }
+
+            const response = await fetch('http://localhost:5151/api/profile', {
                 method: 'PUT',
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    Authorization: `Bearer ${token}`
                 },
-
-                body: JSON.stringify({
-                    fullname: profileData.fullname,
-                    email: profileData.email,
-                    bio: profileData.bio,
-                }),
+                body: formData,
             });
 
             if (!response.ok) {
-                throw new Error('Failed with putting in the newly added info in edit prof');
+                throw new Error('Failed to save and change');
             }
 
             const result = await response.json();
-            console.log('profile updated sucssly', result);
+            console.log("profiled has been updated scsly", result);
             setIsEditing(false);
         } catch (error) {
-            console.error('Error in saving newly added info', error);
+            console.error("something went wrong");
         }
     };
 
@@ -110,11 +121,6 @@ const ProfilePage = () => {
         }
     };
 
-    const handleCancel = () => {
-        // Reset any unsaved changes
-        setIsEditing(false);
-    };
-
     const renderStarRating = (rating) => {
         const stars = [];
         for (let i = 0; i < 5; i++) {
@@ -133,7 +139,7 @@ const ProfilePage = () => {
             <header className="profile-header">
                 <div className="profile-header-content">
                     <h1 className="profile-page-title">My Profile</h1>
-                    <button className="settings-btn" onClick={ () => navigate('/')}>
+                    <button className="settings-btn" onClick={() => navigate('/')}>
                         <span>Back</span>
                     </button>
                 </div>
@@ -246,7 +252,7 @@ const ProfilePage = () => {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="reviews-section">
                         <div className="reviews-header">
                             <h2 className="reviews-section-title">Recent Reviews</h2>

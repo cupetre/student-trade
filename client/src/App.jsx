@@ -8,6 +8,8 @@ function App() {
   const [fullName, setFullName] = useState('');
   const navigate = useNavigate();
 
+  const [profileData, setProfileData] = useState({});
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     itemName: '',
@@ -41,6 +43,29 @@ function App() {
       .catch(err => {
         console.error('Failed to fetch user info:', err);
       });
+  }, []);
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('http://localhost:5151/api/getProfile', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) throw new Error('Failed to fetch profile');
+
+        const data = await res.json();
+
+        setProfileData(data);
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      }
+    };
+
+    fetchProfileData();
   }, []);
 
   const handleInputChange = (e) => {
@@ -130,6 +155,11 @@ function App() {
               </button>
               <div className="user-profile" onClick={() => navigate('/profilepage')}>
                 <div className="user-avatar">
+                  <img
+                    src={`http://localhost:5151${profileData.profile_picture}`}
+                    alt="Profile"
+                    className="profile-picture"
+                  />
                 </div>
                 <span className="user-name"> {fullName || 'Loading ...'}</span>
               </div>

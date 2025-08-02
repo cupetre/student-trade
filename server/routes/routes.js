@@ -1,9 +1,20 @@
 const express = require('express');
+
 const router = express.Router();
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
 
 const JWT_SECRET = process.env.JWT_SECRET  || 'super-secret-key';
+
+const storage = multer.diskStorage({
+    destination: './uploads/',
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+
+const upload = multer({ storage });
 
 function authenticationToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -17,6 +28,43 @@ function authenticationToken(req, res, next) {
     next();
   });
 }
+
+router.put('/profile', authenticationToken, upload.single('profilePicture'), async(req, res) => {
+    const pool = req.pool;
+    
+    const {fullname, email, bio } = req.body;
+    const profilePicPath = req.file ? `/uploads/${req.file.filename}`: null;
+
+    try {
+        await pool.query('UPDATE User SET fullname = ? , email = ? , bio = ? , profile_picture = ? WHERE id = ? ', 
+            [fullname,email,bio,profilePicPath,req.user.id]
+            );
+
+            res.json({ message : "profle succsly updated" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'failed to upd' });
+    }
+});
+
+router.get('/getprofile', authenticationToken, async (req, res) => {
+
+    const pool = req.pool;
+
+    try {
+        const [rows] = await pool.query(
+            'SELECT fullname, email, bio, created_at, profile_picture FROM User WHERE id = ?',
+            [req.user.id]
+        );
+
+        if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+        res.json(rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch profile' });
+    }
+});
 
 router.get('/userFullname', async(req,res) => {
     try {
@@ -91,7 +139,7 @@ router.get('/created_at', authenticationToken, async(req, res) => {
     }
 });
 
-router.put('/profile', authenticationToken, async(req,res) => {
+/*router.put('/profile', authenticationToken, async(req,res) => {
     const pool = req.pool;
 
     const { fullname, email, bio } = req.body;
@@ -106,6 +154,6 @@ router.put('/profile', authenticationToken, async(req,res) => {
         console.error(err);
         res.status(500).json({ error: 'failed to upd' });
     }
-});
+}); */
 
 module.exports = router;
