@@ -7,14 +7,22 @@ const path = require('path');
 
 const JWT_SECRET = process.env.JWT_SECRET  || 'super-secret-key';
 
-const storage = multer.diskStorage({
-    destination: './uploads/',
+const profilePicStorage = multer.diskStorage({
+    destination: './uploads/profiles/',
     filename: (req, file, cb) => {
         cb(null, Date.now() + '-' + file.originalname);
     }
 });
 
-const upload = multer({ storage });
+const listingStorage = multer.diskStorage({
+    destination: './uploads/listings/',
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+
+const upload1 = multer({ storage: profilePicStorage });
+const upload2 = multer({ storage: listingStorage });
 
 function authenticationToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -29,11 +37,11 @@ function authenticationToken(req, res, next) {
   });
 }
 
-router.put('/profile', authenticationToken, upload.single('profilePicture'), async(req, res) => {
+router.put('/profile', authenticationToken, upload1.single('profilePicture'), async(req, res) => {
     const pool = req.pool;
     
     const {fullname, email, bio } = req.body;
-    const profilePicPath = req.file ? `/uploads/${req.file.filename}`: null;
+    const profilePicPath = req.file ? `/uploads/profiles/${req.file.filename}`: null;
 
     try {
         await pool.query('UPDATE User SET fullname = ? , email = ? , bio = ? , profile_picture = ? WHERE id = ? ', 
@@ -139,21 +147,25 @@ router.get('/created_at', authenticationToken, async(req, res) => {
     }
 });
 
-/*router.put('/profile', authenticationToken, async(req,res) => {
+router.post('/listings', authenticationToken, upload2.single('photo'), async(req,res) => {
     const pool = req.pool;
 
-    const { fullname, email, bio } = req.body;
+    const { title , description , price } = req.body;
+    const owner_id = req.user.id;
+    const imagePath = req.file ? `uploads/listings/${req.file.filename}` : null;
 
     try {
-        await pool.query('UPDATE User SET fullname = ? , email = ? , bio = ? WHERE id = ? ', 
-            [fullname,email,bio,req.user.id]
-            );
+        await pool.query(
+            `INSERT INTO ListingItem (owner_id, title, description, price, date, photo) VALUES (?,?,?,?, NOW(), ?)`,
+            [owner_id, title, description, price, imagePath]
+        );
 
-            res.json({ message : "profle succsly updated" });
+        res.json({ message: 'Listing created scsfly!' });
+        
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'failed to upd' });
+        res.status(500).json({ error: 'Failed to save listing' });
     }
-}); */
+});
 
 module.exports = router;

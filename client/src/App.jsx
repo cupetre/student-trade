@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import './App.css';
-
 import { useNavigate } from 'react-router-dom';
 
 function App() {
@@ -12,10 +11,11 @@ function App() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
-    itemName: '',
+    title: '',
     description: '',
     price: '',
-    image: null
+    photo: null,
+    photoPreview: null,
   });
 
   useEffect(() => {
@@ -83,35 +83,63 @@ function App() {
       reader.onload = () => {
         setFormData(prev => ({
           ...prev,
-          image: file
+          photo: file,
+          photoPreview: reader.result,
         }));
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
+
+    const token = localStorage.getItem('token');
+    const formDataToSend = new FormData();
+
+    formDataToSend.append('title', formData.title);
+    formDataToSend.append('description', formData.description);
+    formDataToSend.append('price', formData.price);
+    if (formData.photo) {
+      formDataToSend.append('photo', formData.photo);
+    }
+
     console.log('Form submitted:', formData);
-    // Reset form and close modal
-    setFormData({
-      itemName: '',
-      description: '',
-      price: '',
-      image: null
-    });
-    setIsModalOpen(false);
+
+    try {
+      const response = await fetch(`http://localhost:5151/api/listings`, {
+        method: 'POST' ,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formDataToSend,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload to db ' );
+      }
+
+      const result = await response.json();
+      console.log(result.message);
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error("error in uploading to db listing", err);
+    }
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setFormData({
-      itemName: '',
+      title: '',
       description: '',
       price: '',
-      image: null
+      photo: null,
+      photoPreview: null
     });
+  };
+
+  const handleButtonClick = () => {
+    navigate('/profilePage#listing-content');
   };
 
   const listings = [
@@ -173,14 +201,14 @@ function App() {
           <aside className="sidebar">
             <h3 className="sidebar-title">Quick Actions</h3>
             <div className="quick-actions">
-              <button className="quick-action-btn">
+              <button className="quick-action-btn" onClick={(handleButtonClick)}>
                 My Listings
+              </button>
+              <button className="quick-action-btn" onClick={(handleButtonClick)}>
+                My Reviews
               </button>
               <button className="quick-action-btn">
                 Messages
-              </button>
-              <button className="quick-action-btn">
-                Settings
               </button>
               <button className="quick-action-btn">
                 Log Out
@@ -221,8 +249,8 @@ function App() {
                 <label className="form-label">Item Name</label>
                 <input
                   type="text"
-                  name="itemName"
-                  value={formData.itemName}
+                  name="title"
+                  value={formData.title}
                   onChange={handleInputChange}
                   className="form-input"
                   placeholder="Enter item name..."
@@ -269,8 +297,8 @@ function App() {
                     id="image-upload"
                   />
                   <label htmlFor="image-upload" className="image-upload-label">
-                    {formData.imagePreview ? (
-                      <img src={formData.imagePreview} alt="Preview" className="image-preview" />
+                    {formData.photoPreview ? (
+                      <img src={formData.photoPreview} alt="Preview" className="image-preview" />
                     ) : (
                       <div className="upload-placeholder">
                         <span className="upload-text">Click to upload image</span>

@@ -4,15 +4,18 @@ import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
     const navigate = useNavigate();
+
     const [isEditing, setIsEditing] = useState(false);
     const [profileData, setProfileData] = useState({
         fullname: '',
         email: '',
         bio: '',
         created_at: '',
-        profilePicture: null,        
+        profilePicture: null,
         profilePicturePreview: null
     });
+
+    const [originalProfileData, setOriginalProfileData] = useState(null);
 
     const token = localStorage.getItem('token');
 
@@ -44,7 +47,7 @@ const ProfilePage = () => {
 
                 const data = await response.json();
 
-                setProfileData({
+                const fetchedData = {
                     fullname: data.fullname,
                     email: data.email,
                     bio: data.bio,
@@ -52,8 +55,10 @@ const ProfilePage = () => {
                     profilePicturePreview: data.profile_picture
                         ? `http://localhost:5151${data.profile_picture}`
                         : null,
-                });
+                };
 
+                setProfileData(fetchedData);
+                setOriginalProfileData(fetchedData);
             } catch (err) {
                 console.error('Failed to load profile data: ', err);
             }
@@ -131,6 +136,15 @@ const ProfilePage = () => {
             );
         }
         return <div className="star-rating">{stars}</div>;
+    };
+
+    const handleCancel = () => {
+        // Reset any unsaved changes by restoring the original data
+        if (originalProfileData) {
+            setProfileData(originalProfileData);
+        }
+        // Exit editing mode
+        setIsEditing(false);
     };
 
     return (
