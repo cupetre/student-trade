@@ -36,8 +36,7 @@ const ProfilePage = () => {
         const fetchProfileData = async () => {
 
             try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`http://localhost:5151/api/getprofile`, {
+                const response = await fetch(`http://localhost:5151/api/get_profile`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

@@ -18,8 +18,11 @@ function App() {
     photoPreview: null,
   });
 
+  const [itemListings, setItemListings] = useState([]);
+  
+  const token = localStorage.getItem('token');
+
   useEffect(() => {
-    const token = localStorage.getItem('token');
     if (!token) {
       console.log('No token found, user might not be logged in');
       return;
@@ -46,12 +49,18 @@ function App() {
   }, []);
 
   useEffect(() => {
+
+    if (!token) {
+      console.log('No token found, user might not be logged in');
+      return;
+    }
+
     const fetchProfileData = async () => {
+
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5151/api/getProfile', {
+        const res = await fetch('http://localhost:5151/api/get_profile', {
           headers: {
-            Authorization: `Bearer ${token}`,
+            'Authorization': `Bearer ${token}`,
           },
         });
 
@@ -108,7 +117,7 @@ function App() {
 
     try {
       const response = await fetch(`http://localhost:5151/api/listings`, {
-        method: 'POST' ,
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -116,7 +125,7 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload to db ' );
+        throw new Error('Failed to upload to db ');
       }
 
       const result = await response.json();
@@ -142,7 +151,7 @@ function App() {
     navigate('/profilePage#listing-content');
   };
 
-  const listings = [
+  /* const listings = [
     { id: 1, title: "Calculus Textbook", price: "$45", seller: "Sarah M.", image: "📚", category: "Textbooks" },
     { id: 2, title: "Gaming Chair", price: "$120", seller: "Mike R.", image: "🪑", category: "Furniture" },
     { id: 3, title: "iPhone Charger", price: "$15", seller: "Alex K.", image: "🔌", category: "Electronics" },
@@ -152,7 +161,21 @@ function App() {
     { id: 7, title: "Programming Books", price: "$60", seller: "David C.", image: "💻", category: "Textbooks" },
     { id: 8, title: "Yoga Mat", price: "$20", seller: "Nina S.", image: "🧘", category: "Sports" },
     { id: 9, title: "Wireless Mouse", price: "$30", seller: "Jake W.", image: "🖱️", category: "Electronics" }
-  ];
+  ]; */
+
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const response = await fetch('http://localhost:5151/api/showListings');
+        const data = await response.json();
+        setItemListings(data);
+      } catch (err) {
+        console.error('Failed to fetch listings', err);
+      }
+    };
+
+    fetchListings();
+  }, []);
 
   return (
     <div className="main-container">
@@ -218,15 +241,24 @@ function App() {
 
           <div className="listings-container">
             <div className="listings-grid">
-              {listings.map((listing) => (
+              {itemListings.map((listing) => (
                 <div key={listing.id} className="listing-card">
-                  <div className="listing-image">{listing.image}</div>
-                  <h3 className="listing-title">{listing.title}</h3>
-                  <div className="listing-details">
-                    <span className="listing-price">{listing.price}</span>
-                    <span className="listing-category">{listing.category}</span>
+                  <div className="listing-info">
+                    <h3 className="listing-title">{listing.title}</h3>
+                    <div className="listing-details">
+                      <span className="listing-price">{listing.price}</span>
+                    </div>
+                    <p className="listing-seller">Seller: {listing.owner_id}</p>
+                      <span className="listing-date">
+                        {new Date(listing.date).toLocaleDateString()}
+                      </span>
                   </div>
-                  <p className="listing-seller">Seller: {listing.seller}</p>
+                  <div className="listing-image">
+                    <img
+                      src={`http://localhost:5151/${listing.photo}`}
+                      alt={listing.title}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
