@@ -224,4 +224,87 @@ router.post('/create_chat', authenticationToken, async (req, res) => {
     res.json({ chat_id });
 });
 
+router.get('/get_chat_history', authenticationToken, async (req, res) => {
+    const pool = req.pool;
+
+    const user1_id = req.user.id;
+    try {
+        const [rows] = await pool.query(`
+        SELECT 
+            c.id,
+            u.id AS owner_of_post_id,
+            u.fullname AS owner_of_post_fullname,
+            u.profile_picture AS owner_of_post_photo,
+            c.date
+            FROM Chat c
+            JOIN User u
+                ON u.id = CASE
+                    WHEN c.user1_id = ? THEN c.user2_id
+                    ELSE c.user1_id
+                END
+            WHERE c.user1_id = ? OR c.user2_id = ?
+            ORDER BY c.date DESC    
+        `, [user1_id, user1_id, user1_id]);
+
+        console.log(rows);
+
+        res.json(rows);
+    } catch (err) {
+        console.error('error in fetching the chats from sql/backend/db', err);
+        res.status(500).json({ error: "not workkinn" });
+    }
+
+}); // not to get confused but IF user id matches any chat that has either
+// user1 or user2 the same as the one using the system , we then make a JOIN table
+// where we extract the user that posted the item and his info like fullname + profile_picture
+
+
+router.post('/send_message', authenticationToken, async (req, res) => {
+    const pool = req.pool;
+
+    const sender_id = req.user.id;
+
+    const { chat_id, receiver_id, content } = req.body;
+
+    if (!chat_id || !receiver_id || !content) {
+        return res.status(400).json({ error: 'Msomth is missing in the 3 fields.' });
+    }
+
+    try {
+        await pool.query(`
+            INSERT INTO Message (chat_id, sender_id, receiver_id, content, sent_at)
+            VALUES (?, ?, ?, ?, NOW() )
+            `, [chat_id, sender_id, receiver_id, content]
+        );
+
+        res.json({ message: ' message is sent sucslfly '});
+    } catch (err) {
+        console.error("failed in sending the message in the backend/db", err);
+        res.status(500).json({ error: "problem in db" });
+    }
+});
+
+router.get('/receive_message/:chat_id', authenticationToken, async (req, res) => {
+    const pool = req.pool;
+
+    const user_id = req.body.id;
+
+    const chat_id = req.params.chat_id;
+
+    try {
+        const [messages] = await pool.query(`
+            SELECT *
+            FROM Message
+            WHERE chat_id = ? 
+            ORDER BY sent_at ASC`,
+            [chat_id]
+        );
+
+        res.json({ messages });
+    } catch (err) {
+        console.error('Failed to fetch messages:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 module.exports = router;

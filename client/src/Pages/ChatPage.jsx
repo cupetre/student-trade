@@ -71,11 +71,72 @@ function ChatPage() {
         fetchProfileData();
     }, []);
 
+    const [chatList, setChatList] = useState([]);
+
+    useEffect(() => {
+        const fetchChats = async () => {
+            const token = localStorage.getItem('token');
+
+            try {
+                const respo = await fetch('http://localhost:5151/api/get_chat_history', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (!respo.ok) {
+                    throw new Error("failed in front to fetch");
+                }
+
+                const chats = await respo.json();
+                setChatList(chats);
+            } catch (err) {
+                console.error('Error fetch chat list :', err);
+            }
+        };
+        fetchChats();
+
+    }, []);
+
+    const [selectedChat, setSelectedChat] = useState(null);
+
     const logout = () => {
         localStorage.removeItem('token');
         navigate('/login');
     };
 
+    const [newMessage, setNewMessage] = useState('');
+
+    const sendMessage = async (chatId) => {
+
+        const token = localStorage.getItem('token');
+
+        console.log(chatId);
+        console.log(selectedChat.owner_of_post_fullname);
+
+        try {
+            const res = await fetch('http://localhost:5151/api/send_message', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    receiver_id: selectedChat.owner_of_post_id,
+                    content: newMessage
+                })
+            });
+
+            console.log(res);
+            if (!res.ok) throw new Error('Failed to send');
+
+            setNewMessage('');
+        } catch (err) {
+            console.error('Failed to send mesgs', err);
+        }
+    };
 
     return (
         <div className="main-container">
@@ -144,65 +205,60 @@ function ChatPage() {
 
                         {/* Chat List */}
                         <div className="chat-sidebar-list">
-                            <div className="chat-item active">
-                                <div className="chat-avatar">
-                                    <img src="/api/placeholder/36/36" alt="User Avatar" className="avatar-img" />
-                                    <div className="online-dot"></div>
-                                </div>
-                                <div className="chat-info">
-                                    <div className="chat-user-name">Sarah Johnson</div>
-                                </div>
-                            </div>
-
-                            <div className="chat-item">
-                                <div className="chat-avatar">
-                                    <img src="/api/placeholder/36/36" alt="User Avatar" className="avatar-img" />
-                                </div>
-                                <div className="chat-info">
-                                    <div className="chat-user-name">Mike Chen</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Active Chat Window */}
-                    <div className="chat-window">
-                        <div className="chat-window-header">
-                            <div className="active-chat-user">
-                                <img src="/api/placeholder/40/40" alt="User Avatar" className="active-avatar" />
-                                <div className="active-user-info">
-                                    <div className="active-user-name">Sarah Johnson</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="chat-messages">
-                            <div className="message received">
-                                <div className="message-bubble">
-                                    <div className="message-content">
-                                        Hey! I saw your listing for the Chemistry textbook. Is it still available?
+                            {chatList.map((chat) => (
+                                <div key={chat.id}
+                                    className={`chat-item ${selectedChat?.id === chat.id ? 'active' : ''}`}
+                                    onClick={() => setSelectedChat(chat)}
+                                >
+                                    <div className="chat-avatar">
+                                        <img src={`http://localhost:5151${chat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
                                     </div>
-                                    <div className="message-time">10:30 AM</div>
+                                    <div className="chat-info">
+                                        <div className="chat-user-name">{chat.owner_of_post_fullname}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div className="chat-input-container">
-                            <div className="chat-input-wrapper">
-                                <input
-                                    type="text"
-                                    placeholder="Type your message..."
-                                    className="chat-input"
-                                />
-                                <button className="send-button">
-                                    <svg className="send-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                    </svg>
-                                </button>
-                            </div>
+                            ))}
                         </div>
                     </div>
+                    
+                    <div className="chat-window">
+                    {selectedChat ? (
+                        <>
+                            <div className="chat-window-header">
+                                <div className="active-chat-user">
+                                    <div className="active-user-info">
+                                        <div className="active-user-name">{selectedChat.owner_of_post_fullname}</div>
+                                    </div>
+                                </div>
+                            </div>
 
+                            <div className="chat-messages">
+                                {/* fetch & render messages using selectedChat.chat_id */}
+                            </div>
+
+                            <div className="chat-input-container">
+                                <div className="chat-input-wrapper">
+                                    <input
+                                        type="text"
+                                        placeholder="Type your message..."
+                                        className="chat-input"
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                    />
+                                    <button className="send-button" onClick={() => sendMessage(selectedChat.id)}>
+                                        <svg className="send-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="no-chat-selected">
+                            <p>Select a chat to begin messaging.</p>
+                        </div>
+                    )}
+                    </div>
                 </div>
             </main>
         </div>
