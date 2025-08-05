@@ -1,11 +1,8 @@
-
-/* Main Layout */
 .main-container {
   height: 100%;
   background-color: #f9fafb;
 }
 
-/* Header Styles */
 .header {
   background-color: white;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -139,7 +136,6 @@
   font-weight: 500;
 }
 
-/* Main Content */
 .main-content {
   max-width: 100%;
   max-height: 100%;
@@ -164,7 +160,6 @@
   height: 100%;
 }
 
-/* Sidebar Styles */
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -186,7 +181,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin-top: auto; /* Pushes it to the bottom */
+  margin-top: auto;
 }
 
 .quick-action-btn {
@@ -223,7 +218,6 @@
   color: #164e63;
 }
 
-/* Listings Area */
 .listings-container {
   flex: 1;
   background-color: white;
@@ -289,7 +283,7 @@
 }
 
 .listing-card {
-  display: flex; /* Make it a row layout */
+  display: flex;
   justify-content: space-between;
   border: 1px;
   border-radius: 0.5rem;
@@ -313,8 +307,8 @@
 }
 
 .listing-image img {
-  width: 100px;   /* Fixed width */
-  height: auto;   /* Maintain aspect ratio */
+  width: 100px;
+  height: auto;
   max-height: 100px;
   border-radius: 0.25rem;
   object-fit: cover;
@@ -367,7 +361,7 @@
 .modal-container {
   background-color: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Lowered shadow for a softer look */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   padding: 30px;
   position: relative;
   width: 40%;
@@ -400,7 +394,7 @@
   padding: 0;
   line-height: 1;
   transition: color 0.2s ease-in-out;
-  font-family: 'Arial', sans-serif; /* Use a common font for the 'x' */
+  font-family: 'Arial', sans-serif;
 }
 
 .modal-close-btn:hover {
@@ -417,9 +411,9 @@
 
 .form-label {
   display: block;
-  font-weight: 600; /* Bolder font weight */
+  font-weight: 600;
   margin-bottom: 8px;
-  color: #111; /* Darker color for labels */
+  color: #111;
   font-size: 1rem;
 }
 
@@ -436,7 +430,7 @@
 
 .form-input:focus, .form-textarea:focus {
   outline: none;
-  border-color: #6699ff; /* Softer blue on focus */
+  border-color: #6699ff; 
   box-shadow: 0 0 0 3px rgba(102, 153, 255, 0.25);
 }
 
@@ -513,12 +507,12 @@
 }
 
 .submit-btn {
-  background-color: #4a90e2; /* Softer blue color */
+  background-color: #4a90e2;
   color: #fff;
 }
 
 .submit-btn:hover {
-  background-color: #3b74c2; /* A slightly darker blue on hover */
+  background-color: #3b74c2;
 }
 
 .submit-btn:active, .cancel-btn:active {
@@ -540,7 +534,6 @@
     z-index: 1000;
 }
 
-/* Modal Content Container */
 .modal2-content {
     background-color: #fff;
     padding: 30px;
@@ -552,10 +545,9 @@
     max-height: 80vh;
     overflow-y: auto;
     display: flex;
-    flex-direction: column; /* To stack header, grid, and actions */
+    flex-direction: column;
 }
 
-/* Close Button */
 .close2-button {
     position: absolute;
     top: 15px;
@@ -572,25 +564,22 @@
     color: #000;
 }
 
-/* Main Two-Column Layout for details and photo */
 .modal2-grid-container {
     display: flex;
     gap: 30px;
     align-items: flex-start;
-    margin-top: 20px; /* Space between the close button/title area and the main content */
-    flex-wrap: wrap; /* Allows columns to stack on smaller screens */
+    margin-top: 20px;
+    flex-wrap: wrap;
 }
 
-/* Left Column: Text Details */
 .listing2-details-column {
     flex: 1;
     display: flex;
     flex-direction: column;
     text-align: left;
-    min-width: 300px; /* Ensures text column doesn't get too narrow */
+    min-width: 300px;
 }
 
-/* Specific styling for text elements */
 .listing2-details-column h2 {
     font-size: 1.8em;
     margin-bottom: 15px;
@@ -603,34 +592,29 @@
     color: #333;
 }
 
-/* Ensures description has enough space */
 .listing2-details-column p.listing2-description {
     min-height: 60px;
 }
 
-/* Right Column: Photo */
 .listing2-photo-column {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-width: 300px; /* Ensures photo column doesn't get too narrow */
+    min-width: 300px;
 }
 
 .listing2-photo-column .modal2-image {
     width: 300px; 
     max-height: 300px;
 
-    /* Styling from your second example */
     height: auto; 
     border-radius: 0.25rem;
     object-fit: cover;
     
-    /* Some styling from your first example */
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
 }
 
-/* Seller Profile Info */
 .seller2-info {
     display: flex;
     align-items: center;
@@ -648,7 +632,6 @@
     border: 2px solid #ddd;
 }
 
-/* Action Buttons */
 .modal2-actions {
     margin-top: 25px;
     display: flex;
@@ -686,7 +669,6 @@
     transform: translateY(-2px);
 }
 
-/* Media Query for smaller screens */
 @media (max-width: 768px) {
     .modal2-grid-container {
         flex-direction: column;
@@ -695,6 +677,6 @@
     }
     
     .listing2-photo-column {
-        order: -1; /* Puts the photo above the text on small screens */
+        order: -1;
     }
 }

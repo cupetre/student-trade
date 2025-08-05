@@ -8,6 +8,7 @@ import App from './App.jsx';
 import Login from './Pages/LoginPage.jsx';
 import Register from './Pages/RegisterPage.jsx';
 import Profile from './Pages/ProfilePage.jsx';
+import ChatPage from './Pages/ChatPage.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BrowserRouter>
@@ -16,6 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/profilepage" element={<Profile />} />
+      <Route path="/chatpage" element={<ChatPage />} />
     </Routes>
   </BrowserRouter>
 );

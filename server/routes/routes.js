@@ -38,7 +38,7 @@ function authenticationToken(req, res, next) {
         if (err) {
             return res.status(403).json({ error: 'Invalid token' });
         }
-        
+
         // If the token is valid, attach the user and continue to the next middleware.
         req.user = user;
         next();
@@ -166,7 +166,7 @@ router.post('/listings', authenticationToken, upload2.single('photo'), async (re
     }
 });
 
-router.get('/showListings', async(req,res) => {
+router.get('/showListings', async (req, res) => {
     const pool = req.pool;
 
     try {
@@ -180,21 +180,48 @@ router.get('/showListings', async(req,res) => {
         res.json(rows); // okey so first we pull everything from ListingItem , then we pull the fullnames from the User db as owner_name and the prof_pict, we do a join, and extract the fullname
     } catch (err) {
         console.error('failed getting the listing items', err);
-        res.status(500).json({ error:'yikes again' });
+        res.status(500).json({ error: 'yikes again' });
     }
 });
 
-router.get('/showmylistings', authenticationToken, async(req,res) => {
+router.get('/showmylistings', authenticationToken, async (req, res) => {
     const pool = req.pool;
     const my_id = req.user.id;
 
-    try { 
-        const[rows] = await pool.query(`SELECT * FROM ListingItem WHERE owner_id = ? `, [my_id] );
+    try {
+        const [rows] = await pool.query(`SELECT * FROM ListingItem WHERE owner_id = ? `, [my_id]);
         res.json(rows);
     } catch (err) {
         console.error('failed getting my own listing items', err);
-        res.status(500).json({ error:'not working' });
+        res.status(500).json({ error: 'not working' });
     }
+});
+
+router.post('/create_chat', authenticationToken, async (req, res) => {
+    const pool = req.pool;
+    const user1_id = req.user.id;
+    const { user2_id } = req.body;
+
+    // okey first we check if there is an existing chat alredy
+    const [existingChats] = await pool.query(
+        `SELECT id FROM Chat
+        WHERE (user1_id = ? AND user2_id = ?) 
+        OR (user1_id = ? AND user2_id = ? )
+        LIMIT 1`, [user1_id, user2_id, user2_id, user1_id]
+    );
+
+    if (existingChats.length > 0) {
+        return res.json({ chat_id: existingChats[0].chat_id });
+    }
+
+    // if there isn't , we create one
+    const [created_chat] = await pool.query(
+        `INSERT INTO Chat (user1_id, user2_id, date)
+        VALUES (?, ?, NOW() )`, [user1_id, user2_id]
+    );
+
+    const chat_id = created_chat.insertId;
+    res.json({ chat_id });
 });
 
 module.exports = router;

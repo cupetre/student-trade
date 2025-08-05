@@ -199,6 +199,34 @@ function App() {
     setSelectedListing(null);
   }
 
+  const handleMessageButton = async () => {
+
+    const token = localStorage.getItem('token');
+
+    try {
+      const receiverId = selectedListing.owner_id;
+      console.log(receiverId);
+
+      const resp = await fetch('http://localhost:5151/api/create_chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ user2_id: receiverId }),
+      });
+      if (!resp.ok) {
+      throw new Error('Failed to create or get chat');
+    }
+      const data = await resp.json();
+
+      const chatId = data.chat_id;
+      navigate(`/chatPage?chatId=${chatId}`);
+    } catch (err) {
+      console.error("error in creating the chat:", err);
+    }
+  };
+
   return (
     <div className="main-container">
       {/* Header */}
@@ -252,7 +280,7 @@ function App() {
               <button className="quick-action-btn" onClick={(handleButtonClick)}>
                 My Reviews
               </button>
-              <button className="quick-action-btn">
+              <button className="quick-action-btn" onClick={() => navigate('/chatPage')}>
                 Messages
               </button>
               <button className="quick-action-btn" onClick={logout}>
@@ -419,8 +447,8 @@ function App() {
             </div>
 
             <div className="modal2-actions">
-              <button className="message2-button">Message</button>
-              <button className="report2-button">Report</button>
+              <button className="message2-button" onClick={handleMessageButton}>Message</button>
+              <button className="report2-button" >Report</button>
             </div>
           </div>
         </div>
