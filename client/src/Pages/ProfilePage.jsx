@@ -17,14 +17,14 @@ const ProfilePage = () => {
 
     const [originalProfileData, setOriginalProfileData] = useState(null);
 
-    const token = localStorage.getItem('token');
+    const [itemListings2, setItemListings2] = useState([]);
 
-    const userListings = [
+    /* const userListings = [
         { id: 1, title: "Calculus Textbook", price: "$45", image: "📚", category: "Textbooks", status: "Active", views: 24 },
         { id: 2, title: "Programming Books", price: "$60", image: "💻", category: "Textbooks", status: "Active", views: 18 },
         { id: 3, title: "Study Lamp", price: "$25", image: "💡", category: "Furniture", status: "Sold", views: 31 },
         { id: 4, title: "Wireless Mouse", price: "$30", image: "🖱️", category: "Electronics", status: "Active", views: 12 }
-    ];
+    ]; */
 
     const userReviews = [
         { id: 1, rating: 5, text: "Great seller, item was exactly as described and fast shipping!", date: "2024-07-28" },
@@ -33,10 +33,37 @@ const ProfilePage = () => {
     ];
 
     useEffect(() => {
+        const fetchMyListings = async () => {
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.warn('No token found');
+                return;
+            }
+            try {
+                const resp = await fetch(`http://localhost:5151/api/showmylistings`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                });
+
+                if (!resp.ok) throw new Error("failed to fetch the prof data");
+
+                const data = await resp.json();
+                setItemListings2(data);
+            } catch (err) {
+                console.error('Failed to fetch listings', err);
+            }
+        };
+        fetchMyListings();
+    }, []);
+
+    useEffect(() => {
         const fetchProfileData = async () => {
+            const token = localStorage.getItem('token');
 
             try {
-                const response = await fetch(`http://localhost:5151/api/get_profile`, {
+                const response = await fetch(`http://localhost:5151/api/getprofile`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -66,7 +93,6 @@ const ProfilePage = () => {
         fetchProfileData();
 
     }, []);
-
 
     const handleSave = async () => {
 
@@ -286,36 +312,26 @@ const ProfilePage = () => {
                     <div className="listings-section">
                         <div className="listings-header">
                             <h2 className="listings-section-title">My Listings</h2>
-                            <div className="listings-stats">
-                                <span className="listings-count">{userListings.length} items</span>
-                                <span className="listings-active">{userListings.filter(item => item.status === 'Active').length} active</span>
-                            </div>
                         </div>
 
-                        <div className="user-listings-grid">
-                            {userListings.map((listing) => (
-                                <div key={listing.id} className="user-listing-card">
-                                    <div className="listing-status-badge">
-                                        <span className={`status-indicator ${listing.status.toLowerCase()}`}>
-                                            {listing.status}
+                        <div className="listings-grid">
+                            {itemListings2.map((listing) => (
+                                <div key={listing.id} className="listing-card">
+                                    <div className="listing-info">
+                                        <h3 className="listing-title">{listing.title}</h3>
+                                        <div className="listing-details">
+                                            <span className="listing-price">{listing.price}</span>
+                                        </div>
+                                        <span className="listing-date">
+                                            {new Date(listing.date).toLocaleDateString()}
                                         </span>
                                     </div>
-
-                                    <div className="user-listing-image">{listing.image}</div>
-                                    <h3 className="user-listing-title">{listing.title}</h3>
-
-                                    <div className="user-listing-details">
-                                        <span className="user-listing-price">{listing.price}</span>
-                                        <span className="user-listing-category">{listing.category}</span>
-                                    </div>
-
-                                    <div className="listing-stats">
-                                        <span className="listing-views">{listing.views} views</span>
-                                    </div>
-
-                                    <div className="listing-actions">
-                                        <button className="listing-action-btn edit">Edit</button>
-                                        <button className="listing-action-btn delete">Delete</button>
+                                    {/* pamti vrati go to za status*/}
+                                    <div className="listing-image">
+                                        <img
+                                            src={`http://localhost:5151/${listing.photo}`}
+                                            alt={listing.title}
+                                        />
                                     </div>
                                 </div>
                             ))}

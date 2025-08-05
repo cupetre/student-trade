@@ -61,7 +61,9 @@ const Register = () => {
 
     return (
         <div className="login-page-container">
-            <h2>Student Trade Register</h2>
+            <h2>
+                <span className="brand-name">Student Trade</span>
+            </h2>
             <form className="login-form" onSubmit={handleSubmit}>
 
                 <div className="form-group">

@@ -10,6 +10,7 @@ function App() {
   const [profileData, setProfileData] = useState({});
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -19,10 +20,11 @@ function App() {
   });
 
   const [itemListings, setItemListings] = useState([]);
-  
-  const token = localStorage.getItem('token');
 
   useEffect(() => {
+
+    const token = localStorage.getItem('token');
+
     if (!token) {
       console.log('No token found, user might not be logged in');
       return;
@@ -49,6 +51,7 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
 
     if (!token) {
       console.log('No token found, user might not be logged in');
@@ -56,9 +59,8 @@ function App() {
     }
 
     const fetchProfileData = async () => {
-
       try {
-        const res = await fetch('http://localhost:5151/api/get_profile', {
+        const res = await fetch('http://localhost:5151/api/getprofile', {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -177,6 +179,26 @@ function App() {
     fetchListings();
   }, []);
 
+  const logout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  //modals for the listings view
+
+  const [isListingModalOpen, setIsListingModalOpen] = useState(false);
+  const [selectedListing, setSelectedListing] = useState(null);
+
+  const openListingModal = (listing) => {
+    setSelectedListing(listing);
+    setIsListingModalOpen(true);
+  }
+
+  const closeListingModal = () => {
+    setIsListingModalOpen(false);
+    setSelectedListing(null);
+  }
+
   return (
     <div className="main-container">
       {/* Header */}
@@ -233,7 +255,7 @@ function App() {
               <button className="quick-action-btn">
                 Messages
               </button>
-              <button className="quick-action-btn">
+              <button className="quick-action-btn" onClick={logout}>
                 Log Out
               </button>
             </div>
@@ -242,16 +264,16 @@ function App() {
           <div className="listings-container">
             <div className="listings-grid">
               {itemListings.map((listing) => (
-                <div key={listing.id} className="listing-card">
+                <div key={listing.id} className="listing-card" onClick={() => openListingModal(listing)}>
                   <div className="listing-info">
                     <h3 className="listing-title">{listing.title}</h3>
                     <div className="listing-details">
-                      <span className="listing-price">{listing.price}</span>
+                      <span className="listing-price">{listing.price}$</span>
                     </div>
-                    <p className="listing-seller">Seller: {listing.owner_id}</p>
-                      <span className="listing-date">
-                        {new Date(listing.date).toLocaleDateString()}
-                      </span>
+                    <p className="listing-seller">Seller: {listing.owner_name}</p>
+                    <span className="listing-date">
+                      {new Date(listing.date).toLocaleDateString()}
+                    </span>
                   </div>
                   <div className="listing-image">
                     <img
@@ -350,6 +372,56 @@ function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isListingModalOpen && selectedListing && (
+        <div className="modal2-overlay" onClick={closeListingModal}>
+          <div className="modal2-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close2-button" onClick={closeListingModal}>&times;</button>
+
+            <div className="modal2-grid-container">
+              {/* Left Column: Text Details */}
+              <div className="listing2-details-column">
+                <h2>{selectedListing.title}</h2>
+                <p className="listing2-description">
+                  <strong>Description:</strong> {selectedListing.description}
+                </p>
+                <p>
+                  <strong>Price:</strong> ${selectedListing.price}
+                </p>
+                <p>
+                  <strong>Date Posted:</strong> {selectedListing.date}
+                </p>
+                <div className="2seller-info">
+                  {/* Conditional rendering for the profile picture */}
+                  {selectedListing.owner_profile_picture && (
+                    <img
+                      src={selectedListing.owner_photo}
+                      alt={selectedListing.owner_name}
+                      className="seller2-profile-pic"
+                    />
+                  )}
+                  <p>
+                    <strong>Seller:</strong> {selectedListing.owner_name}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Photo */}
+              <div className="listing2-photo-column">
+                <img
+                  src={`http://localhost:5151/${selectedListing.photo}`}
+                  className="modal2-image"
+                />
+              </div>
+            </div>
+
+            <div className="modal2-actions">
+              <button className="message2-button">Message</button>
+              <button className="report2-button">Report</button>
+            </div>
           </div>
         </div>
       )}

@@ -149,7 +149,7 @@
 
 @media (min-width: 640px) {
   .main-content {
-    padding: 2rem 1.5rem;
+    padding: 0 1.5rem;
   }
 }
 
@@ -523,4 +523,178 @@
 
 .submit-btn:active, .cancel-btn:active {
   transform: scale(0.98);
+}
+
+/* MODAL JUST TO VIEW THE LISTING WHEN PRESSED */
+
+.modal2-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* Modal Content Container */
+.modal2-content {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    max-width: 900px;
+    width: 90%;
+    position: relative;
+    max-height: 80vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column; /* To stack header, grid, and actions */
+}
+
+/* Close Button */
+.close2-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 2em;
+    cursor: pointer;
+    color: #555;
+    transition: color 0.2s;
+}
+
+.close2-button:hover {
+    color: #000;
+}
+
+/* Main Two-Column Layout for details and photo */
+.modal2-grid-container {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    margin-top: 20px; /* Space between the close button/title area and the main content */
+    flex-wrap: wrap; /* Allows columns to stack on smaller screens */
+}
+
+/* Left Column: Text Details */
+.listing2-details-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    min-width: 300px; /* Ensures text column doesn't get too narrow */
+}
+
+/* Specific styling for text elements */
+.listing2-details-column h2 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+}
+
+.listing2-details-column p {
+    margin: 8px 0;
+    line-height: 1.5;
+    font-size: 1.1em;
+    color: #333;
+}
+
+/* Ensures description has enough space */
+.listing2-details-column p.listing2-description {
+    min-height: 60px;
+}
+
+/* Right Column: Photo */
+.listing2-photo-column {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 300px; /* Ensures photo column doesn't get too narrow */
+}
+
+.listing2-photo-column .modal2-image {
+    width: 300px; 
+    max-height: 300px;
+
+    /* Styling from your second example */
+    height: auto; 
+    border-radius: 0.25rem;
+    object-fit: cover;
+    
+    /* Some styling from your first example */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
+}
+
+/* Seller Profile Info */
+.seller2-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    font-size: 1em;
+    font-weight: bold;
+}
+
+.seller2-profile-pic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ddd;
+}
+
+/* Action Buttons */
+.modal2-actions {
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.modal2-actions button {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.message2-button {
+    background-color: #007bff;
+    color: white;
+}
+
+.message2-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.report2-button {
+    background-color: #dc3545;
+    color: white;
+}
+
+.report2-button:hover {
+    background-color: #c82333;
+    transform: translateY(-2px);
+}
+
+/* Media Query for smaller screens */
+@media (max-width: 768px) {
+    .modal2-grid-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .listing2-photo-column {
+        order: -1; /* Puts the photo above the text on small screens */
+    }
 }

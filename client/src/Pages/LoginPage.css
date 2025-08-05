@@ -1,6 +1,6 @@
 .login-page-container {
     max-width: 400px;
-    margin: 50px auto;
+    margin: 0px auto;
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -9,10 +9,18 @@
     font-family: Arial, sans-serif;
 }
 
+/* Updated styling for the heading */
 .login-page-container h2 {
     color: #333;
     margin-bottom: 25px;
     font-size: 1.8em;
+}
+
+/* New style for the brand name */
+.brand-name {
+    color: #007bff; /* The blue color you wanted */
+    font-weight: bold; /* Make it bold */
+    font-size: 1.2em; /* Make it larger relative to the parent font size */
 }
 
 .login-form .form-group {
@@ -32,13 +40,13 @@
     padding: 12px;
     border: 1px solid #ddd;
     border-radius: 5px;
-    box-sizing: border-box; /* Include padding in width */
+    box-sizing: border-box;
     font-size: 1em;
 }
 
 .login-form input[type="text"]:focus,
 .login-form input[type="password"]:focus {
-    border-color: #007bff; /* Highlight on focus */
+    border-color: #007bff;
     outline: none;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
@@ -66,7 +74,7 @@
 }
 
 .error-message {
-    color: #dc3545; /* Red for errors */
+    color: #dc3545;
     margin-bottom: 15px;
     font-size: 0.9em;
     background-color: #f8d7da;

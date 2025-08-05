@@ -28,14 +28,22 @@ function authenticationToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
-    if (!token) return res.sendStatus(410).json({ error: 'No token provided' });
+    // If no token is provided, set status 401 and send a JSON response.
+    if (!token) {
+        return res.status(401).json({ error: 'No token provided' });
+    }
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403).json({ error: 'Invalid token' });
+        // If the token is invalid, set status 403 and send a JSON response.
+        if (err) {
+            return res.status(403).json({ error: 'Invalid token' });
+        }
+        
+        // If the token is valid, attach the user and continue to the next middleware.
         req.user = user;
         next();
     });
-}
+};
 
 router.put('/profile', authenticationToken, upload1.single('profilePicture'), async (req, res) => {
     const pool = req.pool;
@@ -55,7 +63,7 @@ router.put('/profile', authenticationToken, upload1.single('profilePicture'), as
     }
 });
 
-router.get('/get_profile', authenticationToken, async (req, res) => {
+router.get('/getprofile', authenticationToken, async (req, res) => {
 
     const pool = req.pool;
 
@@ -162,15 +170,21 @@ router.get('/showListings', async(req,res) => {
     const pool = req.pool;
 
     try {
-        const [rows] = await pool.query(`SELECT * FROM ListingItem`);
-        res.json(rows);
+        const [rows] = await pool.query(`
+            SELECT
+                ListingItem.*, 
+                User.fullname AS owner_name,
+                User.profile_picture as owner_photo
+            FROM ListingItem
+            INNER JOIN User ON ListingItem.owner_id = User.id`);
+        res.json(rows); // okey so first we pull everything from ListingItem , then we pull the fullnames from the User db as owner_name and the prof_pict, we do a join, and extract the fullname
     } catch (err) {
         console.error('failed getting the listing items', err);
         res.status(500).json({ error:'yikes again' });
     }
 });
 
-router.get('/show_my_listings', authenticationToken, async(req,res) => {
+router.get('/showmylistings', authenticationToken, async(req,res) => {
     const pool = req.pool;
     const my_id = req.user.id;
 
