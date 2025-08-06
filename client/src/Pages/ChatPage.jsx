@@ -113,6 +113,8 @@ function ChatPage() {
 
         console.log(chatId);
         console.log(selectedChat.owner_of_post_fullname);
+        //okej e vo red gi zema
+
 
         try {
             const res = await fetch('http://localhost:5151/api/send_message', {
@@ -136,6 +138,56 @@ function ChatPage() {
         } catch (err) {
             console.error('Failed to send mesgs', err);
         }
+    };
+
+    // odime sega so reviews part
+
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [reviewText, setReviewText] = useState('');
+    const [reviewRating, setReviewRating] = useState(0);
+    const [hoveredStar, setHoveredStar] = useState(0);
+
+    const handleReviewSubmit = async () => {
+
+        const token = localStorage.getItem('token');
+
+        try {
+            const respy = await fetch('http://localhost:5151/api/add_review', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+
+                body: JSON.stringify({
+                    user2_id: selectedChat.owner_of_post_id,
+                    rating: reviewRating,
+                    description: reviewText
+                })
+            });
+
+            console.log(respy);
+            if (!respy.ok) throw new Error('Failed to send');
+
+            setReviewText('');
+            setReviewRating(0);
+            setShowReviewModal(false);
+            alert('Review submitted successfully!');
+        } catch (err) {
+            console.error('Failed to send mesgs', err);
+        }
+
+        if (reviewRating === 0) {
+            alert('Please select a rating');
+            return;
+        }
+    };
+
+    const closeReviewModal = () => {
+        setShowReviewModal(false);
+        setReviewText('');
+        setReviewRating(0);
+        setHoveredStar(0);
     };
 
     return (
@@ -220,47 +272,114 @@ function ChatPage() {
                             ))}
                         </div>
                     </div>
-                    
+
                     <div className="chat-window">
-                    {selectedChat ? (
-                        <>
-                            <div className="chat-window-header">
-                                <div className="active-chat-user">
+                        {selectedChat ? (
+                            <>
+                                <div className="chat-window-header">
                                     <div className="active-user-info">
+                                        <div className="chat-avatar">
+                                            <img src={`http://localhost:5151${selectedChat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
+                                        </div>
                                         <div className="active-user-name">{selectedChat.owner_of_post_fullname}</div>
                                     </div>
+                                    <div className="active-user-name">
+                                        <button onClick={() => setShowReviewModal(true)}> Give Review </button>
+                                    </div>
+                                    <div className="active-user-name">
+                                        <button> Close Chat </button>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="chat-messages">
-                                {/* fetch & render messages using selectedChat.chat_id */}
-                            </div>
-
-                            <div className="chat-input-container">
-                                <div className="chat-input-wrapper">
-                                    <input
-                                        type="text"
-                                        placeholder="Type your message..."
-                                        className="chat-input"
-                                        value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
-                                    />
-                                    <button className="send-button" onClick={() => sendMessage(selectedChat.id)}>
-                                        <svg className="send-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                        </svg>
-                                    </button>
+                                <div className="chat-messages">
+                                    {/* fetch & render messages using selectedChat.chat_id */}
                                 </div>
+
+                                <div className="chat-input-container">
+                                    <div className="chat-input-wrapper">
+                                        <input
+                                            type="text"
+                                            placeholder="Type your message..."
+                                            className="chat-input"
+                                            value={newMessage}
+                                            onChange={(e) => setNewMessage(e.target.value)}
+                                        />
+                                        <button className="send-button" onClick={() => sendMessage(selectedChat.id)}>
+                                            <svg className="send-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="no-chat-selected">
+                                <p>Select a chat to begin messaging.</p>
                             </div>
-                        </>
-                    ) : (
-                        <div className="no-chat-selected">
-                            <p>Select a chat to begin messaging.</p>
-                        </div>
-                    )}
+                        )}
                     </div>
                 </div>
             </main>
+
+            {showReviewModal && (
+                <div className="review-modal-overlay" onClick={closeReviewModal}>
+                    <div className="review-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="review-modal-header">
+                            <h3>Review for {selectedChat.owner_of_post_fullname}</h3>
+                            <button className="close-btn" onClick={closeReviewModal}>&times;</button>
+                        </div>
+
+                        <div className="review-modal-body">
+                            <div className="user-info">
+                                <img
+                                    src={`http://localhost:5151${selectedChat.owner_of_post_photo}`}
+                                    alt="User Avatar"
+                                    className="review-user-avatar"
+                                />
+                                <span className="review-user-name">{selectedChat.owner_of_post_fullname}</span>
+                            </div>
+
+                            <div className="rating-section">
+                                <label>Rating:</label>
+                                <div className="star-rating">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <span
+                                            key={star}
+                                            className={`star ${star <= (hoveredStar || reviewRating) ? 'filled' : ''}`}
+                                            onClick={() => setReviewRating(star)}
+                                            onMouseEnter={() => setHoveredStar(star)}
+                                            onMouseLeave={() => setHoveredStar(0)}
+                                        >
+                                            ★
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="review-text-section">
+                                <label htmlFor="reviewText">Review:</label>
+                                <textarea
+                                    id="reviewText"
+                                    placeholder="Write your review here..."
+                                    value={reviewText}
+                                    onChange={(e) => setReviewText(e.target.value)}
+                                    className="review-textarea"
+                                    rows={4}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="review-modal-footer">
+                            <button className="cancel-btn" onClick={closeReviewModal}>
+                                Cancel
+                            </button>
+                            <button className="submit-btn" onClick={handleReviewSubmit}>
+                                Submit Review
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

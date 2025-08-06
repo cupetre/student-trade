@@ -277,7 +277,7 @@ router.post('/send_message', authenticationToken, async (req, res) => {
             `, [chat_id, sender_id, receiver_id, content]
         );
 
-        res.json({ message: ' message is sent sucslfly '});
+        res.json({ message: ' message is sent sucslfly ' });
     } catch (err) {
         console.error("failed in sending the message in the backend/db", err);
         res.status(500).json({ error: "problem in db" });
@@ -302,9 +302,28 @@ router.get('/receive_message/:chat_id', authenticationToken, async (req, res) =>
 
         res.json({ messages });
     } catch (err) {
-        console.error('Failed to fetch messages:', err);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('again fail on msgs:', err);
+        res.status(500).json({ error: 'server njok dela, error' });
     }
+});
+
+router.post('/add_review', authenticationToken, async (req, res) => {
+
+    const pool = req.pool;
+    const my_id = req.user.id;
+    const { user2_id, rating, description } = req.body;
+
+    try {
+        await pool.query(`
+        INSERT INTO Review (reviewer_id, reviewee_id, rating, description, created_at) 
+        VALUES (?, ?, ?, ?, NOW() )`,
+            [my_id, user2_id, rating, description]);
+
+        res.json({ message: "it worked " });
+    } catch (err) {
+        console.error("something didnt work in backend", err);
+    }
+
 });
 
 module.exports = router;

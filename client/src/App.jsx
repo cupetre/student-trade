@@ -216,7 +216,7 @@ function App() {
         body: JSON.stringify({ user2_id: receiverId }),
       });
       if (!resp.ok) {
-      throw new Error('Failed to create or get chat');
+      throw new Error('Failed to create or get the damn chat');
     }
       const data = await resp.json();
 

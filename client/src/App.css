@@ -650,7 +650,7 @@
 }
 
 .message2-button {
-    background-color: #007bff;
+    background-color: #3d82cc;
     color: white;
 }
 
@@ -660,12 +660,12 @@
 }
 
 .report2-button {
-    background-color: #dc3545;
+    background-color: #3d82cc;
     color: white;
 }
 
 .report2-button:hover {
-    background-color: #c82333;
+    background-color: #0056b3;
     transform: translateY(-2px);
 }
 

@@ -41,7 +41,6 @@ const Login = () => {
             <span className="brand-name">Student Trade</span>
         </h2>
         <form className="login-form" onSubmit={handleLogin}>
-            {/* ... rest of your form components ... */}
             <div className="form-group">
                 <label htmlFor="email">Email address:</label>
                 <input
