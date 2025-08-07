@@ -326,4 +326,22 @@ router.post('/add_review', authenticationToken, async (req, res) => {
 
 });
 
+router.get('/get_reviews', authenticationToken, async (req,res) => {
+    const pool = req.pool;
+    
+    const my_id = req.user.id;
+
+    try {
+        const[reviews] = await pool.query(`
+            SELECT * FROM Review WHERE reviewee_id = ? `,
+        [my_id]);
+
+        console.log(reviews);
+
+        res.json(reviews);
+    } catch (err) {
+        res.status(500).json({ err : "yikes" });
+    }
+});
+
 module.exports = router;

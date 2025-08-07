@@ -26,11 +26,11 @@ const ProfilePage = () => {
         { id: 4, title: "Wireless Mouse", price: "$30", image: "🖱️", category: "Electronics", status: "Active", views: 12 }
     ]; */
 
-    const userReviews = [
+    /* const userReviews = [
         { id: 1, rating: 5, text: "Great seller, item was exactly as described and fast shipping!", date: "2024-07-28" },
         { id: 2, rating: 4, text: "Quick to respond and the product was in good condition. Would recommend.", date: "2024-07-25" },
         { id: 3, rating: 5, text: "Excellent communication and a smooth transaction. Couldn't be happier!", date: "2024-07-20" },
-    ];
+    ]; */
 
     useEffect(() => {
         const fetchMyListings = async () => {
@@ -151,25 +151,60 @@ const ProfilePage = () => {
         }
     };
 
-    const renderStarRating = (rating) => {
-        const stars = [];
-        for (let i = 0; i < 5; i++) {
-            stars.push(
-                <span key={i} className={`star-icon ${i < rating ? 'filled' : ''}`}>
-                    ★
-                </span>
-            );
-        }
-        return <div className="star-rating">{stars}</div>;
-    };
-
     const handleCancel = () => {
-        // Reset any unsaved changes by restoring the original data
         if (originalProfileData) {
             setProfileData(originalProfileData);
         }
-        // Exit editing mode
         setIsEditing(false);
+    };
+
+    // reviews sections
+
+    const [userReviews, setUserReviews] = useState([]);
+
+    useEffect(() => {
+        const showReviews = async () => {
+
+            const token = localStorage.getItem('token');
+
+            try {
+
+                const response = await fetch('http://localhost:5151/api/get_reviews', {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    }
+
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch reviews");
+                }
+
+                const newData = await response.json();
+
+                const dataForAssigning = newData.map((review) => ({
+                    id: review.id,
+                    rating: review.rating,
+                    text: review.description,
+                    date: new Date(review.created_at).toLocaleDateString(),
+                }));
+
+                setUserReviews(dataForAssigning);
+            } catch (err) {
+                console.error("not working in front end", err);
+            }
+        };
+
+        showReviews();
+    }, []);
+
+    const renderStarRating = (rating) => {
+        return (
+            <div className="star-rating">
+                {'⭐'.repeat(rating)}
+                {'☆'.repeat(5 - rating)}
+            </div>
+        );
     };
 
     return (
