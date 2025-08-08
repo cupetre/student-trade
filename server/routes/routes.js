@@ -63,6 +63,28 @@ router.put('/profile', authenticationToken, upload1.single('profilePicture'), as
     }
 });
 
+router.put('/edit_listing', authenticationToken, async (req,res) => {
+    const pool = req.pool;
+
+    const my_id = req.user.id;
+    const { title, description, price } = req.body;
+    const photo = req.file ? `/uploads/listings/${req.file.filename}` : null;
+
+    try {
+        await pool.query(`
+            UPDATE ListingItem SET 
+            title = ? , description = ? , price = ? , photo = ? 
+            WHERE owner_id = ? `, 
+            [title, description, price, photo, my_id]
+        );
+
+        res.json({ message : " listing was changed " });
+    } catch (err) {
+        res.status(500).json({ error: "not working in back "});
+    }
+    
+});
+
 router.get('/getprofile', authenticationToken, async (req, res) => {
 
     const pool = req.pool;
@@ -361,5 +383,6 @@ router.post('/add_report', authenticationToken, async (req,res) => {
         console.error("error in sending to db",err);
     }
 });
+
 
 module.exports = router;

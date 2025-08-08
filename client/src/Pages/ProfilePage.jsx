@@ -194,9 +194,113 @@ const ProfilePage = () => {
         );
     };
 
+    // lets edit/delete listings here
+
+    const [selectedListing, setSelectedListing] = useState(null);
+    const [isListingModalOpen, setIsListingModalOpen] = useState(false);
+
+    const [editFormData, setEditFormData] = useState({
+        title: '',
+        description: '',
+        price: '',
+        photo: null,
+        currentPhoto: ''
+    });
+
+    const openListingModal = (listing) => {
+
+        setEditFormData({
+            title: listing.title,
+            description: listing.description,
+            price: listing.price,
+            photo: null,
+            currentPhoto: `http://localhost:5151/${listing.photo}`
+        });
+
+        setSelectedListing(listing);
+        setIsListingModalOpen(true);
+    };
+
+    const closeListingModal = () => {
+        setIsListingModalOpen(false);
+        setSelectedListing(null);
+
+        setEditFormData({
+            title: '',
+            description: '',
+            price: '',
+            photo: null,
+            currentPhoto: ''
+        })
+    };
+
+    const handleFormSubmit = async (e) => {
+        e.preventDefault();
+
+        const token = localStorage.getItem('token');
+
+        const newAddedForm = new FormData();
+
+        newAddedForm.append('id', editFormData.id);
+        newAddedForm.append('title', editFormData.title);
+        newAddedForm.append('description', editFormData.description);
+        newAddedForm.append('price', editFormData.price);
+
+        if (editFormData.photo) {
+            newAddedForm.append('photo', editFormData.photo);
+        }
+
+        console.log(newAddedForm);
+
+        try {
+            const resp = await fetch('http://localhost:5151/api/edit_listing', {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+
+                body: newAddedForm,
+
+            });
+
+            if (!resp.ok) {
+                throw new Error(`HTTP error! status: ${resp.status}`);
+            }
+
+            const result = await resp.json();
+            console.log("listing has been updated scsly", result);
+            closeListingModal();
+
+        } catch (err) {
+            console.error("problem in fetching and frontend", err);
+        }
+    };
+
+    const handleFormChange = (e) => {
+        const { name, value, files } = e.target;
+
+        if (name === 'photo' && files && files.length > 0) {
+            const file = files[0];
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+                setEditFormData(prevData => ({
+                    ...prevData,
+                    photo: file, // Store the actual file object for submission
+                    photoPreview: event.target.result // Store the URL for immediate preview
+                }));
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setEditFormData(prevData => ({
+                ...prevData,
+                [name]: files ? files[0] : value
+            }));
+        }
+    };
+
     return (
         <div className="profile-page">
-            {/* Header */}
             <header className="profile-header">
                 <div className="profile-header-content">
                     <h1 className="profile-page-title">My Profile</h1>
@@ -343,7 +447,22 @@ const ProfilePage = () => {
                                         <span className="listing-date">
                                             {new Date(listing.date).toLocaleDateString()}
                                         </span>
+                                        <div className="listing-actions">
+                                            <button
+                                                className="listing-action-btn edit"
+                                                onClick={() => openListingModal(listing)}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                className="listing-action-btn delete"
+                                                onClick={() => handleDelete(listing.id)}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
                                     </div>
+
                                     <div className="listing-image">
                                         <img
                                             src={`http://localhost:5151/${listing.photo}`}
@@ -356,6 +475,69 @@ const ProfilePage = () => {
                     </div>
                 </div>
             </main>
+
+            {isListingModalOpen && selectedListing && (
+                <div className="edit-modal-overlay" onClick={closeListingModal}>
+                    <div className="edit-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <button className="edit-modal-close" onClick={closeListingModal}>&times;</button>
+                        <h2>Edit Listing</h2>
+                        <form onSubmit={handleFormSubmit} className="edit-form">
+                            <div className="form-group">
+                                <label htmlFor="title">Title</label>
+                                <input
+                                    type="text"
+                                    id="title"
+                                    name="title"
+                                    value={editFormData.title}
+                                    onChange={handleFormChange}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="description">Description</label>
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    value={editFormData.description}
+                                    onChange={handleFormChange}
+                                    rows="4"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="price">Price</label>
+                                <input
+                                    type="number"
+                                    id="price"
+                                    name="price"
+                                    value={editFormData.price}
+                                    onChange={handleFormChange}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Current Image</label>
+                                {/* This will show either the original image or the newly selected one */}
+                                {editFormData.photoPreview && (
+                                    <img
+                                        src={editFormData.photoPreview}
+                                        alt="Listing preview"
+                                        className="edit-current-image"
+                                    />
+                                )}
+                                <label htmlFor="photo" className="file-input-label">
+                                    Choose a new image (optional)
+                                </label>
+                                <input
+                                    type="file"
+                                    id="photo"
+                                    name="photo"
+                                    onChange={handleFormChange}
+                                />
+                            </div>
+                            <button type="submit" className="edit-submit-btn">Save Changes</button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };
