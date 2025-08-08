@@ -19,19 +19,6 @@ const ProfilePage = () => {
 
     const [itemListings2, setItemListings2] = useState([]);
 
-    /* const userListings = [
-        { id: 1, title: "Calculus Textbook", price: "$45", image: "📚", category: "Textbooks", status: "Active", views: 24 },
-        { id: 2, title: "Programming Books", price: "$60", image: "💻", category: "Textbooks", status: "Active", views: 18 },
-        { id: 3, title: "Study Lamp", price: "$25", image: "💡", category: "Furniture", status: "Sold", views: 31 },
-        { id: 4, title: "Wireless Mouse", price: "$30", image: "🖱️", category: "Electronics", status: "Active", views: 12 }
-    ]; */
-
-    /* const userReviews = [
-        { id: 1, rating: 5, text: "Great seller, item was exactly as described and fast shipping!", date: "2024-07-28" },
-        { id: 2, rating: 4, text: "Quick to respond and the product was in good condition. Would recommend.", date: "2024-07-25" },
-        { id: 3, rating: 5, text: "Excellent communication and a smooth transaction. Couldn't be happier!", date: "2024-07-20" },
-    ]; */
-
     useEffect(() => {
         const fetchMyListings = async () => {
 
@@ -219,11 +206,9 @@ const ProfilePage = () => {
                 </div>
             </header>
 
-            {/* Main Content */}
             <main className="profile-main">
                 <div className="profile-container">
 
-                    {/* Profile Info Section */}
                     <div className="profile-info-card">
                         <div className="profile-info-header">
                             <h2 className="profile-section-title">Profile Information</h2>
@@ -244,7 +229,6 @@ const ProfilePage = () => {
                         </div>
 
                         <div className="profile-info-content">
-                            {/* Profile Picture */}
                             <div className="profile-picture-section">
                                 <div className="profile-picture-container">
                                     {profileData.profilePicturePreview ? (
@@ -270,7 +254,6 @@ const ProfilePage = () => {
                                 )}
                             </div>
 
-                            {/* Profile Details */}
                             <div className="profile-details">
                                 <div className="profile-field">
                                     <label className="profile-label">Full Name</label>
@@ -361,7 +344,6 @@ const ProfilePage = () => {
                                             {new Date(listing.date).toLocaleDateString()}
                                         </span>
                                     </div>
-                                    {/* pamti vrati go to za status*/}
                                     <div className="listing-image">
                                         <img
                                             src={`http://localhost:5151/${listing.photo}`}

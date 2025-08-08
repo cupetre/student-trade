@@ -113,6 +113,7 @@ function ChatPage() {
 
         console.log(chatId);
         console.log(selectedChat.owner_of_post_fullname);
+        
         //okej e vo red gi zema
 
 
@@ -172,7 +173,6 @@ function ChatPage() {
             setReviewText('');
             setReviewRating(0);
             setShowReviewModal(false);
-            alert('Review submitted successfully!');
         } catch (err) {
             console.error('Failed to send mesgs', err);
         }
@@ -192,7 +192,6 @@ function ChatPage() {
 
     return (
         <div className="main-container">
-            {/* Header */}
             <header className="header">
                 <div className="header-content">
                     <div className="header-nav">
@@ -201,7 +200,6 @@ function ChatPage() {
                             <h1 className="logo-text" onClick={() => navigate('/')}>Student Trade</h1>
                         </div>
 
-                        {/* Search Bar */}
                         <div className="search-container">
                             <div className="search-input-wrapper">
                                 <input
@@ -250,7 +248,6 @@ function ChatPage() {
                     </aside>
 
                     <div className="chat-sidebar">
-                        {/* Chat Sidebar Header */}
                         <div className="chat-sidebar-header">
                             <h3 className="chat-sidebar-title">Recent Chats</h3>
                         </div>
@@ -292,7 +289,6 @@ function ChatPage() {
                                 </div>
 
                                 <div className="chat-messages">
-                                    {/* fetch & render messages using selectedChat.chat_id */}
                                 </div>
 
                                 <div className="chat-input-container">
@@ -314,7 +310,6 @@ function ChatPage() {
                             </>
                         ) : (
                             <div className="no-chat-selected">
-                                <p>Select a chat to begin messaging.</p>
                             </div>
                         )}
                     </div>

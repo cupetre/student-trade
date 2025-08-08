@@ -166,8 +166,9 @@ router.post('/listings', authenticationToken, upload2.single('photo'), async (re
     }
 });
 
-router.get('/showListings', async (req, res) => {
+router.get('/showListings', authenticationToken, async (req, res) => {
     const pool = req.pool;
+    const my_id = req.user.id;
 
     try {
         const [rows] = await pool.query(`
@@ -176,7 +177,8 @@ router.get('/showListings', async (req, res) => {
                 User.fullname AS owner_name,
                 User.profile_picture as owner_photo
             FROM ListingItem
-            INNER JOIN User ON ListingItem.owner_id = User.id`);
+            INNER JOIN User ON ListingItem.owner_id = User.id
+            WHERE ListingItem.owner_id != ?`, [my_id]);
         res.json(rows); // okey so first we pull everything from ListingItem , then we pull the fullnames from the User db as owner_name and the prof_pict, we do a join, and extract the fullname
     } catch (err) {
         console.error('failed getting the listing items', err);
@@ -308,7 +310,6 @@ router.get('/receive_message/:chat_id', authenticationToken, async (req, res) =>
 });
 
 router.post('/add_review', authenticationToken, async (req, res) => {
-
     const pool = req.pool;
     const my_id = req.user.id;
     const { user2_id, rating, description } = req.body;
@@ -326,21 +327,38 @@ router.post('/add_review', authenticationToken, async (req, res) => {
 
 });
 
-router.get('/get_reviews', authenticationToken, async (req,res) => {
+router.get('/get_reviews', authenticationToken, async (req, res) => {
     const pool = req.pool;
-    
     const my_id = req.user.id;
 
     try {
-        const[reviews] = await pool.query(`
+        const [reviews] = await pool.query(`
             SELECT * FROM Review WHERE reviewee_id = ? `,
-        [my_id]);
+            [my_id]);
 
         console.log(reviews);
 
         res.json(reviews);
     } catch (err) {
-        res.status(500).json({ err : "yikes" });
+        res.status(500).json({ err: "yikes" });
+    }
+});
+
+// report post api
+router.post('/add_report', authenticationToken, async (req,res) => {
+    const pool = req.pool;
+    const reporter_id = req.user.id;
+    const { reported_id, item_id, description } = req.body;
+
+    try {
+        await pool.query(`
+            INSERT INTO Report (reporter_id,reported_id,item_id,description,date)
+            VALUES (?, ?, ?, ?, NOW())`,
+        [reporter_id, reported_id, item_id, description] );
+
+        res.json({ message: "import worked "});
+    } catch (err) {
+        console.error("error in sending to db",err);
     }
 });
 

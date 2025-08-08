@@ -153,22 +153,15 @@ function App() {
     navigate('/profilePage#listing-content');
   };
 
-  /* const listings = [
-    { id: 1, title: "Calculus Textbook", price: "$45", seller: "Sarah M.", image: "📚", category: "Textbooks" },
-    { id: 2, title: "Gaming Chair", price: "$120", seller: "Mike R.", image: "🪑", category: "Furniture" },
-    { id: 3, title: "iPhone Charger", price: "$15", seller: "Alex K.", image: "🔌", category: "Electronics" },
-    { id: 4, title: "Chemistry Lab Kit", price: "$80", seller: "Emma L.", image: "🧪", category: "Lab Equipment" },
-    { id: 5, title: "Mini Fridge", price: "$200", seller: "Tom H.", image: "❄️", category: "Appliances" },
-    { id: 6, title: "Study Lamp", price: "$25", seller: "Lisa P.", image: "💡", category: "Furniture" },
-    { id: 7, title: "Programming Books", price: "$60", seller: "David C.", image: "💻", category: "Textbooks" },
-    { id: 8, title: "Yoga Mat", price: "$20", seller: "Nina S.", image: "🧘", category: "Sports" },
-    { id: 9, title: "Wireless Mouse", price: "$30", seller: "Jake W.", image: "🖱️", category: "Electronics" }
-  ]; */
-
   useEffect(() => {
     const fetchListings = async () => {
+      const token = localStorage.getItem('token');
       try {
-        const response = await fetch('http://localhost:5151/api/showListings');
+        const response = await fetch('http://localhost:5151/api/showListings', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        });
         const data = await response.json();
         setItemListings(data);
       } catch (err) {
@@ -196,7 +189,6 @@ function App() {
 
   const closeListingModal = () => {
     setIsListingModalOpen(false);
-    setSelectedListing(null);
   }
 
   const handleMessageButton = async () => {
@@ -216,8 +208,8 @@ function App() {
         body: JSON.stringify({ user2_id: receiverId }),
       });
       if (!resp.ok) {
-      throw new Error('Failed to create or get the damn chat');
-    }
+        throw new Error('Failed to create or get the damn chat');
+      }
       const data = await resp.json();
 
       const chatId = data.chat_id;
@@ -227,9 +219,51 @@ function App() {
     }
   };
 
+  // report submitting part
+
+  const [reportReason, setReportReason] = useState("");
+  const [customReportReason, setCustomReportReason] = useState("");
+
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+  const openReportModal = () => {
+    setIsListingModalOpen(false);
+    setIsReportModalOpen(true);
+  };
+
+  const closeReportModal = () => {
+    setIsReportModalOpen(false);
+  };
+
+  const handleReportSubmit = async () => {
+
+    const token = localStorage.getItem('token');
+    const reasonToSend = reportReason === "Other" ? customReportReason : reportReason;
+
+    try {
+      await fetch('http://localhost:5151/api/add_report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          reported_id: selectedListing.owner_id,
+          item_id: selectedListing.id,
+          description: reasonToSend,
+        }),
+
+      });
+
+      closeReportModal(true);
+      setIsListingModalOpen(true);
+    } catch (err) {
+      console.error("Error submitting the report from modal: ", err);
+    }
+  };
+
   return (
     <div className="main-container">
-      {/* Header */}
       <header className="header">
         <div className="header-content">
           <div className="header-nav">
@@ -238,7 +272,6 @@ function App() {
               <h1 className="logo-text">Student Trade</h1>
             </div>
 
-            {/* Search Bar */}
             <div className="search-container">
               <div className="search-input-wrapper">
                 <input
@@ -249,7 +282,6 @@ function App() {
               </div>
             </div>
 
-            {/* User Prof*/}
             <div className="user-section">
               <button className="post-item-btn" onClick={() => setIsModalOpen(true)}>
                 <span>Post Item</span>
@@ -326,7 +358,6 @@ function App() {
             </div>
 
             <form className="modal-form" onSubmit={handleSubmit}>
-              {/* Item Name */}
               <div className="form-group">
                 <label className="form-label">Item Name</label>
                 <input
@@ -340,7 +371,6 @@ function App() {
                 />
               </div>
 
-              {/* Description */}
               <div className="form-group">
                 <label className="form-label">Description</label>
                 <textarea
@@ -354,7 +384,6 @@ function App() {
                 />
               </div>
 
-              {/* Price */}
               <div className="form-group">
                 <label className="form-label">Price</label>
                 <input
@@ -367,7 +396,6 @@ function App() {
                 />
               </div>
 
-              {/* Image Upload */}
               <div className="form-group">
                 <label className="form-label">Add Picture</label>
                 <div className="image-upload-container">
@@ -390,7 +418,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Form Buttons */}
               <div className="form-buttons">
                 <button type="button" className="cancel-btn" onClick={closeModal}>
                   Cancel
@@ -410,7 +437,6 @@ function App() {
             <button className="close2-button" onClick={closeListingModal}>&times;</button>
 
             <div className="modal2-grid-container">
-              {/* Left Column: Text Details */}
               <div className="listing2-details-column">
                 <h2>{selectedListing.title}</h2>
                 <p className="listing2-description">
@@ -423,7 +449,6 @@ function App() {
                   <strong>Date Posted:</strong> {selectedListing.date}
                 </p>
                 <div className="2seller-info">
-                  {/* Conditional rendering for the profile picture */}
                   {selectedListing.owner_profile_picture && (
                     <img
                       src={selectedListing.owner_photo}
@@ -437,7 +462,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Right Column: Photo */}
               <div className="listing2-photo-column">
                 <img
                   src={`http://localhost:5151/${selectedListing.photo}`}
@@ -448,11 +472,49 @@ function App() {
 
             <div className="modal2-actions">
               <button className="message2-button" onClick={handleMessageButton}>Message</button>
-              <button className="report2-button" >Report</button>
+              <button className="report2-button" onClick={openReportModal}>Report</button>
             </div>
           </div>
         </div>
       )}
+
+      {isReportModalOpen && (
+        <div className="report-modal-overlay" onClick={closeReportModal}>
+          <div className="report-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Report Listing</h2>
+
+            {["Scam", "Inappropriate", "Spam", "Misleading", "Other"].map((reason) => (
+              <label key={reason}>
+                <input
+                  type="radio"
+                  name="reportReason"
+                  value={reason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                />
+                {reason}
+              </label>
+            ))}
+
+            {reportReason === "Other" && (
+              <textarea
+                placeholder="Describe the issue..."
+                value={customReportReason}
+                onChange={(e) => setCustomReportReason(e.target.value)}
+              />
+            )}
+
+            <div className="report-modal-actions">
+              <button className="report-submit-btn" onClick={handleReportSubmit}>
+                Submit
+              </button>
+              <button className="report-cancel-btn" onClick={closeReportModal}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
