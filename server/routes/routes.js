@@ -28,18 +28,15 @@ function authenticationToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
-    // If no token is provided, set status 401 and send a JSON response.
     if (!token) {
         return res.status(401).json({ error: 'No token provided' });
     }
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
-        // If the token is invalid, set status 403 and send a JSON response.
         if (err) {
             return res.status(403).json({ error: 'Invalid token' });
         }
 
-        // If the token is valid, attach the user and continue to the next middleware.
         req.user = user;
         next();
     });
@@ -49,7 +46,7 @@ router.put('/profile', authenticationToken, upload1.single('profilePicture'), as
     const pool = req.pool;
 
     const { fullname, email, bio } = req.body;
-    const profilePicPath = req.file ? `/uploads/profiles/${req.file.filename}` : null;
+    const profilePicPath = req.file ? `uploads/profiles/${req.file.filename}` : null;
 
     try {
         await pool.query('UPDATE User SET fullname = ? , email = ? , bio = ? , profile_picture = ? WHERE id = ? ',
@@ -63,26 +60,26 @@ router.put('/profile', authenticationToken, upload1.single('profilePicture'), as
     }
 });
 
-router.put('/edit_listing', authenticationToken, async (req,res) => {
+router.put('/edit_listing', authenticationToken,upload2.single('photo'), async (req, res) => {
     const pool = req.pool;
 
     const my_id = req.user.id;
-    const { title, description, price } = req.body;
-    const photo = req.file ? `/uploads/listings/${req.file.filename}` : null;
+    const { id, title, description, price } = req.body;
+    const photo = req.file ? `uploads/listings/${req.file.filename}` : null;
 
     try {
         await pool.query(`
-            UPDATE ListingItem SET 
-            title = ? , description = ? , price = ? , photo = ? 
-            WHERE owner_id = ? `, 
-            [title, description, price, photo, my_id]
+            UPDATE ListingItem 
+            SET title = ?, description = ?, price = ?, photo = ? 
+            WHERE id = ? AND owner_id = ?`,
+            [title, description, price, photo, id, my_id]
         );
 
-        res.json({ message : " listing was changed " });
+        res.json({ message: " listing was changed " });
     } catch (err) {
-        res.status(500).json({ error: "not working in back "});
+        res.status(500).json({ error: "not working in back " });
     }
-    
+
 });
 
 router.get('/getprofile', authenticationToken, async (req, res) => {
@@ -172,11 +169,11 @@ router.post('/listings', authenticationToken, upload2.single('photo'), async (re
 
     const { title, description, price } = req.body;
     const owner_id = req.user.id;
-    const imagePath = req.file ? `uploads/listings/${req.file.filename}` : null;
+    const imagePath = req.file ? `uploads / listings / ${req.file.filename}` : null;
 
     try {
         await pool.query(
-            `INSERT INTO ListingItem (owner_id, title, description, price, date, photo) VALUES (?,?,?,?, NOW(), ?)`,
+            `INSERT INTO ListingItem(owner_id, title, description, price, date, photo) VALUES(?,?,?,?, NOW(), ?)`,
             [owner_id, title, description, price, imagePath]
         );
 
@@ -195,12 +192,12 @@ router.get('/showListings', authenticationToken, async (req, res) => {
     try {
         const [rows] = await pool.query(`
             SELECT
-                ListingItem.*, 
-                User.fullname AS owner_name,
-                User.profile_picture as owner_photo
+                ListingItem.*,
+            User.fullname AS owner_name,
+            User.profile_picture as owner_photo
             FROM ListingItem
             INNER JOIN User ON ListingItem.owner_id = User.id
-            WHERE ListingItem.owner_id != ?`, [my_id]);
+            WHERE ListingItem.owner_id != ? `, [my_id]);
         res.json(rows); // okey so first we pull everything from ListingItem , then we pull the fullnames from the User db as owner_name and the prof_pict, we do a join, and extract the fullname
     } catch (err) {
         console.error('failed getting the listing items', err);
@@ -229,8 +226,8 @@ router.post('/create_chat', authenticationToken, async (req, res) => {
     // okey first we check if there is an existing chat alredy
     const [existingChats] = await pool.query(
         `SELECT id FROM Chat
-        WHERE (user1_id = ? AND user2_id = ?) 
-        OR (user1_id = ? AND user2_id = ? )
+        WHERE(user1_id = ? AND user2_id = ?) 
+        OR(user1_id = ? AND user2_id = ? )
         LIMIT 1`, [user1_id, user2_id, user2_id, user1_id]
     );
 
@@ -240,8 +237,8 @@ router.post('/create_chat', authenticationToken, async (req, res) => {
 
     // if there isn't , we create one
     const [created_chat] = await pool.query(
-        `INSERT INTO Chat (user1_id, user2_id, date)
-        VALUES (?, ?, NOW() )`, [user1_id, user2_id]
+        `INSERT INTO Chat(user1_id, user2_id, date)
+        VALUES(?, ?, NOW())`, [user1_id, user2_id]
     );
 
     const chat_id = created_chat.insertId;
@@ -267,8 +264,8 @@ router.get('/get_chat_history', authenticationToken, async (req, res) => {
                     ELSE c.user1_id
                 END
             WHERE c.user1_id = ? OR c.user2_id = ?
-            ORDER BY c.date DESC    
-        `, [user1_id, user1_id, user1_id]);
+            ORDER BY c.date DESC
+            `, [user1_id, user1_id, user1_id]);
 
         console.log(rows);
 
@@ -296,9 +293,9 @@ router.post('/send_message', authenticationToken, async (req, res) => {
 
     try {
         await pool.query(`
-            INSERT INTO Message (chat_id, sender_id, receiver_id, content, sent_at)
-            VALUES (?, ?, ?, ?, NOW() )
-            `, [chat_id, sender_id, receiver_id, content]
+            INSERT INTO Message(chat_id, sender_id, receiver_id, content, sent_at)
+            VALUES(?, ?, ?, ?, NOW())
+                `, [chat_id, sender_id, receiver_id, content]
         );
 
         res.json({ message: ' message is sent sucslfly ' });
@@ -319,7 +316,7 @@ router.get('/receive_message/:chat_id', authenticationToken, async (req, res) =>
         const [messages] = await pool.query(`
             SELECT *
             FROM Message
-            WHERE chat_id = ? 
+            WHERE chat_id = ?
             ORDER BY sent_at ASC`,
             [chat_id]
         );
@@ -338,8 +335,8 @@ router.post('/add_review', authenticationToken, async (req, res) => {
 
     try {
         await pool.query(`
-        INSERT INTO Review (reviewer_id, reviewee_id, rating, description, created_at) 
-        VALUES (?, ?, ?, ?, NOW() )`,
+        INSERT INTO Review(reviewer_id, reviewee_id, rating, description, created_at) 
+        VALUES(?, ?, ?, ?, NOW())`,
             [my_id, user2_id, rating, description]);
 
         res.json({ message: "it worked " });
@@ -367,20 +364,20 @@ router.get('/get_reviews', authenticationToken, async (req, res) => {
 });
 
 // report post api
-router.post('/add_report', authenticationToken, async (req,res) => {
+router.post('/add_report', authenticationToken, async (req, res) => {
     const pool = req.pool;
     const reporter_id = req.user.id;
     const { reported_id, item_id, description } = req.body;
 
     try {
         await pool.query(`
-            INSERT INTO Report (reporter_id,reported_id,item_id,description,date)
-            VALUES (?, ?, ?, ?, NOW())`,
-        [reporter_id, reported_id, item_id, description] );
+            INSERT INTO Report(reporter_id, reported_id, item_id, description, date)
+            VALUES(?, ?, ?, ?, NOW())`,
+            [reporter_id, reported_id, item_id, description]);
 
-        res.json({ message: "import worked "});
+        res.json({ message: "import worked " });
     } catch (err) {
-        console.error("error in sending to db",err);
+        console.error("error in sending to db", err);
     }
 });
 

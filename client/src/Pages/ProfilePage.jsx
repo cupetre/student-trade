@@ -200,21 +200,23 @@ const ProfilePage = () => {
     const [isListingModalOpen, setIsListingModalOpen] = useState(false);
 
     const [editFormData, setEditFormData] = useState({
+        id: '',
         title: '',
         description: '',
         price: '',
         photo: null,
-        currentPhoto: ''
+        photoPreview: ''
     });
 
     const openListingModal = (listing) => {
 
         setEditFormData({
+            id: listing.id,
             title: listing.title,
             description: listing.description,
             price: listing.price,
             photo: null,
-            currentPhoto: `http://localhost:5151/${listing.photo}`
+            photoPreview: `http://localhost:5151/${listing.photo}`
         });
 
         setSelectedListing(listing);
@@ -226,6 +228,7 @@ const ProfilePage = () => {
         setSelectedListing(null);
 
         setEditFormData({
+            id: '',
             title: '',
             description: '',
             price: '',
@@ -286,15 +289,15 @@ const ProfilePage = () => {
             reader.onload = (event) => {
                 setEditFormData(prevData => ({
                     ...prevData,
-                    photo: file, // Store the actual file object for submission
-                    photoPreview: event.target.result // Store the URL for immediate preview
+                    photo: file,
+                    photoPreview: event.target.result 
                 }));
             };
             reader.readAsDataURL(file);
         } else {
             setEditFormData(prevData => ({
                 ...prevData,
-                [name]: files ? files[0] : value
+                [name]: value
             }));
         }
     };
@@ -514,7 +517,6 @@ const ProfilePage = () => {
                             </div>
                             <div className="form-group">
                                 <label>Current Image</label>
-                                {/* This will show either the original image or the newly selected one */}
                                 {editFormData.photoPreview && (
                                     <img
                                         src={editFormData.photoPreview}
