@@ -46,7 +46,7 @@ router.put('/profile', authenticationToken, upload1.single('profilePicture'), as
     const pool = req.pool;
 
     const { fullname, email, bio } = req.body;
-    const profilePicPath = req.file ? `uploads/profiles/${req.file.filename}` : null;
+    const profilePicPath = req.file ? `/uploads/profiles/${req.file.filename}` : null;
 
     try {
         await pool.query('UPDATE User SET fullname = ? , email = ? , bio = ? , profile_picture = ? WHERE id = ? ',
@@ -65,7 +65,7 @@ router.put('/edit_listing', authenticationToken,upload2.single('photo'), async (
 
     const my_id = req.user.id;
     const { id, title, description, price } = req.body;
-    const photo = req.file ? `uploads/listings/${req.file.filename}` : null;
+    const photo = req.file ? `/uploads/listings/${req.file.filename}` : null;
 
     try {
         await pool.query(`
@@ -169,7 +169,7 @@ router.post('/listings', authenticationToken, upload2.single('photo'), async (re
 
     const { title, description, price } = req.body;
     const owner_id = req.user.id;
-    const imagePath = req.file ? `uploads / listings / ${req.file.filename}` : null;
+    const imagePath = req.file ? `/uploads/listings/ ${req.file.filename}` : null;
 
     try {
         await pool.query(

@@ -59,6 +59,7 @@ const Register = () => {
     };
 
     return (
+        <div className="login-page-wrapper">
         <div className="login-page-container">
             <h2>
                 <span className="brand-name">Student Trade</span>
@@ -119,6 +120,7 @@ const Register = () => {
             <p className="register-link">
                 Already have an account? <a href="/login">Login here</a>
             </p>
+        </div>
         </div>
     );
 }

@@ -327,7 +327,7 @@ function ChatPage() {
                         <div className="review-modal-body">
                             <div className="user-info">
                                 <img
-                                    src={`http://localhost:5151${selectedChat.owner_of_post_photo}`}
+                                    src={`http://localhost:5151/${selectedChat.owner_of_post_photo}`}
                                     alt="User Avatar"
                                     className="review-user-avatar"
                                 />
