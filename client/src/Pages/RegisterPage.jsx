@@ -48,7 +48,7 @@ const Register = () => {
 
             if (response.ok) {
                 console.log('Registration successful:', data.message);
-                navigate('/');
+                navigate('/login');
             } else {
                 setErrors(data.error || 'Registration failed');
             }

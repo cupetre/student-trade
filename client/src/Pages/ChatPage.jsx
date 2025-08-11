@@ -145,7 +145,7 @@ function ChatPage() {
             sender_id: currentUserId,
             receiver_id: selectedChat.owner_of_post_id,
             content: newMessage,
-            date: new Date().toISOString(),
+            sent_at: new Date().toISOString(),
         };
 
         // Update the messages state with the new message
