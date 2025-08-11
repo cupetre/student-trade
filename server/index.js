@@ -8,12 +8,12 @@ const authRoutes = require('./routes/authRoutes.js');
 const multer = require('multer');
 const path = require('path');
 
-
 const app = express();
-const port = 5151; //the port that we use in order the SERVER to run on it ( backend ) 
+const port = 5151;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../client/dist')));
 
 let pool;
 
@@ -29,7 +29,7 @@ async function initializeDB() {
         queueLimit: 0
     });
     console.log('Database pool is created tho');
-};
+}
 
 (async () => {
     await initializeDB();
@@ -39,12 +39,19 @@ async function initializeDB() {
         next();
     });
 
+    // API routes
     app.use('/api', routes);
     app.use('/api/auth', authRoutes);
     app.use('/uploads', express.static('uploads'));
 
-    app.get('/', (req, res) => {
+    // Optional simple test route before the React fallback
+    app.get('/api/status', (req, res) => {
         res.send('API is working!');
+    });
+
+    // React router fallback - keep last
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
     });
 
     app.listen(port, () => {
