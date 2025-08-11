@@ -169,7 +169,7 @@ router.post('/listings', authenticationToken, upload2.single('photo'), async (re
 
     const { title, description, price } = req.body;
     const owner_id = req.user.id;
-    const imagePath = req.file ? `/uploads/listings/ ${req.file.filename}` : null;
+    const imagePath = req.file ? `/uploads/listings/${req.file.filename}` : null;
 
     try {
         await pool.query(
@@ -215,6 +215,27 @@ router.get('/showmylistings', authenticationToken, async (req, res) => {
     } catch (err) {
         console.error('failed getting my own listing items', err);
         res.status(500).json({ error: 'not working' });
+    }
+});
+
+router.delete(`/delete_listing/:id`, authenticationToken, async(req,res) => {
+    const pool = req.pool;
+    const listingId = req.params.id;
+    const user_id = req.user.id;
+
+    try {
+        const [deletion] = await pool.query(`
+            DELETE FROM ListingItem WHERE id = ? and owner_id = ?`,
+        [listingId, user_id]);
+
+        if (deletion.affectedRows === 0) {
+            return res.status(404).json({ message: "Listing not found or owned by that id for user" });
+        }
+
+        res.json({ message: "Listing deleted suucessly" });
+    } catch  (err) {
+        console.error(err);
+        res.status(500).json({ message: "error deleting in be "});
     }
 });
 

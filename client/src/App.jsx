@@ -337,7 +337,7 @@ function App() {
                   </div>
                   <div className="listing-image">
                     <img
-                      src={`http://localhost:5151/${listing.photo}`}
+                      src={`http://localhost:5151${listing.photo}`}
                       alt={listing.title}
                     />
                   </div>
@@ -464,7 +464,7 @@ function App() {
 
               <div className="listing2-photo-column">
                 <img
-                  src={`http://localhost:5151/${selectedListing.photo}`}
+                  src={`http://localhost:5151${selectedListing.photo}`}
                   className="modal2-image"
                 />
               </div>

@@ -283,9 +283,6 @@ function ChatPage() {
                                     <div className="active-user-name">
                                         <button onClick={() => setShowReviewModal(true)}> Give Review </button>
                                     </div>
-                                    <div className="active-user-name">
-                                        <button> Close Chat </button>
-                                    </div>
                                 </div>
 
                                 <div className="chat-messages">

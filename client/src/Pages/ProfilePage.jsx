@@ -216,7 +216,7 @@ const ProfilePage = () => {
             description: listing.description,
             price: listing.price,
             photo: null,
-            photoPreview: `http://localhost:5151/${listing.photo}`
+            photoPreview: `http://localhost:5151${listing.photo}`
         });
 
         setSelectedListing(listing);
@@ -276,6 +276,28 @@ const ProfilePage = () => {
 
         } catch (err) {
             console.error("problem in fetching and frontend", err);
+        }
+    };
+
+    const handleDelete = async (listingId) => {
+        const token = localStorage.getItem('token');
+
+        if (!window.confirm("Are you sure you want to delete this listing?")) {
+            return;
+        }
+
+        try {
+            const respo = await fetch(`http://localhost:5151/api/delete_listing/${listingId}`, {
+                method: 'DELETE', 
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            const result = await respo.json();
+            console.log("delete listing", result); // just print if it goes througha dn gets deleted
+        } catch (err) {
+            console.error("error in deleting the listing in fe", err);
         }
     };
 
@@ -468,7 +490,7 @@ const ProfilePage = () => {
 
                                     <div className="listing-image">
                                         <img
-                                            src={`http://localhost:5151/${listing.photo}`}
+                                            src={`http://localhost:5151${listing.photo}`}
                                             alt={listing.title}
                                         />
                                     </div>
