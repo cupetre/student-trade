@@ -108,7 +108,15 @@ const ProfilePage = () => {
             }
 
             const result = await response.json();
-            console.log("profiled has been updated scsly", result);
+
+            setProfileData(prev => ({
+                ...prev,
+                profilePicture: null, // clear file
+                profilePicturePreview: result.profile_picture
+                    ? `http://localhost:5151${result.profile_picture}`
+                    : prev.profilePicturePreview
+            }));
+
             setIsEditing(false);
         } catch (error) {
             console.error("something went wrong");
@@ -288,7 +296,7 @@ const ProfilePage = () => {
 
         try {
             const respo = await fetch(`http://localhost:5151/api/delete_listing/${listingId}`, {
-                method: 'DELETE', 
+                method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -312,7 +320,7 @@ const ProfilePage = () => {
                 setEditFormData(prevData => ({
                     ...prevData,
                     photo: file,
-                    photoPreview: event.target.result 
+                    photoPreview: event.target.result
                 }));
             };
             reader.readAsDataURL(file);

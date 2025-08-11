@@ -326,11 +326,8 @@ router.post('/send_message', authenticationToken, async (req, res) => {
     }
 });
 
-router.get('/receive_message/:chat_id', authenticationToken, async (req, res) => {
+router.get('/receive_messages/:chat_id', authenticationToken, async (req, res) => {
     const pool = req.pool;
-
-    const user_id = req.body.id;
-
     const chat_id = req.params.chat_id;
 
     try {
