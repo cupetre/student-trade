@@ -22,7 +22,7 @@ function ChatPage() {
             return;
         }
 
-        fetch('http://localhost:5151/api/fullname', {
+        fetch(`${import.meta.env.VITE_API_URL}/api/fullname`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
@@ -198,7 +198,7 @@ const handleReviewSubmit = async () => {
     const token = localStorage.getItem('token');
 
     try {
-        const respy = await fetch('http://localhost:5151/api/add_review', {
+        const respy = await fetch(`${import.meta.env.VITE_API_URL}/api/add_review`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
