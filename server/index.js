@@ -39,17 +39,14 @@ async function initializeDB() {
         next();
     });
 
-    // API routes
     app.use('/api', routes);
     app.use('/api/auth', authRoutes);
     app.use('/uploads', express.static('uploads'));
 
-    // Optional simple test route before the React fallback
     app.get('/api/status', (req, res) => {
         res.send('API is working!');
     });
 
-    // React router fallback - keep last
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
     });
