@@ -28,7 +28,7 @@ const ProfilePage = () => {
                 return;
             }
             try {
-                const resp = await fetch(`http://localhost:5151/api/showmylistings`, {
+                const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/showmylistings`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     },
@@ -50,7 +50,7 @@ const ProfilePage = () => {
             const token = localStorage.getItem('token');
 
             try {
-                const response = await fetch(`http://localhost:5151/api/getprofile`, {
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/getprofile`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -66,7 +66,7 @@ const ProfilePage = () => {
                     bio: data.bio,
                     created_at: data.created_at,
                     profilePicturePreview: data.profile_picture
-                        ? `http://localhost:5151${data.profile_picture}`
+                        ? `${import.meta.env.VITE_API_URL}${data.profile_picture}`
                         : null,
                 };
 
@@ -95,7 +95,7 @@ const ProfilePage = () => {
                 formData.append('profilePicture', profileData.profilePicture);
             }
 
-            const response = await fetch('http://localhost:5151/api/profile', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
                 method: 'PUT',
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -113,7 +113,7 @@ const ProfilePage = () => {
                 ...prev,
                 profilePicture: null, // clear file
                 profilePicturePreview: result.profile_picture
-                    ? `http://localhost:5151${result.profile_picture}`
+                    ? `${import.meta.env.VITE_API_URL}${result.profile_picture}`
                     : prev.profilePicturePreview
             }));
 
@@ -164,7 +164,7 @@ const ProfilePage = () => {
 
             try {
 
-                const response = await fetch('http://localhost:5151/api/get_reviews', {
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/get_reviews`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }
@@ -224,7 +224,7 @@ const ProfilePage = () => {
             description: listing.description,
             price: listing.price,
             photo: null,
-            photoPreview: `http://localhost:5151${listing.photo}`
+            photoPreview: `${import.meta.env.VITE_API_URL}${listing.photo}`
         });
 
         setSelectedListing(listing);
@@ -264,7 +264,7 @@ const ProfilePage = () => {
         console.log(newAddedForm);
 
         try {
-            const resp = await fetch('http://localhost:5151/api/edit_listing', {
+            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/edit_listing`, {
                 method: 'PUT',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -295,7 +295,7 @@ const ProfilePage = () => {
         }
 
         try {
-            const respo = await fetch(`http://localhost:5151/api/delete_listing/${listingId}`, {
+            const respo = await fetch(`${import.meta.env.VITE_API_URL}/api/delete_listing/${listingId}`, {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -498,7 +498,7 @@ const ProfilePage = () => {
 
                                     <div className="listing-image">
                                         <img
-                                            src={`http://localhost:5151${listing.photo}`}
+                                            src={`${import.meta.env.VITE_API_URL}${listing.photo}`}
                                             alt={listing.title}
                                         />
                                     </div>

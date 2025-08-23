@@ -52,7 +52,7 @@ function ChatPage() {
 
         const fetchProfileData = async () => {
             try {
-                const res = await fetch('http://localhost:5151/api/getprofile', {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/getprofile`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },
@@ -77,7 +77,7 @@ function ChatPage() {
             const token = localStorage.getItem('token');
 
             try {
-                const respo = await fetch('http://localhost:5151/api/get_chat_history', {
+                const respo = await fetch(`${import.meta.env.VITE_API_URL}/api/get_chat_history`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },
@@ -122,7 +122,7 @@ function ChatPage() {
         //okej e vo red gi zema
 
         try {
-            const res = await fetch('http://localhost:5151/api/send_message', {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/send_message`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -164,7 +164,7 @@ function ChatPage() {
                 const token = localStorage.getItem('token');
 
                 try {
-                    const respo = await fetch(`http://localhost:5151/api/receive_messages/${selectedChat.id}`, {
+                    const respo = await fetch(`${import.meta.env.VITE_API_URL}/api/receive_messages/${selectedChat.id}`, {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
@@ -260,7 +260,7 @@ return (
                         <div className="user-profile" onClick={() => navigate('/profilepage')}>
                             <div className="user-avatar">
                                 <img
-                                    src={`http://localhost:5151${profileData.profile_picture}`}
+                                    src={`${import.meta.env.VITE_API_URL}${profileData.profile_picture}`}
                                     alt="Profile"
                                     className="profile-picture"
                                 />
@@ -305,7 +305,7 @@ return (
                                 onClick={() => setSelectedChat(chat)}
                             >
                                 <div className="chat-avatar">
-                                    <img src={`http://localhost:5151${chat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
+                                    <img src={`${import.meta.env.VITE_API_URL}${chat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
                                 </div>
                                 <div className="chat-info">
                                     <div className="chat-user-name">{chat.owner_of_post_fullname}</div>
@@ -321,7 +321,7 @@ return (
                             <div className="chat-window-header">
                                 <div className="active-user-info">
                                     <div className="chat-avatar">
-                                        <img src={`http://localhost:5151${selectedChat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
+                                        <img src={`${import.meta.env.VITE_API_URL}${selectedChat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
                                     </div>
                                     <div className="active-user-name">{selectedChat.owner_of_post_fullname}</div>
                                 </div>
@@ -385,7 +385,7 @@ return (
                     <div className="review-modal-body">
                         <div className="user-info">
                             <img
-                                src={`http://localhost:5151${selectedChat.owner_of_post_photo}`}
+                                src={`${import.meta.env.VITE_API_URL}${selectedChat.owner_of_post_photo}`}
                                 alt="User Avatar"
                                 className="review-user-avatar"
                             />
