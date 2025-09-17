@@ -12,15 +12,15 @@ const pkg = require('pg');
 const app = express();
 const port = 5151; //the port that we use in order the SERVER to run on it ( backend ) 
 
-const { Pool } = pkg; 
+const { Pool } = pkg;
 
 const pool = new Pool({
-  host: process.env.DB_HOST,  
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
-  ssl: { rejectUnauthorized: false } 
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
+    ssl: { rejectUnauthorized: false }
 });
 
 app.use(cors());
@@ -49,11 +49,23 @@ app.use(express.json());
 })();
 
 app.get('/api/test', async (req, res) => {
-    try { 
+    try {
         const { rows } = await pool.query('SELECT 1+1 AS result');
         res.json({ dbConnected: true, results: rows[0].result });
     } catch (error) {
         console.error('Database connection failed: ', error);
         res.status(500).json({ dbConnected: false, error: error.message });
+    }
+});
+
+app.get(`/api/try_this`, async (req, res) => {
+    const pool = req.pool;
+
+    try {
+        const { rows } = await pool.query('SELECT * FROM "User" LIMIT 1');
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database query failed' });
     }
 });

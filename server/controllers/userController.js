@@ -1,4 +1,4 @@
-const { updateUserProfile } = require('../models/userModels.js');
+const { updateUserProfile, registerUserData } = require('../models/userModels.js');
 
 async function editProfile(req, res) {
     const pool = req.pool;
@@ -20,4 +20,22 @@ async function editProfile(req, res) {
     }
 };
 
-module.exports = { editProfile };
+async function registerUser(req, res) {
+    const pool = req.pool;
+    const { fullname, email, password } = req.body;
+
+    try { 
+        await registerUserData(pool, {
+            fullname,
+            email,
+            password
+        });
+        res.status(201).json({ message: 'User registered successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to register user' });
+    }
+
+};
+
+module.exports = { editProfile , registerUser};
