@@ -4,7 +4,7 @@ const { authenticationToken } = require('../configs/authConfig');
 const { editProfile, registerUser } = require('../controllers/userController');
 const { upload1 } = require('../configs/multerConfig');
 
-router.post('/register', authenticationToken, registerUser);
+router.post('/register', registerUser);
 router.put('/profile', authenticationToken, upload1.single('profilePicture'), editProfile);
 
 module.exports = router;

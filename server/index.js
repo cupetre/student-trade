@@ -33,10 +33,8 @@ app.use(express.json());
         next();
     });
 
-    app.use('/api', routes);
     app.use('/api/users', userRoutes);
     app.use('/api/listings', listingRoutes);
-    app.use('/api/auth', authRoutes);
     app.use('/uploads', express.static('uploads'));
 
     app.get('/', (req, res) => {
