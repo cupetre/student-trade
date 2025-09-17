@@ -19,6 +19,20 @@ async function registerUserData(pool, { fullname, email, password }){
 
 }
 
+async function loginUserData(pool, { email }) {
+    const { rows } = await pool.query(
+        ` SELECT * FROM "User" WHERE email = $1`, [ email ]
+    );
+
+    const user = rows[0];
+    
+    if ( !user ) return res.status(400).json({ error: 'User not found' });
+    else {
+        return user || null;
+    }
+}
+
 module.exports = { updateUserProfile,
-    registerUserData
+    registerUserData,
+    loginUserData
  };
