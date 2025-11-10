@@ -4,11 +4,10 @@ const { updateUserProfile, registerUserData, loginUserData } = require('../model
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
-
 async function editProfile(req, res) {
     const pool = req.pool;
     const { id, fullname, email, bio } = req.body;
-    const profilePicPath = req.file ? `/uploads/profiles/${req.file.filename}` : null;
+    const profilePicPath = req.file ? req.file.location : null;
 
     try {
         await updateUserProfile(pool, {

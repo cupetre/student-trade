@@ -30,7 +30,7 @@ function App() {
       return;
     }
 
-    fetch('http://localhost:5151/api/fullname', {
+    fetch('/api/fullname', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -60,7 +60,7 @@ function App() {
 
     const fetchProfileData = async () => {
       try {
-        const res = await fetch('http://localhost:5151/api/getprofile', {
+        const res = await fetch('/api/getprofile', {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -118,7 +118,7 @@ function App() {
     console.log('Form submitted:', formData);
 
     try {
-      const response = await fetch(`http://localhost:5151/api/listings`, {
+      const response = await fetch(`/api/listings`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -157,7 +157,7 @@ function App() {
     const fetchListings = async () => {
       const token = localStorage.getItem('token');
       try {
-        const response = await fetch('http://localhost:5151/api/showListings', {
+        const response = await fetch('/api/showListings', {
           headers: {
             Authorization: `Bearer ${token}`,
           }
@@ -199,7 +199,7 @@ function App() {
       const receiverId = selectedListing.owner_id;
       console.log(receiverId);
 
-      const resp = await fetch('http://localhost:5151/api/create_chat', {
+      const resp = await fetch('/api/create_chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -241,7 +241,7 @@ function App() {
     const reasonToSend = reportReason === "Other" ? customReportReason : reportReason;
 
     try {
-      await fetch('http://localhost:5151/api/add_report', {
+      await fetch('/api/add_report', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -289,7 +289,7 @@ function App() {
               <div className="user-profile" onClick={() => navigate('/profilepage')}>
                 <div className="user-avatar">
                   <img
-                    src={`http://localhost:5151${profileData.profile_picture}`}
+                    src={`${profileData.profile_picture}`}
                     alt="Profile"
                     className="profile-picture"
                   />
@@ -337,7 +337,7 @@ function App() {
                   </div>
                   <div className="listing-image">
                     <img
-                      src={`http://localhost:5151${listing.photo}`}
+                      src={`${listing.photo}`}
                       alt={listing.title}
                     />
                   </div>
@@ -464,7 +464,7 @@ function App() {
 
               <div className="listing2-photo-column">
                 <img
-                  src={`http://localhost:5151${selectedListing.photo}`}
+                  src={`${selectedListing.photo}`}
                   className="modal2-image"
                 />
               </div>
