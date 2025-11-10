@@ -23,7 +23,7 @@ async function editListing(req, res) {
 
 async function uploadListing(req, res) {
     const pool = req.pool;
-    const {title, description, price} = req.body;
+    const {title, description, price, date} = req.body;
     const photoPath = req.file ? req.file.location : null;
 
     try {
@@ -32,7 +32,8 @@ async function uploadListing(req, res) {
             title,
             description,
             price,
-            photo: photoPath
+            photo: photoPath,
+            date
         });
         res.status(200).json("workd fine");
     } catch ( err ){

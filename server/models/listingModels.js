@@ -7,11 +7,11 @@ async function updateListing(pool, { id, ownerId, title, description, price, pho
   );
 };
 
-async function addListing(pool, { ownerId, title, description, price, photo, date }) {
+async function addListing(pool, { ownerId, title, description, price, photo }) {
     return pool.query(
         `INSERT INTO "ListingItem" (owner_id, title, description, price, photo, date)
          VALUES ($1, $2, $3, $4, $5, NOW())`,
-        [ownerId, title, description, price, photo, date]
+        [ownerId, title, description, price, photo]
     );
 };
 
