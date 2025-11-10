@@ -1,4 +1,4 @@
-const express = require('express');
+/* const express = require('express');
 
 const router = express.Router();
 const jwt = require('jsonwebtoken');
@@ -6,23 +6,6 @@ const multer = require('multer');
 const path = require('path');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
-
-const profilePicStorage = multer.diskStorage({
-    destination: './uploads/profiles/',
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
-
-const listingStorage = multer.diskStorage({
-    destination: './uploads/listings/',
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
-
-const upload1 = multer({ storage: profilePicStorage });
-const upload2 = multer({ storage: listingStorage });
 
 function authenticationToken(req, res, next) {
     const authHeader = req.headers['authorization'];
@@ -161,27 +144,6 @@ router.get('/created_at', authenticationToken, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Something went wrong' });
-    }
-});
-
-router.post('/listings', authenticationToken, upload2.single('photo'), async (req, res) => {
-    const pool = req.pool;
-
-    const { title, description, price } = req.body;
-    const owner_id = req.user.id;
-    const imagePath = req.file ? `/uploads/listings/${req.file.filename}` : null;
-
-    try {
-        await pool.query(
-            `INSERT INTO ListingItem(owner_id, title, description, price, date, photo) VALUES(?,?,?,?, NOW(), ?)`,
-            [owner_id, title, description, price, imagePath]
-        );
-
-        res.json({ message: 'Listing created scsfly!' });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Failed to save listing' });
     }
 });
 
@@ -400,4 +362,4 @@ router.post('/add_report', authenticationToken, async (req, res) => {
 });
 
 
-module.exports = router;
+module.exports = router; */

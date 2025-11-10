@@ -18,3 +18,5 @@ async function uploadFileToS3(file) {
 
   await s3.send(new PutObjectCommand(params));
 }
+
+module.exports = { s3, uploadFileToS3 };

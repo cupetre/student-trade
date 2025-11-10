@@ -88,24 +88,25 @@ function App() {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFormData(prev => ({
-          ...prev,
-          photo: file,
-          photoPreview: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const file = e.target.files[0];
+  if (file) {
+    setFormData({
+      ...formData,
+      photo: file,
+      photoPreview: URL.createObjectURL(file),
+    });
+  }
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const token = localStorage.getItem('token');
+
+    if (!token) { 
+      console.error("problem with local token for logged in user");
+    }
+
     const formDataToSend = new FormData();
 
     formDataToSend.append('title', formData.title);
@@ -118,7 +119,7 @@ function App() {
     console.log('Form submitted:', formData);
 
     try {
-      const response = await fetch(`/api/listings`, {
+      const response = await fetch(`/api/listings/upload_listing`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -131,6 +132,11 @@ function App() {
       }
 
       const result = await response.json();
+
+      if (!response.ok) { 
+        console.error("nor resonpose back");
+      }
+      
       console.log(result.message);
       setIsModalOpen(false);
     } catch (err) {

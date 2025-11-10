@@ -1,9 +1,9 @@
-const { updateListing } = require('../models/listingModels.js');
+const { updateListing, addListing } = require('../models/listingModels.js');
 
 async function editListing(req, res) {
     const pool = req.pool;
     const { id, title, description, price } = req.body;
-    const photoPath = req.file ? `/uploads/listings/${req.file.filename}` : null;
+    const photoPath = req.file ? req.file.location : null;
 
     try { 
         await updateListing(pool, { 
@@ -12,7 +12,7 @@ async function editListing(req, res) {
             title,
             description,
             price,
-            photo: photoPath 
+            photo: photoPath
         });
         res.status(200).json({ message: 'Listing updated successfully' });
         } catch (err) {
@@ -21,4 +21,24 @@ async function editListing(req, res) {
     }
 };
 
-module.exports = { editListing };
+async function uploadListing(req, res) {
+    const pool = req.pool;
+    const {title, description, price} = req.body;
+    const photoPath = req.file ? req.file.location : null;
+
+    try {
+        await addListing(pool,{
+            ownerId: req.user.id,
+            title,
+            description,
+            price,
+            photo: photoPath
+        });
+        res.status(200).json("workd fine");
+    } catch ( err ){
+        console.error(err);
+        res.status(500).json({ error: " failed to add it "});
+    }
+};
+
+module.exports = { editListing, uploadListing };
