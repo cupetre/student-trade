@@ -28,7 +28,7 @@ const ProfilePage = () => {
                 return;
             }
             try {
-                const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/showmylistings`, {
+                const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/listings/fetch_my_listings`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     },
@@ -50,7 +50,7 @@ const ProfilePage = () => {
             const token = localStorage.getItem('token');
 
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/getprofile`, {
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/fetch_profile`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -95,7 +95,7 @@ const ProfilePage = () => {
                 formData.append('profilePicture', profileData.profilePicture);
             }
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/edit_profile`, {
                 method: 'PUT',
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -109,13 +109,15 @@ const ProfilePage = () => {
 
             const result = await response.json();
 
+            console.log(result);
+
             setProfileData(prev => ({
                 ...prev,
                 profilePicture: null, // clear the file and also in the database its null so it HAS to be null if not anything
-                profilePicturePreview: result.profile_picture
-                    ? `${import.meta.env.VITE_API_URL}${result.profile_picture}`
-                    : prev.profilePicturePreview
+                profilePicturePreview: result.profile_picture || prev.profilePicturePreview
             }));
+
+            console.log(profileData);
 
             setIsEditing(false);
         } catch (error) {
@@ -295,7 +297,7 @@ const ProfilePage = () => {
         }
 
         try {
-            const respo = await fetch(`${import.meta.env.VITE_API_URL}/api/delete_listing/${listingId}`, {
+            const respo = await fetch(`${import.meta.env.VITE_API_URL}/api/listings/delete_listing/${listingId}`, {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${token}`

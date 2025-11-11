@@ -15,4 +15,43 @@ async function addListing(pool, { ownerId, title, description, price, photo }) {
     );
 };
 
-module.exports = { updateListing, addListing };
+async function viewListings(pool, {ownerId, title, description, price, photo }) {
+    const result = await pool.query(
+        `SELECT "ListingItem".*,
+        "User".fullname AS owner_id,
+        "User".profile_picture AS owner_photo
+        FROM "ListingItem"
+        INNER JOIN "User" ON "ListingItem".owner_id = "User".id
+        WHERE "ListingItem".owner_id != $1` , [ownerId]
+    );
+
+    return result.rows;
+};
+
+async function fetchMyListings(pool, {owner_id, title, description, price, photo }) {
+    const results = await pool.query(`
+        SELECT "ListingItem".* ,
+        "User".id AS owner_id ,
+        "User".profile_picture AS owner_photo 
+        FROM "ListingItem"
+        INNER JOIN "User" ON "ListingItem".owner_id = "User".id
+        WHERE "ListingItem".owner_id = $1` , [ owner_id ] 
+    );
+
+    return results.rows;
+};
+
+async function removeListing(pool, { listingId, owner_id }) {
+    return pool.query(`
+        DELETE FROM "ListingItem"
+        WHERE owner_id = $1 AND id = $2 `,
+    [owner_id, listingId]);
+};
+
+module.exports = { 
+    updateListing,
+    addListing,
+    viewListings,
+    fetchMyListings,
+    removeListing
+ };

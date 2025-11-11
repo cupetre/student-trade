@@ -1,23 +1,24 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { updateUserProfile, registerUserData, loginUserData } = require('../models/userModels.js');
+const { updateUserProfile, registerUserData, loginUserData, viewInformation } = require('../models/userModels.js');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
 async function editProfile(req, res) {
     const pool = req.pool;
-    const { id, fullname, email, bio } = req.body;
+    const owner_id = req.user.id;
+    const { fullname, email, bio } = req.body;
     const profilePicPath = req.file ? req.file.location : null;
 
     try {
-        await updateUserProfile(pool, {
-            id,
+        const result = await updateUserProfile(pool, {
+            id: owner_id,
             fullname,
             email,
             bio,
             profilePicPath
-        });
-        res.status(200).json({ message: 'Profile updated successfully' });
+        }); //this is what we send to the model to use
+        res.status(200).json(result);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to update profile' });
@@ -62,8 +63,22 @@ async function loginUser(req, res) {
     res.json({ token });
 }
 
+async function viewProfile(req,res) {
+    const pool = req.pool;
+    const owner_id = req.user.id;
+
+    try {
+        const info = await viewInformation(pool, owner_id);
+        res.json(info);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: " failed to fetch info "});
+    }
+};
+
 module.exports = {
     editProfile,
     registerUser,
-    loginUser
+    loginUser,
+    viewProfile
 };

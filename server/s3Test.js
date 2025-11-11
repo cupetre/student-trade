@@ -13,7 +13,7 @@ const s3 = new S3Client({
 
 async function testUpload() {
   try {
-    const filePath = path.join(__dirname, 'test-image.jpg'); // put a sample image in server folder
+    const filePath = path.join(__dirname, 'test-image.jpg');
     const fileStream = fs.createReadStream(filePath);
 
     const params = {
