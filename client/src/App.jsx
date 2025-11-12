@@ -58,22 +58,22 @@ function App() {
   };
 
   const handleImageChange = (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    setFormData({
-      ...formData,
-      photo: file,
-      photoPreview: URL.createObjectURL(file),
-    });
-  }
-};
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({
+        ...formData,
+        photo: file,
+        photoPreview: URL.createObjectURL(file),
+      });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const token = localStorage.getItem('token');
 
-    if (!token) { 
+    if (!token) {
       console.error("problem with local token for logged in user");
     }
 
@@ -103,10 +103,10 @@ function App() {
 
       const result = await response.json();
 
-      if (!response.ok) { 
+      if (!response.ok) {
         console.error("nor resonpose back");
       }
-      
+
       console.log(result.message);
       setIsModalOpen(false);
     } catch (err) {
@@ -217,7 +217,7 @@ function App() {
     const reasonToSend = reportReason === "Other" ? customReportReason : reportReason;
 
     try {
-      await fetch('/api/add_report', {
+      await fetch('/api/rr/submit_report', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

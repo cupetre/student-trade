@@ -18,7 +18,8 @@ async function addListing(pool, { ownerId, title, description, price, photo }) {
 async function viewListings(pool, {ownerId, title, description, price, photo }) {
     const result = await pool.query(
         `SELECT "ListingItem".*,
-        "User".fullname AS owner_id,
+        "User".fullname AS owner_name,
+        "User".id AS owner_id,
         "User".profile_picture AS owner_photo
         FROM "ListingItem"
         INNER JOIN "User" ON "ListingItem".owner_id = "User".id

@@ -2,10 +2,10 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const routes = require('./routes/routes.js');
 const authRoutes = require('./routes/authRoutes.js');
 const userRoutes = require('./routes/userRoutes.js');
 const listingRoutes = require('./routes/listingRoutes.js');
+const rrRoutes = require('./routes/rrRoutes.js');
 const multer = require('multer');
 const path = require('path');
 const pkg = require('pg');
@@ -36,6 +36,7 @@ app.use(express.json());
     app.use('/api/users', userRoutes);
     app.use('/api/listings', listingRoutes);
     app.use('/uploads', express.static('uploads'));
+    app.use('/api/rr', rrRoutes);
 
     app.get('/', (req, res) => {
         res.send('API is working!');
