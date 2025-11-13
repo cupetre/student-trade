@@ -25,7 +25,6 @@ async function viewListings(pool, {ownerId, title, description, price, photo }) 
         INNER JOIN "User" ON "ListingItem".owner_id = "User".id
         WHERE "ListingItem".owner_id != $1` , [ownerId]
     );
-
     return result.rows;
 };
 

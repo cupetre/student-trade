@@ -6,7 +6,6 @@ async function addReport(pool, { reporter_id, reported_id, item_id, description 
     );
 }
 
-
 module.exports = {
     addReport
 };

@@ -9,7 +9,12 @@ const rrRoutes = require('./routes/rrRoutes.js');
 const multer = require('multer');
 const path = require('path');
 const pkg = require('pg');
+const { createServer } = require('node:http');
+const { join } = require(`node:path`);
+const { Server } = require('socket.io');
 const app = express();
+const server = createServer(app);
+const io = new Server(server);
 const port = 5151; //the port that we use in order the SERVER to run on it ( backend ) 
 
 const { Pool } = pkg;
@@ -25,6 +30,10 @@ const pool = new Pool({
 
 app.use(cors());
 app.use(express.json());
+
+io.on('connection', (socket) => {
+    console.log('a user connected');
+});
 
 (async () => {
 
