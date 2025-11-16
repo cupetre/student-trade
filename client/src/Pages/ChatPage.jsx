@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 
 function ChatPage() {
 
-    const [fullName, setFullName] = useState('');
     const [profileData, setProfileData] = useState({});
 
     const navigate = useNavigate();
+
+    const [chatList, setChatList] = useState([]);
 
     const handleButtonClick = () => {
         navigate('/profilePage#listing-content');
@@ -59,6 +60,7 @@ function ChatPage() {
                 }
 
                 const chats = await respo.json();
+                
                 setChatList(chats);
             } catch (err) {
                 console.error('Error fetch chat list :', err);
@@ -73,7 +75,6 @@ function ChatPage() {
         navigate('/login');
     };
 
-    const [chatList, setChatList] = useState([]);
     const [selectedChat, setSelectedChat] = useState(null);
     const [newMessage, setNewMessage] = useState('');
     const [messages, setMessages] = useState([]);
@@ -87,13 +88,10 @@ function ChatPage() {
 
         if (!newMessage.trim()) return; // Don't send empty messages
 
-        console.log(chatId);
-        console.log(selectedChat.owner_of_post_fullname);
-
         //okej e vo red gi zema
 
         try {
-            const res = await fetch('http://localhost:5151/api/send_message', {
+            const res = await fetch('/api/send_message', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -135,7 +133,7 @@ function ChatPage() {
                 const token = localStorage.getItem('token');
 
                 try {
-                    const respo = await fetch(`http://localhost:5151/api/receive_messages/${selectedChat.id}`, {
+                    const respo = await fetch(`/api/receive_messages/${selectedChat.id}`, {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
@@ -169,7 +167,7 @@ const handleReviewSubmit = async () => {
     const token = localStorage.getItem('token');
 
     try {
-        const respy = await fetch('http://localhost:5151/api/add_review', {
+        const respy = await fetch('/api/add_review', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -276,7 +274,7 @@ return (
                                 onClick={() => setSelectedChat(chat)}
                             >
                                 <div className="chat-avatar">
-                                    <img src={`http://localhost:5151${chat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
+                                    <img src={`${chat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
                                 </div>
                                 <div className="chat-info">
                                     <div className="chat-user-name">{chat.owner_of_post_fullname}</div>
@@ -292,7 +290,7 @@ return (
                             <div className="chat-window-header">
                                 <div className="active-user-info">
                                     <div className="chat-avatar">
-                                        <img src={`http://localhost:5151${selectedChat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
+                                        <img src={`${selectedChat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
                                     </div>
                                     <div className="active-user-name">{selectedChat.owner_of_post_fullname}</div>
                                 </div>
@@ -356,7 +354,7 @@ return (
                     <div className="review-modal-body">
                         <div className="user-info">
                             <img
-                                src={`http://localhost:5151${selectedChat.owner_of_post_photo}`}
+                                src={`${selectedChat.owner_of_post_photo}`}
                                 alt="User Avatar"
                                 className="review-user-avatar"
                             />

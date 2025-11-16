@@ -34,38 +34,22 @@ async function chatHistory(pool, { user1_id }) {
     const chats = await pool.query(`
          SELECT 
                 c.id AS chat_id,
-                u.id AS other_user_id,
-                u.fullname AS other_user_fullname,
-                u.profile_picture AS other_user_photo,
-
-                (
-                    SELECT m.content 
-                    FROM "Message" m
-                    WHERE m.chat_id = c.id
-                    ORDER BY m.date DESC
-                    LIMIT 1
-                ) AS last_message,
-
-                (
-                    SELECT m.date
-                    FROM "Message" m
-                    WHERE m.chat_id = c.id
-                    ORDER BY m.date DESC
-                    LIMIT 1
-                ) AS last_message_date
-
+                u.id AS owner_of_post_id,
+                u.fullname AS owner_of_post_fullname,
+                u.profile_picture AS owner_of_post_photo,
+                c.date AS chat_created_at
             FROM "Chat" c
             JOIN "User" u 
                 ON u.id = CASE 
                     WHEN c.user1_id = $1 THEN c.user2_id
                     ELSE c.user1_id
                 END
-            WHERE $1 = c.user1_id 
-               OR $1 = c.user2_id
-            ORDER BY last_message_date DESC NULLS LAST
+            WHERE c.user1_id = $1 
+               OR c.user2_id = $1
+            ORDER BY c.date DESC
         `, [user1_id]);
-
-    return chats.rows;
+        console.log(chats);
+    return chats.rows; 
 }
 
 module.exports = {
