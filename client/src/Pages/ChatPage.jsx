@@ -14,35 +14,6 @@ function ChatPage() {
     }
 
     useEffect(() => {
-
-        const token = localStorage.getItem('token');
-
-        if (!token) {
-            console.log('No token found, user might not be logged in');
-            return;
-        }
-
-        fetch('http://localhost:5151/api/fullname', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        })
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
-                }
-                return res.json();
-            })
-            .then(data => {
-                setFullName(data.fullname);
-            })
-            .catch(err => {
-                console.error('Failed to fetch user info:', err);
-            });
-    }, []);
-
-    useEffect(() => {
         const token = localStorage.getItem('token');
 
         if (!token) {
@@ -52,7 +23,7 @@ function ChatPage() {
 
         const fetchProfileData = async () => {
             try {
-                const res = await fetch('http://localhost:5151/api/getprofile', {
+                const res = await fetch('/api/users/fetch_profile', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },
@@ -77,7 +48,7 @@ function ChatPage() {
             const token = localStorage.getItem('token');
 
             try {
-                const respo = await fetch('http://localhost:5151/api/get_chat_history', {
+                const respo = await fetch('/api/messages/get_history', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },
@@ -260,12 +231,12 @@ return (
                         <div className="user-profile" onClick={() => navigate('/profilepage')}>
                             <div className="user-avatar">
                                 <img
-                                    src={`http://localhost:5151${profileData.profile_picture}`}
+                                    src={`${profileData.profile_picture}`}
                                     alt="Profile"
                                     className="profile-picture"
                                 />
                             </div>
-                            <span className="user-name"> {fullName || 'Loading ...'}</span>
+                            <span className="user-name"> {profileData.fullname || 'Loading ...'}</span>
                         </div>
                     </div>
                 </div>

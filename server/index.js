@@ -88,7 +88,7 @@ io.on('connection', (socket) => {
     app.use('/api/listings', listingRoutes);
     app.use('/uploads', express.static('uploads'));
     app.use('/api/rr', rrRoutes);
-    // app.use('/api/messages', messageRoutes);
+    app.use('/api/messages', messageRoutes);
 
     app.get('/', (req, res) => {
         res.send('API is working!');

@@ -175,7 +175,7 @@ function App() {
       const receiverId = selectedListing.owner_id;
       console.log(receiverId);
 
-      const resp = await fetch('/api/create_chat', {
+      const resp = await fetch('/api/messages/create_chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

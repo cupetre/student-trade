@@ -22,33 +22,6 @@ router.put('/edit_listing', authenticationToken,upload2.single('photo'), async (
 
 });
 
-router.post('/create_chat', authenticationToken, async (req, res) => {
-    const pool = req.pool;
-    const user1_id = req.user.id;
-    const { user2_id } = req.body;
-
-    // okey first we check if there is an existing chat alredy
-    const [existingChats] = await pool.query(
-        `SELECT id FROM Chat
-        WHERE(user1_id = ? AND user2_id = ?) 
-        OR(user1_id = ? AND user2_id = ? )
-        LIMIT 1`, [user1_id, user2_id, user2_id, user1_id]
-    );
-
-    if (existingChats.length > 0) {
-        return res.json({ chat_id: existingChats[0].chat_id });
-    }
-
-    // if there isn't , we create one
-    const [created_chat] = await pool.query(
-        `INSERT INTO Chat(user1_id, user2_id, date)
-        VALUES(?, ?, NOW())`, [user1_id, user2_id]
-    );
-
-    const chat_id = created_chat.insertId;
-    res.json({ chat_id });
-});
-
 router.get('/get_chat_history', authenticationToken, async (req, res) => {
     const pool = req.pool;
 
