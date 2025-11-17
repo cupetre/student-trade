@@ -167,7 +167,7 @@ const handleReviewSubmit = async () => {
     const token = localStorage.getItem('token');
 
     try {
-        const respy = await fetch('/api/add_review', {
+        const respy = await fetch('/api/rr/submit_review', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
