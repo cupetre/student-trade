@@ -28,7 +28,7 @@ const ProfilePage = () => {
                 return;
             }
             try {
-                const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/listings/fetch_my_listings`, {
+                const resp = await fetch(`/api/listings/fetch_my_listings`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     },
@@ -50,7 +50,7 @@ const ProfilePage = () => {
             const token = localStorage.getItem('token');
 
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/fetch_profile`, {
+                const response = await fetch(`/api/users/fetch_profile`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -95,7 +95,7 @@ const ProfilePage = () => {
                 formData.append('profilePicture', profileData.profilePicture);
             }
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/edit_profile`, {
+            const response = await fetch(`/api/users/edit_profile`, {
                 method: 'PUT',
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -166,7 +166,7 @@ const ProfilePage = () => {
 
             try {
 
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/get_reviews`, {
+                const response = await fetch(`/api/rr/get_reviews`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }
@@ -266,7 +266,7 @@ const ProfilePage = () => {
         console.log(newAddedForm);
 
         try {
-            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/edit_listing`, {
+            const resp = await fetch(`api/listings/edit_listing`, {
                 method: 'PUT',
                 headers: {
                     Authorization: `Bearer ${token}`,

@@ -18,7 +18,8 @@ async function editProfile(req, res) {
             bio,
             profilePicPath
         }); //this is what we send to the model to use
-        res.status(200).json(result);
+        res.json({ success: true, result });
+        console.log(result);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to update profile' });

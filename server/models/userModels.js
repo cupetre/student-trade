@@ -4,7 +4,8 @@ async function updateUserProfile(pool, { id, fullname, email, bio, profilePicPat
     const result = await pool.query(
         `UPDATE "User"
         SET fullname = $1, email = $2, bio = $3, profile_picture = $4
-        WHERE id = $5`,
+        WHERE id = $5
+        RETURNING id, fullname, email, bio, profile_picture`,
         [fullname, email, bio, profilePicPath, id]
     );
     return result.rows[0];

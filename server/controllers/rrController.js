@@ -1,4 +1,4 @@
-const { addReport, addReview } = require('../models/rrModels.js');
+const { addReport, addReview, fetchReviews } = require('../models/rrModels.js');
 
 async function submitReport(req, res) {
     const pool = req.pool;
@@ -29,7 +29,22 @@ async function submitReview(req, res) {
     }
 };
 
+async function getReviews(req, res) {
+    const pool = req.pool;
+    const owner_id = req.user.id;
+
+    try { 
+        const results = await fetchReviews(pool, { owner_id } )
+
+        res.json(results);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: " problem in fetching in db " });
+    }
+};
+
 module.exports = { 
     submitReport,
-    submitReview
+    submitReview,
+    getReviews
 }

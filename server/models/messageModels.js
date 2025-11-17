@@ -16,9 +16,6 @@ async function openChat(pool, { user1_id, user2_id }) {
         LIMIT 1
     `, [user1_id, user2_id]);
 
-    console.log(user1_id);
-    console.log(user2_id);
-
     if (check.rows.length > 0) return check.rows[0].id;
 
     const insert = await pool.query(`
@@ -48,7 +45,6 @@ async function chatHistory(pool, { user1_id }) {
                OR c.user2_id = $1
             ORDER BY c.date DESC
         `, [user1_id]);
-        console.log(chats);
     return chats.rows; 
 }
 

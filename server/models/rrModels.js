@@ -14,7 +14,18 @@ async function addReview(pool, { user1_id, user2_id, rating, description}) {
     );
 };
 
+async function fetchReviews(pool, {owner_id}) {
+    const reviews = await pool.query(`
+        SELECT *
+        FROM "Review"
+        WHERE reviewee_id = $1`,
+    [owner_id]);
+
+    return reviews.rows;
+};
+
 module.exports = {
     addReport,
-    addReview
+    addReview,
+    fetchReviews
 };
