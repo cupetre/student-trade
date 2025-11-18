@@ -83,15 +83,9 @@ function ChatPage() {
     const currentUserId = profileData.id;
 
     const sendMessage = async (chatId) => {
-
         const token = localStorage.getItem('token');
 
-        if (!newMessage.trim()) return; // Don't send empty messages
-
-        //okej e vo red gi zema
-
-        console.log(chatId);
-        console.log(selectedChat.owner_of_post_id);
+        if (!newMessage.trim()) return;
 
         try {
             const res = await fetch(`/api/messages/send_messages`, {
@@ -100,7 +94,6 @@ function ChatPage() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-
                 body: JSON.stringify({
                     chat_id: chatId,
                     receiver_id: selectedChat.owner_of_post_id,
@@ -110,19 +103,23 @@ function ChatPage() {
 
             if (!res.ok) throw new Error('Failed to send');
 
-            const saved = await res.json(); // <-- actual saved DB message
+            const newMessageFromBackend = await res.json();
+            console.log("Saved message from backend:", newMessageFromBackend);
 
-            setMessages(prev => [...prev, saved]);
+            setMessages(prev => {
+                const currentMessages = Array.isArray(prev) ? prev : [];
+                return [...currentMessages, newMessageFromBackend];
+            });
 
             setNewMessage('');
+
         } catch (err) {
-            console.error('Failed to send mesgs', err);
+            console.error('Failed to send message', err);
         }
     };
 
     useEffect(() => {
         if (selectedChat) {
-            console.log(selectedChat.chat_id);
             const fetchMessages = async () => {
                 const token = localStorage.getItem('token');
 
@@ -138,9 +135,10 @@ function ChatPage() {
                     }
 
                     const data = await respo.json();
-                    setMessages(data.messages);
+                    setMessages(Array.isArray(data) ? data : (data.messages || []));
                 } catch (err) {
-                    console.error(" you knwo whats wrong 100% ", err);
+                    console.error(" you know whats wrong 100% ", err);
+                    setMessages([]);
                 }
             };
             fetchMessages();
@@ -148,6 +146,10 @@ function ChatPage() {
             setMessages([]);
         }
     }, [selectedChat]);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
     // odime sega so reviews part
 
@@ -297,7 +299,7 @@ function ChatPage() {
                                 <div className="chat-messages">
                                     {messages && messages.map((message) => (
                                         <div
-                                            key={message.id}
+                                            key={message.id || message.message_id}
                                             className={`message ${message.sender_id === currentUserId ? 'sent' : 'received'}`}
                                         >
                                             <div className="message-bubble">
@@ -321,6 +323,11 @@ function ChatPage() {
                                             className="chat-input"
                                             value={newMessage}
                                             onChange={(e) => setNewMessage(e.target.value)}
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    sendMessage(selectedChat.chat_id);
+                                                }
+                                            }}
                                         />
                                         <button className="send-button" onClick={() => sendMessage(selectedChat.chat_id)}>
                                             <svg className="send-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -332,6 +339,7 @@ function ChatPage() {
                             </>
                         ) : (
                             <div className="no-chat-selected">
+                                <p>Select a chat to start messaging</p>
                             </div>
                         )}
                     </div>

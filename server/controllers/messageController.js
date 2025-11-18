@@ -40,7 +40,6 @@ async function sendMessage(req,res) {
     try {
         const message = await createMessage(pool, { chat_id, sender_id, receiver_id, content })
         
-        console.log(message);
         res.json(message);
     } catch (err) {
         console.error(err);
