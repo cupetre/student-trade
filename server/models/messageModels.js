@@ -46,10 +46,33 @@ async function chatHistory(pool, { user1_id }) {
             ORDER BY c.date DESC
         `, [user1_id]);
     return chats.rows; 
+};
+
+async function createMessage(pool, {chat_id, sender_id , receiver_id, content}) {
+    const result = await pool.query(`
+        INSERT INTO "Message" (chat_id, sender_id, receiver_id, content, sent_at) 
+        VALUES ($1, $2, $3, $4, NOW() )
+        RETURNING id, chat_id, sender_id, receiver_id, content, sent_at`,
+    [chat_id, sender_id, receiver_id, content]);
+
+    return result.rows[0];
+};
+
+async function readMessage(pool, {chat_id}) {
+    const [messages] = await pool.query(`
+        SELECT *
+        FROM "Message"
+        WHERE chat_id = $1
+        ORDER BY sent_at ASC`
+    ,[chat_id]);
+
+    return messages;
 }
 
 module.exports = {
     getMessages,
     openChat,
-    chatHistory
+    chatHistory,
+    createMessage,
+    readMessage
 };

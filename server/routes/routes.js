@@ -22,7 +22,6 @@ router.put('/edit_listing', authenticationToken,upload2.single('photo'), async (
 
 });
 
-
 router.post('/send_message', authenticationToken, async (req, res) => {
     const pool = req.pool;
 
