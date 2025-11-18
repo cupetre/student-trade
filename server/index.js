@@ -58,17 +58,25 @@ io.on('connection', (socket) => {
     connectedUsers.set(userId, socket.id);
 
     socket.on('send_message', async ({ chat_id, receiver_id, content }) => {
-        await pool.query(`
-      INSERT INTO "Message" (chat_id, sender_id, receiver_id, content, date)
-      VALUES ($1, $2, $3, $4, NOW())`,
-            [chat_id, userId, receiver_id, content]
-        );
+        try {
+            const result = await pool.query(`
+            INSERT INTO "Message" (chat_id, sender_id, receiver_id, content, sent_at)
+            VALUES ($1, $2, $3, $4, NOW())
+            RETURNING id, chat_id, sender_id, receiver_id, content, sent_at`,
+                [chat_id, userId, receiver_id, content]
+            );
 
-        const receiverSocket = connectedUsers.get(receiver_id);
-        if (receiverSocket) {
-            io.to(receiverSocket).emit('new_message', {
-                chat_id, sender_id: userId, content, date: new Date()
-            });
+            const newMessage = result.rows[0];
+
+            const receiverSocket = connectedUsers.get(receiver_id);
+            if (receiverSocket) {
+                io.to(receiverSocket).emit('new_message', newMessage);
+            }
+
+            socket.emit('message_sent', newMessage);
+        } catch (err) {
+            console.error('Error sending message:', err);
+            socket.emit('message_error', { error: 'Failed to send message' });
         }
     });
 
@@ -81,6 +89,8 @@ io.on('connection', (socket) => {
 
     app.use((req, res, next) => {
         req.pool = pool;
+        req.io = io;
+        req.connectedUsers = connectedUsers;
         next();
     });
 

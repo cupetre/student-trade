@@ -30,6 +30,8 @@ async function getHistory(req, res) {
 
 async function sendMessage(req,res) {
     const pool = req.pool;
+    const io = req.io;
+    const connectedUsers = req.connectedUsers;
     const sender_id = req.user.id;
     const { chat_id, receiver_id , content } = req.body;
 
@@ -39,6 +41,12 @@ async function sendMessage(req,res) {
 
     try {
         const message = await createMessage(pool, { chat_id, sender_id, receiver_id, content })
+        
+        const receiverSocket = connectedUsers.get(receiver_id);
+
+        if ( receiverSocket && io) {
+            io.to(receiverSocket).emit('new_message', message);
+        }
         
         res.json(message);
     } catch (err) {

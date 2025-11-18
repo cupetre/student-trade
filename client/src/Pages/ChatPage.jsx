@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './ChatPage.css';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 
 function ChatPage() {
 
@@ -80,8 +81,6 @@ function ChatPage() {
     const [messages, setMessages] = useState([]);
     const messagesEndRef = useRef(null);
 
-    const currentUserId = profileData.id;
-
     const sendMessage = async (chatId) => {
         const token = localStorage.getItem('token');
 
@@ -138,7 +137,7 @@ function ChatPage() {
                     setMessages(Array.isArray(data) ? data : (data.messages || []));
                 } catch (err) {
                     console.error(" you know whats wrong 100% ", err);
-                    setMessages([]);
+                    setMessages([]); 
                 }
             };
             fetchMessages();
@@ -162,6 +161,11 @@ function ChatPage() {
 
         const token = localStorage.getItem('token');
 
+        if (reviewRating === 0) {
+            alert('Please select a rating');
+            return;
+        }
+
         try {
             const respy = await fetch('/api/rr/submit_review', {
                 method: 'POST',
@@ -183,13 +187,10 @@ function ChatPage() {
             setReviewText('');
             setReviewRating(0);
             setShowReviewModal(false);
+            alert('Review submitted successfully!');
         } catch (err) {
-            console.error('Failed to send mesgs', err);
-        }
-
-        if (reviewRating === 0) {
-            alert('Please select a rating');
-            return;
+            console.error('Failed to send review', err);
+            alert('Failed to submit review');
         }
     };
 
@@ -297,21 +298,26 @@ function ChatPage() {
                                 </div>
 
                                 <div className="chat-messages">
-                                    {messages && messages.map((message) => (
-                                        <div
-                                            key={message.id || message.message_id}
-                                            className={`message ${message.sender_id === currentUserId ? 'sent' : 'received'}`}
-                                        >
-                                            <div className="message-bubble">
-                                                <div className="message-content">
-                                                    {message.content}
-                                                </div>
-                                                <div className="message-time">
-                                                    {new Date(message.sent_at).toLocaleTimeString()}
+                                    {messages && messages.map((message) => {
+                                        // Use profileData.id to determine if message is sent or received
+                                        const isSentByMe = message.sender_id === profileData.id;
+                                        
+                                        return (
+                                            <div
+                                                key={message.id || message.message_id}
+                                                className={`message ${isSentByMe ? 'sent' : 'received'}`}
+                                            >
+                                                <div className="message-bubble">
+                                                    <div className="message-content">
+                                                        {message.content}
+                                                    </div>
+                                                    <div className="message-time">
+                                                        {new Date(message.sent_at).toLocaleTimeString()}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                     <div ref={messagesEndRef} />
                                 </div>
 
