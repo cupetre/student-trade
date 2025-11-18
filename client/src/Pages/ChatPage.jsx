@@ -91,8 +91,8 @@ function ChatPage() {
         //okej e vo red gi zema
 
         console.log(chatId);
-        console.log(receiver_id);
-        
+        console.log(selectedChat.owner_of_post_id);
+
         try {
             const res = await fetch(`/api/messages/send_messages`, {
                 method: 'POST',
@@ -108,9 +108,6 @@ function ChatPage() {
                 })
             });
 
-            console.log(chat_id);
-            console.log(receiver_id);
-
             if (!res.ok) throw new Error('Failed to send');
 
             const saved = await res.json(); // <-- actual saved DB message
@@ -125,11 +122,12 @@ function ChatPage() {
 
     useEffect(() => {
         if (selectedChat) {
+            console.log(selectedChat.chat_id);
             const fetchMessages = async () => {
                 const token = localStorage.getItem('token');
 
                 try {
-                    const respo = await fetch(`/api/receive_messages/${selectedChat.id}`, {
+                    const respo = await fetch(`/api/messages/receive_messages/${selectedChat.chat_id}`, {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
@@ -265,9 +263,10 @@ function ChatPage() {
                         {/* Chat List */}
                         <div className="chat-sidebar-list">
                             {chatList.map((chat) => (
-                                <div key={chat.id}
-                                    className={`chat-item ${selectedChat?.id === chat.id ? 'active' : ''}`}
+                                <div key={chat.chat_id}
+                                    className={`chat-item ${selectedChat?.chat_id === chat.chat_id ? 'active' : ''}`}
                                     onClick={() => setSelectedChat(chat)}
+
                                 >
                                     <div className="chat-avatar">
                                         <img src={`${chat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
@@ -323,7 +322,7 @@ function ChatPage() {
                                             value={newMessage}
                                             onChange={(e) => setNewMessage(e.target.value)}
                                         />
-                                        <button className="send-button" onClick={() => sendMessage(selectedChat.id)}>
+                                        <button className="send-button" onClick={() => sendMessage(selectedChat.chat_id)}>
                                             <svg className="send-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                             </svg>

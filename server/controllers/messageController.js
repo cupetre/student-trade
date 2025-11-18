@@ -1,10 +1,4 @@
-const { getMessages, openChat, chatHistory, createMessage, readMessage } = require('../models/messageModels.js');
-
-async function getChatMessages(req, res) {
-    const { chat_id } = req.params;
-    const messages = await getMessages(chat_id);
-    res.json(messages);
-};
+const { openChat, chatHistory, createMessage, readMessage } = require('../models/messageModels.js');
 
 async function createChat(req, res) {
     const pool = req.pool;
@@ -43,10 +37,6 @@ async function sendMessage(req,res) {
         return res.status(400).json({ error: "Missing fields" });
     }
 
-    console.log(chat_id);
-    console.log(sender_id);
-    console.log(receiver_id);
-
     try {
         const message = await createMessage(pool, { chat_id, sender_id, receiver_id, content })
         
@@ -65,7 +55,7 @@ async function receiveMessages(req, res) {
     try { 
         const result = await readMessage(pool, {chat_id});
 
-        res.json({ messages: result.rows});
+        res.json(result.rows);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: " error in DB " });
@@ -73,7 +63,6 @@ async function receiveMessages(req, res) {
 };
 
 module.exports = {
-    getChatMessages,
     createChat,
     getHistory,
     sendMessage,

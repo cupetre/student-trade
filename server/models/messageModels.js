@@ -1,13 +1,3 @@
-async function getMessages(chat_id) {
-    const result = await pool.query(`
-        SELECT * FROM "Message"
-        WHERE chat_id = $1
-        ORDER BY date ASC`,
-        [chat_id]);
-
-    return result.rows;
-};
-
 async function openChat(pool, { user1_id, user2_id }) {
     const check = await pool.query(`
         SELECT id FROM "Chat"
@@ -59,18 +49,15 @@ async function createMessage(pool, {chat_id, sender_id , receiver_id, content}) 
 };
 
 async function readMessage(pool, {chat_id}) {
-    const [messages] = await pool.query(`
+    return await pool.query(`
         SELECT *
         FROM "Message"
         WHERE chat_id = $1
         ORDER BY sent_at ASC`
     ,[chat_id]);
-
-    return messages;
-}
+};
 
 module.exports = {
-    getMessages,
     openChat,
     chatHistory,
     createMessage,
