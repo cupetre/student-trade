@@ -1,157 +1,127 @@
 # Student Trade
 
-Student Trade is a student-focused marketplace for buying, selling, and trading useful items inside a trusted student community.
+Student Trade is a full-stack student marketplace built for students who need a safer and easier way to buy, sell, and trade everyday items with other students.
 
-The idea comes from a real student problem: moving to a new city, dorm, apartment, university, or country is expensive and stressful. Students often need furniture, electronics, books, kitchen items, and other essentials quickly, but the usual options are scattered social media groups and public marketplaces full of scams, noise, and unreliable listings.
+The project focuses on a common student problem: moving to a new dorm, apartment, city, university, or country usually means needing furniture, electronics, study materials, kitchen items, and other essentials quickly. Most students rely on public marketplaces or social media groups, where listings can be messy, overpriced, unreliable, or unsafe.
 
-Student Trade aims to make that simpler: one place where students can post items, contact each other, build trust through reviews, and report suspicious activity.
+Student Trade creates a more focused environment: students can post items, browse available listings, contact sellers, manage their profiles, leave reviews, and report suspicious content.
 
-## What It Does
+## What The Project Has
 
-- Register and log in with a user account
-- Edit profile details and profile picture
-- Post item listings with title, description, price, and image
-- Browse listings from other students
-- Edit or delete your own listings
-- Start chats with sellers
-- Send and receive messages
-- Leave reviews after interactions
-- Report suspicious or inappropriate listings
+- User registration and login
+- Password hashing with Bcrypt
+- JWT-based authentication
+- Profile page with editable personal information
+- Profile picture upload
+- Listing creation with title, description, price, date, and image
+- Marketplace feed showing listings from other users
+- Personal listing management for editing and deleting posts
+- Direct chat creation between buyer and seller
+- Message history for existing chats
+- Backend Socket.IO support for live message events
+- Review system with rating and description
+- Report system for suspicious or inappropriate listings
 
-## Vision
+## Main User Workflow
 
-The current app focuses on the student essentials marketplace. The bigger business plan expands Student Trade into a student mobility platform with:
+The app is built around a simple student-to-student exchange flow:
 
-- a peer-to-peer marketplace for student essentials
-- verified student accounts
-- trusted profiles, reviews, and reports
-- in-app communication
-- a future verified housing module for student accommodation
+1. A student creates an account and logs in.
+2. The student enters the marketplace feed.
+3. They can browse items posted by other users.
+4. They can post their own item with an image, price, and description.
+5. If interested in an item, they open the listing and start a chat with the seller.
+6. After communication or a trade, users can leave reviews.
+7. If something looks suspicious, users can report the listing.
+8. Each user can manage their own profile, reviews, and listings.
 
-The long-term goal is to support students during relocation by combining trust, affordability, and community in one platform.
+This workflow keeps the platform centered on trust, direct communication, and student needs.
 
-## Tech Stack
+## How It Is Built
 
-**Frontend:** React, Vite, React Router, Socket.IO Client
-
-**Backend:** Node.js, Express, PostgreSQL, JWT, Bcrypt, Socket.IO, Multer, AWS S3
-
-## Project Structure
+Student Trade is split into two main parts:
 
 ```text
-StudentTrade/
-|-- client/     # React frontend
-|-- server/     # Express API and Socket.IO backend
-|-- BusinessPlanStudentTrade.pdf
-|-- Student Trade.pdf
-|-- Student_Trade_Report .pdf
-`-- README.md
+client/   React frontend
+server/   Express backend, database queries, auth, uploads, and messaging
 ```
 
-## Setup
+The frontend handles the user interface: login, registration, marketplace browsing, listing modals, profile editing, chat screens, review forms, and report forms.
 
-Install backend dependencies:
+The backend handles the platform logic: user accounts, authentication, listing storage, profile updates, chat creation, message saving, reviews, reports, and image upload handling.
 
-```bash
-cd server
-npm install
-```
+PostgreSQL stores the main application data, including users, listings, chats, messages, reviews, and reports. AWS S3 is used for uploaded listing and profile images.
 
-Install frontend dependencies:
+## Dependencies And Their Role
 
-```bash
-cd ../client
-npm install
-```
+### Frontend
 
-Create `server/.env`:
+- **React**: builds the user interface and manages page state.
+- **Vite**: runs and builds the frontend quickly during development.
+- **React Router**: handles navigation between the marketplace, login, register, profile, and chat pages.
+- **Socket.IO Client**: supports real-time communication features from the browser side.
 
-```env
-DB_HOST=your_database_host
-DB_PORT=5432
-DB_USER=your_database_user
-DB_PASS=your_database_password
-DB_NAME=your_database_name
-JWT_SECRET=your_jwt_secret
+### Backend
 
-AWS_ACCESS_KEY_ID=your_aws_access_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-AWS_REGION=your_aws_region
-AWS_BUCKET_NAME=your_bucket_name
-```
+- **Express**: creates the REST API used by the frontend.
+- **PostgreSQL (`pg`)**: connects the backend to the database.
+- **Bcrypt**: hashes user passwords before storing them.
+- **JSON Web Token (`jsonwebtoken`)**: protects private routes after login.
+- **Multer**: processes uploaded files from forms.
+- **Multer S3**: sends uploaded images to AWS S3.
+- **AWS SDK S3 Client**: connects the backend to the S3 bucket.
+- **Socket.IO**: supports live message delivery between connected users.
+- **CORS**: allows the frontend and backend to communicate during development/deployment.
+- **Dotenv**: loads local environment configuration for the server.
 
-Create `client/.env`:
+## Core Backend Areas
 
-```env
-VITE_API_URL=http://localhost:5151
-```
+The backend is organized by responsibility:
 
-Run the backend:
+- `routes/` defines API endpoints.
+- `controllers/` handles request logic.
+- `models/` contains the SQL queries.
+- `configs/` contains authentication, upload, and S3 configuration.
+- `index.js` starts the Express server and Socket.IO server.
 
-```bash
-cd server
-npm run dev
-```
+This keeps the code separated into routes, business logic, database access, and configuration.
 
-Run the frontend:
+## Core Frontend Pages
 
-```bash
-cd client
-npm run dev
-```
+- `App.jsx`: main marketplace feed, listing creation, listing details, messaging entry, and reports.
+- `LoginPage.jsx`: user login.
+- `RegisterPage.jsx`: account creation.
+- `ProfilePage.jsx`: profile editing, personal listings, reviews, listing edit/delete.
+- `ChatPage.jsx`: chat history, message view, message sending, and review submission.
 
-Backend: `http://localhost:5151`
+## Trust And Safety Features
 
-Frontend: `http://localhost:3131`
+Student Trade is designed around trust between students:
 
-## Database
+- accounts are authenticated
+- passwords are hashed
+- private routes require valid tokens
+- users control only their own profiles and listings
+- reports allow the community to flag bad content
+- reviews help build reputation after interactions
+- messaging keeps negotiation inside the platform
 
-The app expects a PostgreSQL database with these main tables:
+The business direction adds stronger student verification and moderation, especially for the future housing module.
 
-- `"User"`
-- `"ListingItem"`
-- `"Chat"`
-- `"Message"`
-- `"Review"`
-- `"Report"`
+## Business Direction
 
-The schema is currently handled manually through the database. A future improvement would be adding SQL migrations so the project can be set up faster by new contributors.
+The current version focuses on student item exchange. The larger business plan expands the project into a student mobility platform with two connected modules:
 
-## Main API Routes
+- **Student Essentials Marketplace**: furniture, electronics, household items, books, and relocation goods.
+- **Verified Housing Module**: a future accommodation system with verified listings, landlord checks, structured listing requirements, and safer communication.
 
-**Users**
-
-- `POST /api/users/register`
-- `POST /api/users/login`
-- `GET /api/users/fetch_profile`
-- `PUT /api/users/edit_profile`
-
-**Listings**
-
-- `POST /api/listings/upload_listing`
-- `GET /api/listings/show_listings`
-- `GET /api/listings/fetch_my_listings`
-- `PUT /api/listings/edit_listing`
-- `DELETE /api/listings/delete_listing/:listingId`
-
-**Messages**
-
-- `POST /api/messages/create_chat`
-- `GET /api/messages/get_history`
-- `POST /api/messages/send_messages`
-- `GET /api/messages/receive_messages/:chat_id`
-
-**Reviews and Reports**
-
-- `POST /api/rr/submit_review`
-- `GET /api/rr/get_reviews`
-- `POST /api/rr/submit_report`
+The goal is to support students at the moment they need help most: when relocating, settling into a new place, and trying to save money.
 
 ## Project Documents
 
-- `Student Trade.pdf`: original project idea, requirements, feasibility study, and database design
-- `Student_Trade_Report .pdf`: implementation report
-- `BusinessPlanStudentTrade.pdf`: business plan and growth direction
+- `Student Trade.pdf`: original concept, requirements, feasibility study, and database design.
+- `Student_Trade_Report .pdf`: implementation report covering the developed features.
+- `BusinessPlanStudentTrade.pdf`: business plan, market positioning, growth model, and future direction.
 
 ## Author
 
