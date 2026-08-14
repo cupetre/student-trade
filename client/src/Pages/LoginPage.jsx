@@ -6,6 +6,7 @@ const Login = () => {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
 
     const navigate = useNavigate();
 
@@ -30,6 +31,7 @@ const Login = () => {
             } else {
                 setError(data.error || "Login failed");
             }
+        // eslint-disable-next-line no-unused-vars
         } catch (err) {
             setError('Login failed. Server error.');
         }
@@ -41,6 +43,7 @@ const Login = () => {
       <h2>
         <span className="brand-name">Student Trade</span>
       </h2>
+      {error && <div className="error-message">{error}</div>}
       <form className="login-form" onSubmit={handleLogin}>
         <div className="form-group">
           <label htmlFor="email">Email address:</label>
