@@ -1,9 +1,6 @@
 Student Trade
 
-
 Information System for Selling and Trading items among Students 
-
-(Project for Systems III) 
 
 Hristijan Chupetreski 
 
@@ -30,3 +27,5 @@ we could change that? The system? What if there was a solution that was simpler,
 more student-friendly — a platform made specifically for people in that situation? One 
 that helps us buy, sell, and trade what we need, in a community we can trust? That’s the 
 solution I want to build — from one student to another.
+
+For more detailed and tehnical description, you can check out the Report Document.
