@@ -6,7 +6,6 @@ const http = require('http');
 const jwt = require('jsonwebtoken');
 const { Server } = require('socket.io');
 
-const authRoutes = require('./routes/authRoutes.js');
 const userRoutes = require('./routes/userRoutes.js');
 const listingRoutes = require('./routes/listingRoutes.js');
 const rrRoutes = require('./routes/rrRoutes.js');
