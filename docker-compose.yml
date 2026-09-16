@@ -1,0 +1,21 @@
+# Local development database for Student Trade.
+# Run:  docker compose up -d
+# This creates a Postgres 16 instance on localhost:5432 and auto-applies
+# server/db/schema.sql the first time the data volume is created.
+services:
+  db:
+    image: postgres:16
+    container_name: student-trade-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: studenttrade
+      POSTGRES_PASSWORD: dfb1e452976ac07aca989060
+      POSTGRES_DB: studenttrade
+    ports:
+      - "5432:5432"
+    volumes:
+      - student_trade_pg_data:/var/lib/postgresql/data
+      - ./server/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+
+volumes:
+  student_trade_pg_data:
