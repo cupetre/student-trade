@@ -1,0 +1,93 @@
+// Prisma schema for Student Trade.
+// This describes the same tables as server/db/schema.sql — Prisma reads
+// THIS file to generate a type-safe client; schema.sql is kept only as
+// the plain-SQL reference for the docker-compose auto-seed and the VPS
+// setup script.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int      @id @default(autoincrement())
+  fullname        String   @db.VarChar(255)
+  email           String   @unique @db.VarChar(255)
+  hashedpassword  String   @db.VarChar(255)
+  bio             String?
+  profile_picture String?  @db.VarChar(500)
+  created_at      DateTime @default(now())
+
+  listings         ListingItem[]
+  chatsAsUser1     Chat[]        @relation("ChatUser1")
+  chatsAsUser2     Chat[]        @relation("ChatUser2")
+  sentMessages     Message[]     @relation("MessageSender")
+  receivedMessages Message[]     @relation("MessageReceiver")
+  reportsFiled     Report[]      @relation("ReportReporter")
+  reportsReceived  Report[]      @relation("ReportReported")
+  reviewsWritten   Review[]      @relation("ReviewReviewer")
+  reviewsReceived  Review[]      @relation("ReviewReviewee")
+}
+
+model ListingItem {
+  id          Int      @id @default(autoincrement())
+  owner_id    Int
+  owner       User     @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  title       String   @db.VarChar(255)
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  photo       String?  @db.VarChar(500)
+  date        DateTime @default(now())
+
+  reports Report[]
+}
+
+model Chat {
+  id       Int      @id @default(autoincrement())
+  user1_id Int
+  user2_id Int
+  user1    User     @relation("ChatUser1", fields: [user1_id], references: [id], onDelete: Cascade)
+  user2    User     @relation("ChatUser2", fields: [user2_id], references: [id], onDelete: Cascade)
+  date     DateTime @default(now())
+
+  messages Message[]
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  chat_id     Int
+  sender_id   Int
+  receiver_id Int
+  chat        Chat     @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  sender      User     @relation("MessageSender", fields: [sender_id], references: [id], onDelete: Cascade)
+  receiver    User     @relation("MessageReceiver", fields: [receiver_id], references: [id], onDelete: Cascade)
+  content     String
+  sent_at     DateTime @default(now())
+}
+
+model Report {
+  id          Int          @id @default(autoincrement())
+  reporter_id Int
+  reported_id Int
+  item_id     Int?
+  reporter    User         @relation("ReportReporter", fields: [reporter_id], references: [id], onDelete: Cascade)
+  reported    User         @relation("ReportReported", fields: [reported_id], references: [id], onDelete: Cascade)
+  item        ListingItem? @relation(fields: [item_id], references: [id], onDelete: SetNull)
+  description String?
+  date        DateTime     @default(now())
+}
+
+model Review {
+  id          Int      @id @default(autoincrement())
+  reviewer_id Int
+  reviewee_id Int
+  reviewer    User     @relation("ReviewReviewer", fields: [reviewer_id], references: [id], onDelete: Cascade)
+  reviewee    User     @relation("ReviewReviewee", fields: [reviewee_id], references: [id], onDelete: Cascade)
+  rating      Int      @db.SmallInt
+  description String?
+  created_at  DateTime @default(now())
+}

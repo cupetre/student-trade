@@ -14,6 +14,8 @@ const messageRoutes = require('./routes/messageRoutes.js');
 const multer = require('multer');
 const path = require('path');
 const pkg = require('pg');
+const pinoHttp = require('pino-http');
+const logger = require('./lib/logger');
 
 const app = express();
 const server = http.createServer(app);
@@ -35,6 +37,7 @@ const pool = new Pool({
 });
 
 app.use(cors());
+app.use(pinoHttp({ logger })); // attaches req.log to every request, with a request id
 app.use(express.json());
 
 io.use((socket, next) => {
