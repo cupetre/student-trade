@@ -6,14 +6,13 @@ const { updateListing,
  } = require('../models/listingModels.js');
 
 async function editListing(req, res) {
-    const pool = req.pool;
     const { id, title, description, price, date } = req.body;
     const photoPath = req.file ? req.file.location : null;
 
     try { 
-        await updateListing(pool, { 
+        await updateListing({ 
             id, 
-            ownerId: req.user.id,
+            owner_id: req.user.id,
             title,
             description,
             price,
@@ -28,13 +27,12 @@ async function editListing(req, res) {
 };
 
 async function uploadListing(req, res) {
-    const pool = req.pool;
     const {title, description, price, date} = req.body;
     const photoPath = req.file ? req.file.location : null;
 
     try {
-        await addListing(pool,{
-            ownerId: req.user.id,
+        await addListing({
+            owner_id: req.user.id,
             title,
             description,
             price,
@@ -49,11 +47,10 @@ async function uploadListing(req, res) {
 };
 
 async function showListings(req,res) {
-    const pool = req.pool;
-    const ownerId = req.user.id;
+    const owner_id = req.user.id;
 
     try {
-        const listings = await viewListings(pool, {ownerId });
+        const listings = await viewListings({ owner_id });
         res.json(listings);
     } catch (err) {
         console.error(err);
@@ -62,11 +59,10 @@ async function showListings(req,res) {
 };
 
 async function showMyListings(req, res) {
-    const pool = req.pool;
     const owner_id = req.user.id;
 
     try {
-        const listings = await fetchMyListings(pool, {owner_id});
+        const listings = await fetchMyListings({owner_id});
         res.json(listings);
     } catch (err) {
         console.error(err);
@@ -75,14 +71,13 @@ async function showMyListings(req, res) {
 };
 
 async function deleteListing(req, res) {
-    const pool = req.pool;
     const owner_id = req.user.id;
     const {listingId} = req.params;
 
     try {
-        const result = await removeListing(pool, {owner_id, listingId})
+        const result = await removeListing({ id: listingId, owner_id })
 
-        if ( result.rowCount == 0 ) {
+        if ( result.count === 0 ) {
             return res.status(404).json({ error: "fault in fetching , doesnt exist "});
         }
 

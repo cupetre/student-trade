@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './ChatPage.css';
+import Avatar from '../components/Avatar.jsx';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 
@@ -225,11 +226,7 @@ function ChatPage() {
                         <div className="user-section">
                             <div className="user-profile" onClick={() => navigate('/profilepage')}>
                                 <div className="user-avatar">
-                                    <img
-                                        src={`${profileData.profile_picture}`}
-                                        alt="Profile"
-                                        className="profile-picture"
-                                    />
+                                    <Avatar src={profileData.profile_picture} name={profileData.fullname} size={32} />
                                 </div>
                                 <span className="user-name"> {profileData.fullname || 'Loading ...'}</span>
                             </div>
@@ -272,7 +269,7 @@ function ChatPage() {
 
                                 >
                                     <div className="chat-avatar">
-                                        <img src={`${chat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
+                                        <Avatar src={chat.owner_of_post_photo} name={chat.owner_of_post_fullname} size={36} />
                                     </div>
                                     <div className="chat-info">
                                         <div className="chat-user-name">{chat.owner_of_post_fullname}</div>
@@ -288,7 +285,7 @@ function ChatPage() {
                                 <div className="chat-window-header">
                                     <div className="active-user-info">
                                         <div className="chat-avatar">
-                                            <img src={`${selectedChat.owner_of_post_photo}`} alt="User Avatar" className="avatar-img" />
+                                            <Avatar src={selectedChat.owner_of_post_photo} name={selectedChat.owner_of_post_fullname} size={36} />
                                         </div>
                                         <div className="active-user-name">{selectedChat.owner_of_post_fullname}</div>
                                     </div>
@@ -362,9 +359,10 @@ function ChatPage() {
 
                         <div className="review-modal-body">
                             <div className="user-info">
-                                <img
-                                    src={`${selectedChat.owner_of_post_photo}`}
-                                    alt="User Avatar"
+                                <Avatar
+                                    src={selectedChat.owner_of_post_photo}
+                                    name={selectedChat.owner_of_post_fullname}
+                                    size={48}
                                     className="review-user-avatar"
                                 />
                                 <span className="review-user-name">{selectedChat.owner_of_post_fullname}</span>

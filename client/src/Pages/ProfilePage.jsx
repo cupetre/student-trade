@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './ProfilePage.css';
+import Avatar from '../components/Avatar.jsx';
 import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
@@ -65,9 +66,12 @@ const ProfilePage = () => {
                     email: data.email,
                     bio: data.bio,
                     created_at: data.created_at,
-                    profilePicturePreview: data.profile_picture
-                        ? `${import.meta.env.VITE_API_URL}${data.profile_picture}`
-                        : null,
+                    // S3 uploads are already full URLs; only old local paths need the API prefix
+                    profilePicturePreview: !data.profile_picture
+                        ? null
+                        : data.profile_picture.startsWith('http')
+                            ? data.profile_picture
+                            : `${import.meta.env.VITE_API_URL}${data.profile_picture}`,
                 };
 
                 setProfileData(fetchedData);
@@ -370,12 +374,13 @@ const ProfilePage = () => {
                         <div className="profile-info-content">
                             <div className="profile-picture-section">
                                 <div className="profile-picture-container">
-                                    {profileData.profilePicturePreview ? (
-                                        <img src={profileData.profilePicturePreview} alt="Profile" className="profile-picture" />
-                                    ) : (
-                                        <div className="profile-picture-placeholder">
-                                        </div>
-                                    )}
+                                    {/* 112 = the 120px container minus its 4px border on each side */}
+                                    <Avatar
+                                        src={profileData.profilePicturePreview}
+                                        name={profileData.fullname}
+                                        size={112}
+                                        className="profile-picture"
+                                    />
                                 </div>
                                 {isEditing && (
                                     <div className="profile-picture-upload">

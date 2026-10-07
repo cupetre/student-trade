@@ -1,13 +1,11 @@
 const { openChat, chatHistory, createMessage, readMessage } = require('../models/messageModels.js');
 
 async function createChat(req, res) {
-    const pool = req.pool;
-
     try {
         const { user2_id } = req.body;
         const user1_id = req.user.id;
 
-        const chat_id = await openChat(pool, { user1_id, user2_id });
+        const chat_id = await openChat({ user1_id, user2_id });
 
         res.json({ chat_id });
     } catch (err) {
@@ -17,11 +15,10 @@ async function createChat(req, res) {
 };
 
 async function getHistory(req, res) {
-    const pool = req.pool;
     const user1_id = req.user.id;
 
     try {
-        const chats = await chatHistory(pool, { user1_id });
+        const chats = await chatHistory({ user1_id });
         res.json(chats);
     } catch (err) {
         res.status(500).json({ error: "Failed to load chat history" });
@@ -29,7 +26,6 @@ async function getHistory(req, res) {
 }
 
 async function sendMessage(req,res) {
-    const pool = req.pool;
     const io = req.io;
     const connectedUsers = req.connectedUsers;
     const sender_id = req.user.id;
@@ -40,7 +36,7 @@ async function sendMessage(req,res) {
     }
 
     try {
-        const message = await createMessage(pool, { chat_id, sender_id, receiver_id, content })
+        const message = await createMessage({ chat_id, sender_id, receiver_id, content })
         
         const receiverSocket = connectedUsers.get(receiver_id);
 
@@ -56,13 +52,12 @@ async function sendMessage(req,res) {
 };
 
 async function receiveMessages(req, res) {
-    const pool = req.pool;
     const chat_id = req.params.chat_id;
 
     try { 
-        const result = await readMessage(pool, {chat_id});
+        const result = await readMessage({chat_id});
 
-        res.json(result.rows);
+        res.json(result);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: " error in DB " });
@@ -75,4 +70,3 @@ module.exports = {
     sendMessage,
     receiveMessages
 }
-

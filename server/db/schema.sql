@@ -9,7 +9,11 @@ CREATE TABLE IF NOT EXISTS "User" (
     hashedpassword   VARCHAR(255) NOT NULL,
     bio              TEXT,
     profile_picture  VARCHAR(500),
-    created_at       TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
+    email_verified           BOOLEAN NOT NULL DEFAULT FALSE,
+    verification_token_hash  VARCHAR(64) UNIQUE,
+    verification_expires_at  TIMESTAMP,
+    verification_sent_at     TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "ListingItem" (

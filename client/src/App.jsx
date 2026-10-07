@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './App.css';
+import Avatar from './components/Avatar.jsx';
 import { useNavigate } from 'react-router-dom';
 
 function App() {
@@ -264,11 +265,7 @@ function App() {
               </button>
               <div className="user-profile" onClick={() => navigate('/profilepage')}>
                 <div className="user-avatar">
-                  <img
-                    src={`${profileData.profile_picture}`}
-                    alt="Profile"
-                    className="profile-picture"
-                  />
+                  <Avatar src={profileData.profile_picture} name={profileData.fullname} size={32} />
                 </div>
                 <span className="user-name"> {profileData.fullname || 'Loading ...'}</span>
               </div>
@@ -425,13 +422,12 @@ function App() {
                   <strong>Date Posted:</strong> {selectedListing.date}
                 </p>
                 <div className="2seller-info">
-                  {selectedListing.owner_profile_picture && (
-                    <img
-                      src={selectedListing.owner_photo}
-                      alt={selectedListing.owner_name}
-                      className="seller2-profile-pic"
-                    />
-                  )}
+                  <Avatar
+                    src={selectedListing.owner_profile_picture}
+                    name={selectedListing.owner_name}
+                    size={40}
+                    className="seller2-profile-pic"
+                  />
                   <p>
                     <strong>Seller:</strong> {selectedListing.owner_name}
                   </p>

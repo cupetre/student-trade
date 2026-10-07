@@ -15,9 +15,9 @@ set -euo pipefail
 
 DB_NAME="studenttrade"
 DB_USER="studenttrade"
-DB_PASSWORD="CHANGE_ME_STRONG_UNIQUE_PASSWORD"
+DB_PASSWORD="dfb1e452976ac07aca989060"
 
-if [ "$DB_PASSWORD" = "CHANGE_ME_STRONG_UNIQUE_PASSWORD" ]; then
+if [ "$DB_PASSWORD" = "dfb1e452976ac07aca989060" ]; then
   echo "Edit this script and set a real DB_PASSWORD before running. Aborting."
   exit 1
 fi

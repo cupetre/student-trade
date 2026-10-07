@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+
+    // The whole point right now: JS and TS files live side by side.
+    // allowJs means .js files are included in the project (so tsc/your
+    // editor understands the whole codebase, not just the .ts parts).
+    "allowJs": true,
+
+    // Left off on purpose for now. With checkJs on, TypeScript would
+    // start type-checking every .js file immediately and you'd get a
+    // wall of errors from code that hasn't been touched yet. Turn this
+    // on later, once most of the codebase is .ts, as a way to catch the
+    // last untyped corners.
+    "checkJs": false,
+
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Intentionally lenient to start. Flip individual strict flags on
+    // (starting with strictNullChecks) as you convert more files and get
+    // comfortable — going straight to full "strict": true on a codebase
+    // this size on day one just produces noise.
+    "strict": false,
+
+    "outDir": "dist",
+    "resolveJsonModule": true
+  },
+  "include": ["**/*.ts", "**/*.js"],
+  "exclude": ["node_modules", "dist"]
+}
