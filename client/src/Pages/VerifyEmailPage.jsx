@@ -44,7 +44,7 @@ const VerifyEmailPage = () => {
     return (
         <div className="auth-page">
             <div className="auth-card auth-card--center">
-                <span className="auth-brand">Student Trade</span>
+                <Link to="/" className="auth-brand">Student Trade</Link>
 
                 {status === 'loading' && (
                     <>

@@ -1,18 +1,15 @@
 const bcrypt = require('bcrypt');
 const prisma = require('../lib/prisma');
 
-// Note: these functions no longer take `pool` as their first argument.
-// Prisma's client is a singleton imported directly (see lib/prisma.js),
-// so there's nothing to thread through from req.pool anymore. Models
-// still on raw SQL keep taking `pool` until they're converted too —
-// during the migration both patterns exist side by side, that's expected.
+// All models use the shared Prisma client from lib/prisma.js; none of them
+// take a database `pool` argument anymore.
 
-async function updateUserProfile({ id, fullname, email, bio, profilePicPath }) {
+async function updateUserProfile({ id, fullname, bio, profilePicPath }) {
     return prisma.user.update({
         where: { id },
         data: {
+            // undefined = leave unchanged (Prisma skips undefined fields)
             fullname,
-            email,
             bio,
             // Only overwrite the photo if a new one was actually uploaded.
             // The old raw-SQL version always set profile_picture = $4, which
@@ -24,7 +21,7 @@ async function updateUserProfile({ id, fullname, email, bio, profilePicPath }) {
     });
 }
 
-async function registerUserData({ fullname, email, password, verificationTokenHash, verificationExpiresAt, verificationSentAt }) {
+async function registerUserData({ fullname, email, password, verificationTokenHash, verificationExpiresAt, verificationSentAt, role = 'student', landlordStatus = null, phone = null }) {
     const hashedpassword = await bcrypt.hash(password, 10);
 
     return prisma.user.create({
@@ -36,6 +33,9 @@ async function registerUserData({ fullname, email, password, verificationTokenHa
             verification_token_hash: verificationTokenHash,
             verification_expires_at: verificationExpiresAt,
             verification_sent_at: verificationSentAt,
+            role,
+            landlord_status: landlordStatus,
+            phone,
         },
     });
 }
@@ -84,7 +84,7 @@ async function loginUserData({ email }) {
 async function viewInformation(owner_id) {
     return prisma.user.findUnique({
         where: { id: owner_id },
-        select: { fullname: true, email: true, bio: true, profile_picture: true, created_at: true },
+        select: { id: true, fullname: true, email: true, bio: true, profile_picture: true, created_at: true, role: true, landlord_status: true },
     });
 }
 

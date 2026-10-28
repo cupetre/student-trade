@@ -49,6 +49,8 @@
     margin-bottom: 24px;
 }
 
+a.auth-brand { text-decoration: none; }
+
 .auth-brand {
     display: inline-block;
     color: var(--auth-brand);

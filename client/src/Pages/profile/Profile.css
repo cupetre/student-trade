@@ -1,0 +1,75 @@
+/* Student rental profile + public profile. Classes start with "sp-". */
+
+.sp-page { max-width: 860px; }
+
+.sp-progress {
+    background: #fff;
+    border: 1px solid var(--hs-border);
+    border-left: 4px solid #f2a516;
+    border-radius: var(--hs-radius);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+.sp-progress.is-done { border-left-color: var(--hs-good); }
+.sp-progress-top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.sp-bar { height: 8px; border-radius: 999px; background: #eef2f7; overflow: hidden; }
+.sp-bar span { display: block; height: 100%; background: #f2a516; border-radius: inherit; transition: width 0.3s; }
+.sp-progress.is-done .sp-bar span { background: var(--hs-good); }
+.sp-missing { margin: 8px 0 0; font-size: 0.9rem; color: var(--hs-muted); }
+
+.sp-form { display: flex; flex-direction: column; gap: 14px; }
+.sp-card { background: #fff; border: 1px solid var(--hs-border); border-radius: var(--hs-radius); padding: 18px; }
+.sp-card h2 { margin: 0 0 14px; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sp-card--private { background: #fbfcfe; border-style: dashed; }
+.sp-private { font-size: 0.75rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: #eef2f7; color: var(--hs-muted); }
+.sp-req { font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: var(--hs-warn-bg); color: var(--hs-warn); margin-left: 6px; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.03em; }
+
+.sp-photo { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.sp-photo .hs-hint { margin-top: 8px; max-width: 360px; }
+.sp-upload { position: relative; overflow: hidden; }
+.sp-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.sp-segment { align-self: flex-start; display: inline-flex; flex-wrap: wrap; border: 1px solid var(--hs-border); border-radius: 10px; overflow: hidden; background: #fff; }
+.sp-segment label { padding: 8px 14px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border-right: 1px solid var(--hs-border); position: relative; }
+.sp-segment label:last-child { border-right: none; }
+.sp-segment input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.sp-segment label.is-on { background: var(--hs-brand); color: #fff; }
+.sp-segment label:has(input:focus-visible) { outline: 3px solid #f2b544; outline-offset: -3px; }
+
+.sp-actions { display: flex; justify-content: flex-end; }
+
+.hs-chip:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ---------- public profile ---------- */
+
+.sp-hero {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--hs-border);
+    border-radius: var(--hs-radius);
+    padding: 20px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+.sp-hero-info { flex: 1; min-width: 200px; }
+.sp-hero h1 { margin: 0 0 6px; font-size: 1.6rem; letter-spacing: -0.02em; }
+.sp-hero-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.sp-hero p { margin: 0; color: var(--hs-muted); }
+.sp-bio { margin-top: 10px !important; color: var(--hs-text) !important; white-space: pre-line; line-height: 1.5; }
+
+.sp-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 18px; align-items: start; }
+.sp-section { margin-bottom: 18px; }
+.sp-section h2 { font-size: 1.1rem; margin: 0 0 10px; }
+.sp-facts { margin: 0; display: grid; gap: 10px; }
+.sp-facts div { display: grid; grid-template-columns: 130px 1fr; gap: 10px; }
+.sp-facts dt { color: var(--hs-muted); font-size: 0.88rem; font-weight: 600; }
+.sp-facts dd { margin: 0; font-weight: 600; }
+.sp-locked { color: var(--hs-muted); font-size: 0.9rem; margin: 10px 0 0; padding: 10px 12px; background: #f5f8fc; border-radius: 10px; }
+
+@media (max-width: 760px) {
+    .sp-grid { grid-template-columns: 1fr; }
+    .sp-hero { flex-direction: column; align-items: flex-start; }
+    .sp-facts div { grid-template-columns: 110px 1fr; }
+}

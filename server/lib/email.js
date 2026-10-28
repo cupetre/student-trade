@@ -1,5 +1,7 @@
 const logger = require('./logger');
 
+const log = logger.createLogger('email');
+
 // Sends email through Amazon SES (v2 API).
 //
 // Dev mode: if EMAIL_FROM isn't set in .env, nothing is sent. The email
@@ -28,7 +30,7 @@ async function sendEmail({ to, subject, html, text }) {
     const from = process.env.EMAIL_FROM;
 
     if (!from) {
-        logger.warn({ to, subject, text }, 'EMAIL_FROM is not set: email NOT sent (dev mode), content logged instead');
+        log.warn({ to, subject, text }, `Dev mode (no EMAIL_FROM): NOT sent to ${to}. The email is below, open its link to continue.`);
         return { delivered: false };
     }
 

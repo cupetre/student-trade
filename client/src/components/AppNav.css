@@ -1,0 +1,72 @@
+.appnav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #ffffff;
+    border-bottom: 1px solid #dce3ed;
+}
+
+.appnav-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.appnav-logo {
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+    color: #2c66a8;
+    text-decoration: none;
+}
+
+.appnav-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.appnav-links a,
+.appnav-links button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: #13233a;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.appnav-links a:hover,
+.appnav-links button:hover {
+    background: #eef3fa;
+}
+
+.appnav-links a.active {
+    background: #e7eff9;
+    color: #2c66a8;
+}
+
+.appnav-links a:focus-visible,
+.appnav-links button:focus-visible,
+.appnav-logo:focus-visible {
+    outline: 3px solid #f2b544;
+    outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+    .appnav-links a,
+    .appnav-links button {
+        padding: 6px 8px;
+        font-size: 0.88rem;
+    }
+}

@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import './ProfilePage.css';
 import Avatar from '../components/Avatar.jsx';
+import { resolveMediaUrl } from '../lib/media';
 import { useNavigate } from 'react-router-dom';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('profile');
 
 const ProfilePage = () => {
     const navigate = useNavigate();
@@ -25,7 +29,7 @@ const ProfilePage = () => {
 
             const token = localStorage.getItem('token');
             if (!token) {
-                console.warn('No token found');
+                log.warn('No token found');
                 return;
             }
             try {
@@ -40,7 +44,7 @@ const ProfilePage = () => {
                 const data = await resp.json();
                 setItemListings2(data);
             } catch (err) {
-                console.error('Failed to fetch listings', err);
+                log.error('Failed to fetch listings', err);
             }
         };
         fetchMyListings();
@@ -66,18 +70,15 @@ const ProfilePage = () => {
                     email: data.email,
                     bio: data.bio,
                     created_at: data.created_at,
-                    // S3 uploads are already full URLs; only old local paths need the API prefix
-                    profilePicturePreview: !data.profile_picture
-                        ? null
-                        : data.profile_picture.startsWith('http')
-                            ? data.profile_picture
-                            : `${import.meta.env.VITE_API_URL}${data.profile_picture}`,
+                    id: data.id,
+                    role: data.role,
+                    profilePicturePreview: resolveMediaUrl(data.profile_picture),
                 };
 
                 setProfileData(fetchedData);
                 setOriginalProfileData(fetchedData);
             } catch (err) {
-                console.error('Failed to load profile data: ', err);
+                log.error('Failed to load profile data: ', err);
             }
         };
 
@@ -92,8 +93,8 @@ const ProfilePage = () => {
             const formData = new FormData();
 
             formData.append('fullname', profileData.fullname);
-            formData.append('email', profileData.email);
-            formData.append('bio', profileData.bio);
+            // a null bio would otherwise be saved as the text "null"
+            formData.append('bio', profileData.bio || '');
 
             if (profileData.profilePicture) {
                 formData.append('profilePicture', profileData.profilePicture);
@@ -113,19 +114,19 @@ const ProfilePage = () => {
 
             const result = await response.json();
 
-            console.log(result);
+            log.debug('Profile saved', result);
 
             setProfileData(prev => ({
                 ...prev,
                 profilePicture: null, // clear the file and also in the database its null so it HAS to be null if not anything
-                profilePicturePreview: result.profile_picture || prev.profilePicturePreview
+                profilePicturePreview: resolveMediaUrl(result.result?.profile_picture) || prev.profilePicturePreview
             }));
 
-            console.log(profileData);
+            
 
             setIsEditing(false);
-        } catch (error) {
-            console.error("something went wrong, find it");
+        } catch (err) {
+            log.error('Failed to save profile', err);
         }
     };
 
@@ -192,7 +193,7 @@ const ProfilePage = () => {
 
                 setUserReviews(dataForAssigning);
             } catch (err) {
-                console.error("not working in front end", err);
+                log.error('Could not load your reviews', err);
             }
         };
 
@@ -230,7 +231,7 @@ const ProfilePage = () => {
             description: listing.description,
             price: listing.price,
             photo: null,
-            photoPreview: `${import.meta.env.VITE_API_URL}${listing.photo}`
+            photoPreview: resolveMediaUrl(listing.photo)
         });
 
         setSelectedListing(listing);
@@ -267,10 +268,10 @@ const ProfilePage = () => {
             newAddedForm.append('photo', editFormData.photo);
         }
 
-        console.log(newAddedForm);
+        log.debug('Listing saved', newAddedForm);
 
         try {
-            const resp = await fetch(`api/listings/edit_listing`, {
+            const resp = await fetch(`/api/listings/edit_listing`, {
                 method: 'PUT',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -284,12 +285,14 @@ const ProfilePage = () => {
                 throw new Error(`HTTP error! status: ${resp.status}`);
             }
 
-            const result = await resp.json();
-            console.log("listing has been updated scsly", result);
+            // show the new text right away (a new photo appears on the next reload)
+            setItemListings2(prev => prev.map(item => item.id === editFormData.id
+                ? { ...item, title: editFormData.title, description: editFormData.description, price: editFormData.price }
+                : item));
             closeListingModal();
 
         } catch (err) {
-            console.error("problem in fetching and frontend", err);
+            log.error('Could not save the listing', err);
         }
     };
 
@@ -301,17 +304,19 @@ const ProfilePage = () => {
         }
 
         try {
-            const respo = await fetch(`${import.meta.env.VITE_API_URL}/api/listings/delete_listing/${listingId}`, {
+            const respo = await fetch(`/api/listings/delete_listing/${listingId}`, {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             });
 
-            const result = await respo.json();
-            console.log("delete listing", result); // just print if it goes througha dn gets deleted
+            if (!respo.ok) throw new Error(`HTTP error! status: ${respo.status}`);
+
+            // remove it from the list right away instead of waiting for a reload
+            setItemListings2(prev => prev.filter(item => item.id !== listingId));
         } catch (err) {
-            console.error("error in deleting the listing in fe", err);
+            log.error('Could not delete the listing', err);
         }
     };
 
@@ -343,9 +348,21 @@ const ProfilePage = () => {
             <header className="profile-header">
                 <div className="profile-header-content">
                     <h1 className="profile-page-title">My Profile</h1>
-                    <button className="settings-btn" onClick={() => navigate('/')}>
-                        <span>Back</span>
-                    </button>
+                    <div className="profile-header-actions">
+                        {profileData.role !== 'landlord' && (
+                            <button className="settings-btn" onClick={() => navigate('/profile/student')}>
+                                <span>Rental profile</span>
+                            </button>
+                        )}
+                        {profileData.id && (
+                            <button className="settings-btn" onClick={() => navigate(`/users/${profileData.id}`)}>
+                                <span>How others see me</span>
+                            </button>
+                        )}
+                        <button className="settings-btn" onClick={() => navigate('/')}>
+                            <span>Back</span>
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -416,19 +433,10 @@ const ProfilePage = () => {
 
                                 <div className="profile-field">
                                     <label className="profile-label">Email Address</label>
-                                    {isEditing ? (
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={profileData.email}
-                                            onChange={handleInputChange}
-                                            className="profile-input"
-                                        />
-                                    ) : (
-                                        <div className="profile-value-with-icon">
-                                            <p className="profile-value">{profileData.email}</p>
-                                        </div>
-                                    )}
+                                    {/* Read-only: the email is the verified university address the account is tied to */}
+                                    <div className="profile-value-with-icon">
+                                        <p className="profile-value">{profileData.email}</p>
+                                    </div>
                                 </div>
 
                                 <div className="profile-field">
@@ -505,7 +513,7 @@ const ProfilePage = () => {
 
                                     <div className="listing-image">
                                         <img
-                                            src={`${import.meta.env.VITE_API_URL}${listing.photo}`}
+                                            src={resolveMediaUrl(listing.photo)}
                                             alt={listing.title}
                                         />
                                     </div>

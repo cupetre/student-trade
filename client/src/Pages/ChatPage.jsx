@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import './ChatPage.css';
 import Avatar from '../components/Avatar.jsx';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('chat');
+const socketLog = createLogger('socket');
 
 function ChatPage() {
 
@@ -10,7 +14,18 @@ function ChatPage() {
 
     const navigate = useNavigate();
 
+    const [selectedChat, setSelectedChat] = useState(null);
+    const [newMessage, setNewMessage] = useState('');
+    const [messages, setMessages] = useState([]);
+    const messagesEndRef = useRef(null);
+
+    // The socket listener is set up once, so it reads the latest values through refs
+    const selectedChatRef = useRef(null);
+    const chatListRef = useRef([]);
+
     const [chatList, setChatList] = useState([]);
+    const [chatsVersion, setChatsVersion] = useState(0); // bump to reload the chat list
+    const [searchParams] = useSearchParams();
 
     const handleButtonClick = () => {
         navigate('/profilePage#listing-content');
@@ -20,7 +35,7 @@ function ChatPage() {
         const token = localStorage.getItem('token');
 
         if (!token) {
-            console.log('No token found, user might not be logged in');
+            log.debug('No token found, user might not be logged in');
             return;
         }
 
@@ -38,7 +53,7 @@ function ChatPage() {
 
                 setProfileData(data);
             } catch (err) {
-                console.error('Error fetching profile:', err);
+                log.error('Error fetching profile:', err);
             }
         };
 
@@ -64,12 +79,52 @@ function ChatPage() {
                 const chats = await respo.json();
 
                 setChatList(chats);
+
+                // Coming from a listing's "Message" button (/chatPage?chatId=12):
+                // open that chat straight away.
+                const wantedId = Number(searchParams.get('chatId'));
+                if (wantedId && !selectedChatRef.current) {
+                    const wanted = chats.find(chat => chat.chat_id === wantedId);
+                    if (wanted) setSelectedChat(wanted);
+                }
             } catch (err) {
-                console.error('Error fetch chat list :', err);
+                log.error('Could not load the chat list', err);
             }
         };
         fetchChats();
 
+    }, [chatsVersion, searchParams]);
+
+    useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
+    useEffect(() => { chatListRef.current = chatList; }, [chatList]);
+
+    // Live chat: one socket connection while this page is open.
+    // New messages from the other person arrive here without a reload.
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) return undefined;
+
+        const socket = io({ auth: { token } });
+
+        socket.on('new_message', (message) => {
+            socketLog.debug(`new message in chat ${message.chat_id}`);
+            if (message.chat_id === selectedChatRef.current?.chat_id) {
+                setMessages(prev => [...(Array.isArray(prev) ? prev : []), message]);
+            }
+            // Someone started a new chat with us: reload the list so it shows up
+            if (!chatListRef.current.some(chat => chat.chat_id === message.chat_id)) {
+                setChatsVersion(v => v + 1);
+            }
+        });
+
+        socket.on('connect', () => socketLog.info('connected, live messages are on'));
+        socket.on('disconnect', (reason) => socketLog.info(`disconnected (${reason})`));
+        socket.on('connect_error', (err) => {
+            socketLog.error('Live chat connection failed:', err.message);
+        });
+        socket.on('message_error', (payload) => socketLog.warn('Message was not sent:', payload?.error));
+
+        return () => socket.disconnect();
     }, []);
 
     const logout = () => {
@@ -77,10 +132,6 @@ function ChatPage() {
         navigate('/login');
     };
 
-    const [selectedChat, setSelectedChat] = useState(null);
-    const [newMessage, setNewMessage] = useState('');
-    const [messages, setMessages] = useState([]);
-    const messagesEndRef = useRef(null);
 
     const sendMessage = async (chatId) => {
         const token = localStorage.getItem('token');
@@ -104,7 +155,7 @@ function ChatPage() {
             if (!res.ok) throw new Error('Failed to send');
 
             const newMessageFromBackend = await res.json();
-            console.log("Saved message from backend:", newMessageFromBackend);
+            log.debug("Saved message from backend:", newMessageFromBackend);
 
             setMessages(prev => {
                 const currentMessages = Array.isArray(prev) ? prev : [];
@@ -114,7 +165,7 @@ function ChatPage() {
             setNewMessage('');
 
         } catch (err) {
-            console.error('Failed to send message', err);
+            log.error('Failed to send message', err);
         }
     };
 
@@ -137,7 +188,7 @@ function ChatPage() {
                     const data = await respo.json();
                     setMessages(Array.isArray(data) ? data : (data.messages || []));
                 } catch (err) {
-                    console.error(" you know whats wrong 100% ", err);
+                    log.error('Could not load the messages of this chat', err);
                     setMessages([]); 
                 }
             };
@@ -182,15 +233,19 @@ function ChatPage() {
                 })
             });
 
-            console.log(respy);
-            if (!respy.ok) throw new Error('Failed to send');
+            const result = await respy.json().catch(() => ({}));
+            if (!respy.ok) {
+                alert(result.error || 'Failed to submit review');
+                return;
+            }
 
             setReviewText('');
             setReviewRating(0);
             setShowReviewModal(false);
-            alert('Review submitted successfully!');
+            // One review per person: sending again updates the earlier one
+            alert(result.message || 'Review submitted');
         } catch (err) {
-            console.error('Failed to send review', err);
+            log.error('Failed to send review', err);
             alert('Failed to submit review');
         }
     };
@@ -249,6 +304,9 @@ function ChatPage() {
                             <button className="quick-action-btn">
                                 Messages
                             </button>
+                            <button className="quick-action-btn" onClick={() => navigate('/housing')}>
+                              Housing
+                            </button>
                             <button className="quick-action-btn" onClick={logout}>
                                 Log Out
                             </button>
@@ -287,7 +345,16 @@ function ChatPage() {
                                         <div className="chat-avatar">
                                             <Avatar src={selectedChat.owner_of_post_photo} name={selectedChat.owner_of_post_fullname} size={36} />
                                         </div>
-                                        <div className="active-user-name">{selectedChat.owner_of_post_fullname}</div>
+                                        <div className="active-user-name">
+                                            {selectedChat.owner_of_post_fullname}
+                                            <button
+                                                type="button"
+                                                className="chat-profile-link"
+                                                onClick={() => navigate(`/users/${selectedChat.owner_of_post_id}`)}
+                                            >
+                                                View profile
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="active-user-name">
                                         <button onClick={() => setShowReviewModal(true)}> Give Review </button>

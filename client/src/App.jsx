@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import Avatar from './components/Avatar.jsx';
 import { useNavigate } from 'react-router-dom';
+import { createLogger } from './lib/logger';
+
+const log = createLogger('marketplace');
 
 function App() {
 
@@ -25,7 +28,7 @@ function App() {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      console.log('No token found, user might not be logged in');
+      log.debug('No token found, user might not be logged in');
       return;
     }
 
@@ -41,14 +44,20 @@ function App() {
 
         const data = await res.json();
 
+        // The marketplace is for students; landlords only use housing
+        if (data.role === 'landlord') {
+          navigate('/housing/mine', { replace: true });
+          return;
+        }
+
         setProfileData(data);
       } catch (err) {
-        console.error('Error fetching profile:', err);
+        log.error('Error fetching profile:', err);
       }
     };
 
     fetchProfileData();
-  }, []);
+  }, [navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -75,7 +84,7 @@ function App() {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      console.error("problem with local token for logged in user");
+      log.warn('No login token found');
     }
 
     const formDataToSend = new FormData();
@@ -87,7 +96,7 @@ function App() {
       formDataToSend.append('photo', formData.photo);
     }
 
-    console.log('Form submitted:', formData);
+    log.debug('Form submitted:', formData);
 
     try {
       const response = await fetch(`/api/listings/upload_listing`, {
@@ -105,13 +114,13 @@ function App() {
       const result = await response.json();
 
       if (!response.ok) {
-        console.error("nor resonpose back");
+        log.error('Saving the listing failed: no OK response from the server');
       }
 
-      console.log(result.message);
+      log.debug(result.message);
       setIsModalOpen(false);
     } catch (err) {
-      console.error("error in uploading to db listing", err);
+      log.error('Could not save the listing', err);
     }
   };
 
@@ -142,7 +151,7 @@ function App() {
         const data = await response.json();
         setItemListings(data);
       } catch (err) {
-        console.error('Failed to fetch listings', err);
+        log.error('Failed to fetch listings', err);
       }
     };
 
@@ -174,7 +183,7 @@ function App() {
 
     try {
       const receiverId = selectedListing.owner_id;
-      console.log(receiverId);
+      log.debug('Opening chat with user', receiverId);
 
       const resp = await fetch('/api/messages/create_chat', {
         method: 'POST',
@@ -192,7 +201,7 @@ function App() {
       const chatId = data.chat_id;
       navigate(`/chatPage?chatId=${chatId}`);
     } catch (err) {
-      console.error("error in creating the chat:", err);
+      log.error('Could not open the chat', err);
     }
   };
 
@@ -235,7 +244,7 @@ function App() {
       closeReportModal(true);
       setIsListingModalOpen(true);
     } catch (err) {
-      console.error("Error submitting the report from modal: ", err);
+      log.error('Could not submit the report', err);
     }
   };
 
@@ -287,6 +296,9 @@ function App() {
               </button>
               <button className="quick-action-btn" onClick={() => navigate('/chatPage')}>
                 Messages
+              </button>
+              <button className="quick-action-btn" onClick={() => navigate('/housing')}>
+                Housing
               </button>
               <button className="quick-action-btn" onClick={logout}>
                 Log Out

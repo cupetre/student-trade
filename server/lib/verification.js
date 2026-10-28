@@ -29,7 +29,8 @@ function escapeHtml(value) {
         .replace(/"/g, '&quot;');
 }
 
-async function sendVerificationEmail({ email, fullname, token }) {
+async function sendVerificationEmail({ email, fullname, token, role = 'student' }) {
+    const whatToConfirm = role === 'student' ? 'your university email' : 'your email address';
     const appUrl = (process.env.APP_URL || 'http://localhost:3131').replace(/\/+$/, '');
     const link = `${appUrl}/verify-email?token=${token}`;
     const firstName = (fullname || '').trim().split(/\s+/)[0] || 'there';
@@ -39,7 +40,7 @@ async function sendVerificationEmail({ email, fullname, token }) {
     const text =
 `Hi ${firstName},
 
-Welcome to Student Trade! Confirm your university email to activate your account:
+Welcome to Student Trade! Confirm ${whatToConfirm} to activate your account:
 
 ${link}
 
@@ -51,7 +52,7 @@ Student Trade`;
 <div style="font-family: Arial, Helvetica, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1f2937;">
   <h2 style="color: #4684c7; margin: 0 0 16px;">Student Trade</h2>
   <p>Hi ${escapeHtml(firstName)},</p>
-  <p>Welcome to Student Trade! Confirm your university email to activate your account.</p>
+  <p>Welcome to Student Trade! Confirm ${whatToConfirm} to activate your account.</p>
   <p style="margin: 28px 0;">
     <a href="${link}" style="background: #4684c7; color: #ffffff; padding: 12px 22px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Confirm my email</a>
   </p>

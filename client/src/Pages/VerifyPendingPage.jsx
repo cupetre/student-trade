@@ -18,6 +18,8 @@ const VerifyPendingPage = () => {
     const location = useLocation();
     const fromLogin = Boolean(location.state?.fromLogin);
     const emailSendFailed = location.state?.emailSent === false;
+    const isLandlord = location.state?.role === 'landlord';
+    const emailWord = isLandlord ? 'email' : 'university email';
 
     const [email, setEmail] = useState(location.state?.email || readStoredEmail());
     const [knownEmail] = useState(Boolean(location.state?.email || readStoredEmail()));
@@ -69,9 +71,9 @@ const VerifyPendingPage = () => {
                     </svg>
                 </div>
 
-                <span className="auth-brand">Student Trade</span>
+                <Link to="/" className="auth-brand">Student Trade</Link>
                 <h1 className="auth-title">
-                    {fromLogin ? 'Your email isn’t confirmed yet' : 'Confirm your university email'}
+                    {fromLogin ? 'Your email isn’t confirmed yet' : `Confirm your ${emailWord}`}
                 </h1>
 
                 {knownEmail && email ? (
@@ -80,11 +82,11 @@ const VerifyPendingPage = () => {
                         Open it to activate your account.
                     </p>
                 ) : (
-                    <p className="auth-subtitle">Open the confirmation link we sent to your university email.</p>
+                    <p className="auth-subtitle">Open the confirmation link we sent to your {emailWord}.</p>
                 )}
 
                 <p className="auth-lock-note">
-                    Until you confirm your existing university email, you can&apos;t access Student Trade.
+                    Until you confirm your {isLandlord ? 'email' : 'existing university email'}, you can&apos;t access Student Trade.
                 </p>
 
                 {error && <div className="auth-alert auth-alert--error" role="alert">{error}</div>}
@@ -92,7 +94,7 @@ const VerifyPendingPage = () => {
 
                 {!knownEmail && (
                     <div className="auth-field auth-field--left">
-                        <label htmlFor="email">Your university email</label>
+                        <label htmlFor="email">Your {emailWord}</label>
                         <input
                             id="email"
                             type="email"

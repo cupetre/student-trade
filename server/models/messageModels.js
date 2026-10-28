@@ -37,6 +37,10 @@ async function chatHistory({ user1_id }) {
     });
 };
 
+async function findChatById(id) {
+    return prisma.chat.findUnique({ where: { id } });
+}
+
 async function createMessage({ chat_id, sender_id, receiver_id, content }) {
     return prisma.message.create({
         data: { chat_id, sender_id, receiver_id , content }
@@ -52,6 +56,7 @@ async function readMessage({ chat_id }) {
 };
 
 module.exports = {
+    findChatById,
     openChat,
     chatHistory,
     createMessage,

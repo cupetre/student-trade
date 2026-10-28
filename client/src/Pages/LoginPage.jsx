@@ -41,8 +41,9 @@ const Login = () => {
 
         if (ok && data.token) {
             localStorage.setItem('token', data.token);
+            // Back to the page they originally tried to open (e.g. a chat link), else the app.
             // replace: the back button shouldn't bring you back to the login form
-            navigate('/', { replace: true });
+            navigate(location.state?.from || '/', { replace: true });
             return;
         }
 
@@ -54,7 +55,7 @@ const Login = () => {
         <div className="auth-page">
             <div className="auth-card">
                 <div className="auth-header">
-                    <span className="auth-brand">Student Trade</span>
+                    <Link to="/" className="auth-brand">Student Trade</Link>
                     <h1 className="auth-title">Welcome back</h1>
                     <p className="auth-subtitle">Log in with your university email.</p>
                 </div>

@@ -1,66 +1,88 @@
-const { openChat, chatHistory, createMessage, readMessage } = require('../models/messageModels.js');
+const { openChat, chatHistory, readMessage } = require('../models/messageModels.js');
+const { ChatError, getChatForMember, sendChatMessage, userRoom } = require('../services/messageService');
+const { toId } = require('../lib/parse');
+const { toChatSummary } = require('../lib/dto');
+const { findUserWithProfile, haveChatted } = require('../models/profileModels.js');
+const { missingProfileFields } = require('../lib/profileValidation');
 
 async function createChat(req, res) {
+    const user1_id = req.user.id;
+    const user2_id = toId(req.body.user2_id);
+
+    if (!user2_id) return res.status(400).json({ error: 'Invalid user' });
+    if (user2_id === user1_id) return res.status(400).json({ error: "You can't start a chat with yourself" });
+
     try {
-        const { user2_id } = req.body;
-        const user1_id = req.user.id;
+        // Students write to landlords only with a complete profile (same rule as
+        // the housing "Message" button, so it can't be skipped through this endpoint)
+        const [me, other] = await Promise.all([findUserWithProfile(user1_id), findUserWithProfile(user2_id)]);
+        if (!other) return res.status(404).json({ error: 'User not found' });
+        if (me && me.role === 'student' && other.role === 'landlord' && !(await haveChatted(user1_id, user2_id))) {
+            const missing = missingProfileFields(me, me.studentProfile);
+            if (missing.length) {
+                return res.status(403).json({
+                    error: 'Complete your profile first, so the owner knows who is contacting them.',
+                    code: 'PROFILE_INCOMPLETE',
+                    missing,
+                });
+            }
+        }
 
         const chat_id = await openChat({ user1_id, user2_id });
-
         res.json({ chat_id });
     } catch (err) {
-        console.error("Error creating chat:", err);
-        res.status(500).json({ error: "failed to create chat" });
+        // P2003 = foreign key failed: the other user doesn't exist
+        if (err.code === 'P2003') return res.status(404).json({ error: 'User not found' });
+        req.log.error({ err }, 'failed to create chat');
+        res.status(500).json({ error: 'Failed to create chat' });
     }
 };
 
 async function getHistory(req, res) {
-    const user1_id = req.user.id;
+    const myId = req.user.id;
 
     try {
-        const chats = await chatHistory({ user1_id });
-        res.json(chats);
+        const chats = await chatHistory({ user1_id: myId });
+        res.json(chats.map(chat => toChatSummary(chat, myId)));
     } catch (err) {
-        res.status(500).json({ error: "Failed to load chat history" });
+        req.log.error({ err }, 'failed to load chat history');
+        res.status(500).json({ error: 'Failed to load chat history' });
     }
 }
 
-async function sendMessage(req,res) {
-    const io = req.io;
-    const connectedUsers = req.connectedUsers;
-    const sender_id = req.user.id;
-    const { chat_id, receiver_id , content } = req.body;
-
-    if (!chat_id || !receiver_id || !content) {
-        return res.status(400).json({ error: "Missing fields" });
-    }
-
+async function sendMessage(req, res) {
     try {
-        const message = await createMessage({ chat_id, sender_id, receiver_id, content })
-        
-        const receiverSocket = connectedUsers.get(receiver_id);
+        const { message, receiverId } = await sendChatMessage({
+            chatId: req.body.chat_id,
+            senderId: req.user.id,
+            content: req.body.content,
+        });
 
-        if ( receiverSocket && io) {
-            io.to(receiverSocket).emit('new_message', message);
-        }
-        
+        // Deliver live to the other person if they're online
+        if (req.io) req.io.to(userRoom(receiverId)).emit('new_message', message);
+
         res.json(message);
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "DB error creating message" });
+        if (err instanceof ChatError) return res.status(err.status).json({ error: err.message });
+        req.log.error({ err }, 'failed to send message');
+        res.status(500).json({ error: 'Failed to send message' });
     }
 };
 
 async function receiveMessages(req, res) {
-    const chat_id = req.params.chat_id;
+    const chatId = toId(req.params.chat_id);
+    if (!chatId) return res.status(400).json({ error: 'Invalid chat' });
 
-    try { 
-        const result = await readMessage({chat_id});
+    try {
+        // Only the two people in a chat may read it
+        const chat = await getChatForMember(chatId, req.user.id);
+        if (!chat) return res.status(404).json({ error: 'Chat not found' });
 
-        res.json(result);
+        const messages = await readMessage({ chat_id: chatId });
+        res.json(messages);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: " error in DB " });
+        req.log.error({ err, chatId }, 'failed to load messages');
+        res.status(500).json({ error: 'Failed to load messages' });
     }
 };
 
@@ -68,5 +90,5 @@ module.exports = {
     createChat,
     getHistory,
     sendMessage,
-    receiveMessages
-}
+    receiveMessages,
+};

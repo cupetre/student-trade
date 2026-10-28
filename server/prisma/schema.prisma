@@ -25,6 +25,12 @@ model User {
   // Email verification: accounts can't log in until email_verified is true.
   // We store only a SHA-256 hash of the emailed token, never the token itself,
   // so a leaked database can't be used to verify accounts.
+  // student (university email) | landlord (any email, approved by hand) | admin
+  role            String  @default("student") @db.VarChar(20)
+  // landlords only: pending | approved | rejected
+  landlord_status String? @db.VarChar(20)
+  phone           String? @db.VarChar(50)
+
   email_verified          Boolean   @default(false)
   verification_token_hash String?   @unique @db.VarChar(64)
   verification_expires_at DateTime?
@@ -39,6 +45,11 @@ model User {
   reportsReceived  Report[]      @relation("ReportReported")
   reviewsWritten   Review[]      @relation("ReviewReviewer")
   reviewsReceived  Review[]      @relation("ReviewReviewee")
+  housingListings  HousingListing[]
+  savedListings    SavedListing[]
+  studentProfile   StudentProfile?
+  tenanciesAsLandlord Tenancy[]   @relation("TenancyLandlord")
+  tenanciesAsStudent  Tenancy[]   @relation("TenancyStudent")
 }
 
 model ListingItem {
@@ -98,4 +109,183 @@ model Review {
   rating      Int      @db.SmallInt
   description String?
   created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  // marketplace: allowed after a chat, one review per person.
+  // housing: allowed only between a landlord and a confirmed tenant, one per tenancy each way.
+  context            String          @default("marketplace") @db.VarChar(20)
+  tenancy_id         Int?
+  tenancy            Tenancy?        @relation(fields: [tenancy_id], references: [id], onDelete: SetNull)
+  housing_listing_id Int?
+  housing_listing    HousingListing? @relation(fields: [housing_listing_id], references: [id], onDelete: SetNull)
+  listing_title      String?         @db.VarChar(120) // kept even if the listing is deleted later
+
+  @@unique([tenancy_id, reviewer_id])
+  @@index([reviewee_id])
+  @@index([reviewer_id, reviewee_id])
+  @@index([housing_listing_id])
+}
+
+// People who aren't students (homeowners, agencies, businesses, organizations)
+// leave their details on the landing page so we can contact them.
+model InterestLead {
+  id         Int      @id @default(autoincrement())
+  type       String   @db.VarChar(20)   // homeowner | agency | partner
+  name       String   @db.VarChar(255)
+  email      String   @db.VarChar(255)
+  phone      String?  @db.VarChar(50)
+  city       String?  @db.VarChar(100)
+  message    String?
+  language   String?  @db.VarChar(5)
+  contacted  Boolean  @default(false)
+  created_at DateTime @default(now())
+}
+
+// ---------- Housing ----------
+
+// A room, flat or house for rent. Landlords post "rental" listings; verified
+// students post "sublet" (replace me) or "roommate" (spare room in our flat).
+model HousingListing {
+  id            Int    @id @default(autoincrement())
+  owner_id      Int
+  owner         User   @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  listing_type  String @db.VarChar(20) // rental | sublet | roommate
+  property_type String @db.VarChar(30) // room_in_flat | room_in_house | shared_room | studio | apartment | house
+
+  title       String  @db.VarChar(120)
+  description String?
+
+  // Money: everything is per person, per month
+  rent_per_person    Decimal  @db.Decimal(10, 2)
+  deposit            Decimal? @db.Decimal(10, 2)
+  utilities_included Boolean  @default(false)
+  utilities_estimate Decimal? @db.Decimal(10, 2)
+
+  // How many students the place is looking for, and how many spots are still free
+  spots_total Int    @db.SmallInt
+  spots_open  Int    @db.SmallInt
+  total_rooms Int?   @db.SmallInt
+  bathrooms   Int?   @db.SmallInt
+  area_m2     Int?
+  furnishing  String @db.VarChar(20) // furnished | semi_furnished | unfurnished
+
+  street        String  @db.VarChar(200)
+  city          String  @db.VarChar(100)
+  postal_code   String? @db.VarChar(10)
+  neighbourhood String? @db.VarChar(100)
+
+  available_from  DateTime  @db.Date
+  available_until DateTime? @db.Date
+  min_stay_months Int?      @db.SmallInt
+
+  // Things international students in Slovenia ask about first
+  address_registration_allowed Boolean @default(false)
+  subsidy_eligible             Boolean @default(false)
+  smoking_allowed              Boolean @default(false)
+  pets_allowed                 Boolean @default(false)
+  amenities                    String[] @default([])
+  languages                    String[] @default([]) // languages the owner speaks
+
+  video_tour_url String? @db.VarChar(500)
+
+  // pending_review | active | paused | filled | archived | rejected
+  status      String    @default("pending_review") @db.VarChar(20)
+  reviewed_at DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @default(now()) @updatedAt
+
+  photos    HousingPhoto[]
+  savedBy   SavedListing[]
+  tenancies Tenancy[]
+  reviews   Review[]
+
+  @@index([status, city])
+  @@index([owner_id])
+}
+
+model HousingPhoto {
+  id         Int            @id @default(autoincrement())
+  listing_id Int
+  listing    HousingListing @relation(fields: [listing_id], references: [id], onDelete: Cascade)
+  url        String         @db.VarChar(500)
+  position   Int            @default(0) @db.SmallInt
+  created_at DateTime       @default(now())
+
+  @@index([listing_id])
+}
+
+// A student's favourites (the heart icon)
+model SavedListing {
+  user_id    Int
+  listing_id Int
+  user       User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  listing    HousingListing @relation(fields: [listing_id], references: [id], onDelete: Cascade)
+  created_at DateTime       @default(now())
+
+  @@id([user_id, listing_id])
+}
+
+// ---------- Student profiles ----------
+
+// What a student shares so homeowners know who is contacting them.
+// Name, photo and bio stay on User; this holds the rest.
+model StudentProfile {
+  user_id Int  @id
+  user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // studies
+  university      String? @db.VarChar(150)
+  faculty         String? @db.VarChar(150)
+  study_programme String? @db.VarChar(150)
+  study_level     String? @db.VarChar(20) // bachelor | master | phd | other
+  study_year      Int?    @db.SmallInt
+  student_type    String? @db.VarChar(20) // regular | exchange
+
+  // where they're from
+  home_country String?  @db.VarChar(2) // ISO code, e.g. "SI", "MK"
+  home_city    String?  @db.VarChar(100)
+  languages    String[] @default([])
+
+  // about them (birth_date is private: others only see the age)
+  birth_date DateTime? @db.Date
+  smoker     Boolean?
+  has_pets   Boolean?
+  lifestyle  String[]  @default([])
+
+  // housing needs: stored, but private until we decide (user testing) who should see them
+  budget_max     Int?
+  move_in_date   DateTime? @db.Date
+  preferred_city String?   @db.VarChar(100)
+  stay_months    Int?      @db.SmallInt
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+}
+
+// ---------- Tenancies ----------
+
+// "This student lives / lived at this place." The landlord adds the student,
+// the student confirms. Only a confirmed tenancy lets the two review each other,
+// so housing reviews always come from real tenants and real landlords.
+model Tenancy {
+  id            Int             @id @default(autoincrement())
+  listing_id    Int?
+  listing       HousingListing? @relation(fields: [listing_id], references: [id], onDelete: SetNull)
+  listing_title String          @db.VarChar(120) // kept if the listing is deleted
+  landlord_id   Int
+  landlord      User            @relation("TenancyLandlord", fields: [landlord_id], references: [id], onDelete: Cascade)
+  student_id    Int
+  student       User            @relation("TenancyStudent", fields: [student_id], references: [id], onDelete: Cascade)
+
+  // pending | confirmed | declined | ended
+  status       String    @default("pending") @db.VarChar(20)
+  created_at   DateTime  @default(now())
+  confirmed_at DateTime?
+  ended_at     DateTime?
+
+  reviews Review[]
+
+  @@unique([listing_id, student_id])
+  @@index([student_id])
+  @@index([landlord_id])
 }

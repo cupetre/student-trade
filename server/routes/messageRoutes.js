@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { createChat, getHistory, sendMessage, receiveMessages } = require('../controllers/messageController.js');
-const { authenticationToken } = require('../configs/authConfig.js');
+const { authenticationToken } = require('../configs/authConfig');
 
 router.post('/create_chat', authenticationToken, createChat);
 router.get('/get_history', authenticationToken, getHistory);

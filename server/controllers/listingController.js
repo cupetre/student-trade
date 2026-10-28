@@ -1,97 +1,119 @@
-const { updateListing, 
-    addListing, 
-    viewListings, 
+const {
+    updateListing,
+    addListing,
+    viewListings,
     fetchMyListings,
-    removeListing
- } = require('../models/listingModels.js');
+    removeListing,
+} = require('../models/listingModels.js');
+const { toId, toTrimmedString, toPrice } = require('../lib/parse');
+const { toListingDto } = require('../lib/dto');
+
+const MAX_TITLE = 255;
+const MAX_DESCRIPTION = 5000;
 
 async function editListing(req, res) {
-    const { id, title, description, price, date } = req.body;
-    const photoPath = req.file ? req.file.location : null;
+    const id = toId(req.body.id);
+    const title = toTrimmedString(req.body.title, MAX_TITLE);
+    const description = toTrimmedString(req.body.description, MAX_DESCRIPTION);
+    const price = toPrice(req.body.price);
 
-    try { 
-        await updateListing({ 
-            id, 
+    if (!id) return res.status(400).json({ error: 'Invalid listing' });
+    if (!title) return res.status(400).json({ error: 'Title is required' });
+    if (price === null) return res.status(400).json({ error: 'Please enter a valid price' });
+
+    try {
+        const result = await updateListing({
+            id,
             owner_id: req.user.id,
             title,
             description,
             price,
-            photo: photoPath,
-            date
+            // Only replace the photo when a new one was uploaded; undefined
+            // tells Prisma to leave the existing photo alone.
+            photo: req.file ? req.file.location : undefined,
         });
-        res.status(200).json({ message: 'Listing updated successfully' });
-        } catch (err) {
-            console.error(err);
-            res.status(500).json({ error: 'Failed to update listing' });
+
+        if (result.count === 0) {
+            return res.status(404).json({ error: 'Listing not found' });
+        }
+
+        req.log.info({ listingId: id }, 'listing updated');
+        res.json({ message: 'Listing updated successfully' });
+    } catch (err) {
+        req.log.error({ err, listingId: id }, 'failed to update listing');
+        res.status(500).json({ error: 'Failed to update listing' });
     }
 };
 
 async function uploadListing(req, res) {
-    const {title, description, price, date} = req.body;
-    const photoPath = req.file ? req.file.location : null;
+    const title = toTrimmedString(req.body.title, MAX_TITLE);
+    const description = toTrimmedString(req.body.description, MAX_DESCRIPTION);
+    const price = toPrice(req.body.price);
+
+    if (!title) return res.status(400).json({ error: 'Title is required' });
+    if (price === null) return res.status(400).json({ error: 'Please enter a valid price' });
 
     try {
-        await addListing({
+        const listing = await addListing({
             owner_id: req.user.id,
             title,
             description,
             price,
-            photo: photoPath,
-            date
+            photo: req.file ? req.file.location : null,
         });
-        res.status(200).json("works fine");
-    } catch ( err ){
-        console.error(err);
-        res.status(500).json({ error: " failed to add it "});
+
+        req.log.info({ listingId: listing.id }, 'listing created');
+        res.status(201).json({ message: 'Listing created', listing: toListingDto(listing) });
+    } catch (err) {
+        req.log.error({ err }, 'failed to create listing');
+        res.status(500).json({ error: 'Failed to create listing' });
     }
 };
 
-async function showListings(req,res) {
-    const owner_id = req.user.id;
-
+async function showListings(req, res) {
     try {
-        const listings = await viewListings({ owner_id });
-        res.json(listings);
+        const listings = await viewListings({ owner_id: req.user.id });
+        res.json(listings.map(toListingDto));
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "failed loading listings "});
+        req.log.error({ err }, 'failed to load listings');
+        res.status(500).json({ error: 'Failed to load listings' });
     }
 };
 
 async function showMyListings(req, res) {
-    const owner_id = req.user.id;
-
     try {
-        const listings = await fetchMyListings({owner_id});
-        res.json(listings);
+        const listings = await fetchMyListings({ owner_id: req.user.id });
+        res.json(listings.map(toListingDto));
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "not found in db listings"});
+        req.log.error({ err }, 'failed to load own listings');
+        res.status(500).json({ error: 'Failed to load your listings' });
     }
 };
 
 async function deleteListing(req, res) {
-    const owner_id = req.user.id;
-    const {listingId} = req.params;
+    const id = toId(req.params.listingId);
+    if (!id) return res.status(400).json({ error: 'Invalid listing' });
 
     try {
-        const result = await removeListing({ id: listingId, owner_id })
+        // owner_id in the filter means you can only delete your own listings
+        const result = await removeListing({ id, owner_id: req.user.id });
 
-        if ( result.count === 0 ) {
-            return res.status(404).json({ error: "fault in fetching , doesnt exist "});
+        if (result.count === 0) {
+            return res.status(404).json({ error: 'Listing not found' });
         }
 
-        res.status(200).json( "message: Deleted successfully ");
-    } catch ( err ) { 
-        console.error("not working properly");
-        res.status(500).json({error: "not working in db/back "});
+        req.log.info({ listingId: id }, 'listing deleted');
+        res.json({ message: 'Deleted successfully' });
+    } catch (err) {
+        req.log.error({ err, listingId: id }, 'failed to delete listing');
+        res.status(500).json({ error: 'Failed to delete listing' });
     }
 };
 
-module.exports = { 
+module.exports = {
     editListing,
     uploadListing,
     showListings,
     showMyListings,
-    deleteListing
+    deleteListing,
 };

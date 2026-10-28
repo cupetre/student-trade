@@ -17,36 +17,46 @@ const {
 } = require('../lib/verification');
 const { normalizeEmail, isAllowedEmailDomain } = require('../lib/emailDomain');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
+// index.js refuses to start without JWT_SECRET, so it's always set here
+const JWT_SECRET = process.env.JWT_SECRET;
 
 async function editProfile(req, res) {
     const owner_id = req.user.id;
-    const { fullname, bio } = req.body;
     const profilePicPath = req.file ? req.file.location : null;
+
+    // Only name, bio and photo can change here (the email is fixed after sign-up)
+    const fullname = typeof req.body.fullname === 'string' ? req.body.fullname.trim() : undefined;
+    const bio = typeof req.body.bio === 'string' ? req.body.bio.trim().slice(0, 1000) : undefined;
+
+    if (fullname !== undefined && (fullname.length < 2 || fullname.length > 100)) {
+        return res.status(400).json({ error: 'Full name must be between 2 and 100 characters', field: 'fullname' });
+    }
 
     try {
         const result = await updateUserProfile({
             id: owner_id,
             fullname,
-            email,
             bio,
-            profilePicPath
+            profilePicPath,
         });
         req.log.info({ userId: owner_id }, 'profile updated');
         res.json({ success: true, result });
     } catch (err) {
-        // req.log comes from pino-http (see index.js) — it's a child logger
-        // that already knows this request's id, so every line it writes
-        // during this request can be correlated together.
         req.log.error({ err, userId: owner_id }, 'failed to update profile');
         res.status(500).json({ error: 'Failed to update profile' });
     }
-};
+}
 
-async function registerUser(req, res) {
+const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Students and landlords sign up the same way, with two differences:
+// students need a university email; landlords can use any email, may add a
+// phone number, and are approved by hand before they can post listings.
+async function register(req, res, role) {
     const fullname = typeof req.body.fullname === 'string' ? req.body.fullname.trim() : '';
     const { password } = req.body;
     const email = normalizeEmail(req.body.email);
+    const phone = typeof req.body.phone === 'string' ? req.body.phone.trim().slice(0, 50) || null : null;
 
     if (!fullname || !email || !password) {
         return res.status(400).json({ error: 'Full name, email and password are required' });
@@ -62,12 +72,21 @@ async function registerUser(req, res) {
         return res.status(400).json({ error: 'Password must be between 8 and 72 characters', field: 'password' });
     }
 
-    if (!isAllowedEmailDomain(email)) {
+    if (role === 'student' && !isAllowedEmailDomain(email)) {
         req.log.warn({ email }, 'registration rejected: email domain not allowed');
         return res.status(400).json({ error: 'Please register with your university email address', field: 'email' });
     }
+    if (role === 'landlord' && !EMAIL_FORMAT.test(email)) {
+        return res.status(400).json({ error: 'Please enter a valid email address', field: 'email' });
+    }
 
     const { token, tokenHash, expiresAt, sentAt } = createVerificationToken();
+
+    // In development landlords are approved straight away (HOUSING_AUTO_APPROVE=true);
+    // in production they wait until you approve them.
+    const landlordStatus = role === 'landlord'
+        ? (process.env.HOUSING_AUTO_APPROVE === 'true' ? 'approved' : 'pending')
+        : null;
 
     try {
         await registerUserData({
@@ -77,8 +96,11 @@ async function registerUser(req, res) {
             verificationTokenHash: tokenHash,
             verificationExpiresAt: expiresAt,
             verificationSentAt: sentAt,
+            role,
+            landlordStatus,
+            phone: role === 'landlord' ? phone : null,
         });
-        req.log.info({ email }, 'user registered (unverified)');
+        req.log.info({ email, role }, 'user registered (unverified)');
     } catch (err) {
         // P2002 = Prisma's "unique constraint failed" (email is @unique in the schema)
         if (err.code === 'P2002') {
@@ -95,14 +117,22 @@ async function registerUser(req, res) {
     // user can press "resend" on the next screen, so this isn't a failed sign-up.
     let emailSent = true;
     try {
-        await sendVerificationEmail({ email, fullname, token });
+        await sendVerificationEmail({ email, fullname, token, role });
     } catch (err) {
         emailSent = false;
         req.log.error({ err, email }, 'failed to send verification email');
     }
 
-    res.status(201).json({ message: 'Account created. Check your email to confirm it.', email, emailSent });
-};
+    res.status(201).json({ message: 'Account created. Check your email to confirm it.', email, emailSent, role });
+}
+
+function registerUser(req, res) {
+    return register(req, res, 'student');
+}
+
+function registerLandlord(req, res) {
+    return register(req, res, 'landlord');
+}
 
 // Same response for "no such account" and "wrong password", so the login form
 // can't be used to find out which emails are registered. The logs still record
@@ -218,7 +248,7 @@ async function resendVerification(req, res) {
 
         const { token, tokenHash, expiresAt, sentAt } = createVerificationToken();
         await setVerificationToken({ id: user.id, tokenHash, expiresAt, sentAt });
-        await sendVerificationEmail({ email: user.email, fullname: user.fullname, token });
+        await sendVerificationEmail({ email: user.email, fullname: user.fullname, token, role: user.role });
 
         req.log.info({ userId: user.id }, 'verification email resent');
         res.json(GENERIC);
@@ -243,6 +273,7 @@ async function viewProfile(req, res) {
 module.exports = {
     editProfile,
     registerUser,
+    registerLandlord,
     loginUser,
     viewProfile,
     verifyEmail,

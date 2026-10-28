@@ -88,7 +88,7 @@ const Register = () => {
         <div className="auth-page">
             <div className="auth-card">
                 <div className="auth-header">
-                    <span className="auth-brand">Student Trade</span>
+                    <Link to="/" className="auth-brand">Student Trade</Link>
                     <h1 className="auth-title">Create your account</h1>
                     <p className="auth-subtitle">Buy, sell and chat with students from your university.</p>
                 </div>

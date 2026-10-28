@@ -1,0 +1,56 @@
+{
+    // Run & Debug panel in VS Code (Ctrl+Shift+D). Pick a configuration and press F5.
+    // Breakpoints: click left of a line number in any server file or React file.
+    // Docker (the database) must be running first: docker compose up -d
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Server: debug (restarts on save)",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/server",
+            "runtimeExecutable": "node",
+            "runtimeArgs": ["--watch", "--import", "tsx"],
+            "program": "${workspaceFolder}/server/index.js",
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+        },
+        {
+            "name": "Server: debug with SQL logging",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/server",
+            "runtimeExecutable": "node",
+            "runtimeArgs": ["--import", "tsx"],
+            "program": "${workspaceFolder}/server/index.js",
+            "env": { "LOG_SQL": "true", "LOG_LEVEL": "debug" },
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+        },
+        {
+            "name": "Server: run tests",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/server",
+            "runtimeExecutable": "node",
+            "runtimeArgs": ["--test"],
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+        },
+        {
+            "name": "Client: Chrome (starts Vite)",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:3131",
+            "webRoot": "${workspaceFolder}/client",
+            "preLaunchTask": "client: vite dev"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Full stack: server + client",
+            "configurations": ["Server: debug (restarts on save)", "Client: Chrome (starts Vite)"],
+            "stopAll": true
+        }
+    ]
+}
