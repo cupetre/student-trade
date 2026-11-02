@@ -1,4 +1,7 @@
-import { BRAND } from '../lib/brand';
+import { BRAND_NAMES } from '../lib/brand';
+
+const SL = BRAND_NAMES.sl;
+const EN = BRAND_NAMES.en;
 
 // Text for log in, sign up and email confirmation, in Slovenian (default) and English.
 // Student sign-up speaks to students informally ("ti"); everything shared with
@@ -22,7 +25,7 @@ export const authCopy = {
         },
         login: {
             title: 'Dobrodošli nazaj',
-            subtitle: `Prijavite se v svoj račun ${BRAND}.`,
+            subtitle: `Prijavite se v svoj račun ${SL}.`,
             email: 'E-naslov', password: 'Geslo',
             submit: 'Prijava', submitting: 'Prijavljam …',
             missing: 'Vpišite e-naslov in geslo.',
@@ -80,7 +83,7 @@ export const authCopy = {
             sentBefore: 'Povezavo za potrditev smo poslali na ',
             sentAfter: '. Odprite jo, da aktivirate račun.',
             openLink: (w) => `Odprite povezavo za potrditev, ki smo jo poslali na vaš ${w}.`,
-            lockNote: `Dokler ne potrdite e-naslova, ${BRAND} ne morete uporabljati.`,
+            lockNote: 'Dokler ne potrdite e-naslova, Sidra ne morete uporabljati.',
             yourEmail: (w) => `Vaš ${w}`,
             spamHint: 'Ni prispelo? Preverite mapo z neželeno pošto ali pošljite novo povezavo.',
             sending: 'Pošiljam …',
@@ -94,7 +97,7 @@ export const authCopy = {
         verify: {
             confirming: 'Potrjujem e-naslov …',
             confirmed: 'E-naslov je potrjen!',
-            active: `Vaš račun je aktiven. Prijavite se in začnite uporabljati ${BRAND}.`,
+            active: `Vaš račun je aktiven. Prijavite se in začnite uporabljati ${SL}.`,
             login: 'Prijava',
             expired: 'Ta povezava je potekla',
             newLink: 'Pošlji novo povezavo',
@@ -120,7 +123,7 @@ export const authCopy = {
         },
         login: {
             title: 'Welcome back',
-            subtitle: `Log in to your ${BRAND} account.`,
+            subtitle: `Log in to your ${EN} account.`,
             email: 'Email', password: 'Password',
             submit: 'Log in', submitting: 'Logging in…',
             missing: 'Please enter your email and password.',
@@ -178,7 +181,7 @@ export const authCopy = {
             sentBefore: 'We sent a confirmation link to ',
             sentAfter: '. Open it to activate your account.',
             openLink: (w) => `Open the confirmation link we sent to your ${w}.`,
-            lockNote: `Until you confirm your email, you can’t use ${BRAND}.`,
+            lockNote: `Until you confirm your email, you can’t use ${EN}.`,
             yourEmail: (w) => `Your ${w}`,
             spamHint: 'Didn’t get it? Check your spam folder, or send a new link.',
             sending: 'Sending…',
@@ -192,7 +195,7 @@ export const authCopy = {
         verify: {
             confirming: 'Confirming your email…',
             confirmed: 'Email confirmed!',
-            active: `Your account is active. Log in to start using ${BRAND}.`,
+            active: `Your account is active. Log in to start using ${EN}.`,
             login: 'Log in',
             expired: 'This link has expired',
             newLink: 'Send a new link',

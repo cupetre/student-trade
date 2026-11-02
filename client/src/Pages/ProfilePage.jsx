@@ -239,12 +239,12 @@ const ProfilePage = () => {
                             <ReviewList reviews={reviews}
                                 emptyText={landlord
                                     ? 'No reviews yet. Tenants can review you once they’ve stayed in one of your places.'
-                                    : 'No reviews yet. After you buy, sell or rent through Kampus, people can review you from your conversation.'} />
+                                    : 'No reviews yet. After you buy, sell or rent through Anchor, people can review you from your conversation.'} />
                         </section>
                     </div>
 
                     {/* ---- shortcuts ---- */}
-                    <aside className="mp-side" aria-label="Your things on Kampus">
+                    <aside className="mp-side" aria-label="Your things on Anchor">
                         {!landlord && (
                             <Link to="/profile/student" className={`mp-card mp-rental ${rentalComplete ? 'is-done' : ''}`}>
                                 <span className="mp-rental-text">

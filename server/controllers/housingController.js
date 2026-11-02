@@ -22,6 +22,8 @@ const { findUserWithProfile } = require('../models/profileModels.js');
 const { openChat } = require('../models/messageModels.js');
 const { listListingReviews, ratingSummary } = require('../models/reviewModels.js');
 const { missingProfileFields } = require('../lib/profileValidation');
+const { readCoordinates, locationFields } = require('../lib/location');
+const { geocodeAddress, GeocoderUnavailable } = require('../lib/geocode');
 
 const PAGE_SIZE = 24;
 
@@ -68,6 +70,25 @@ function canManage(user, listing) {
     return Boolean(user && listing && (user.role === 'admin' || listing.owner_id === user.id));
 }
 
+// Where the listing goes on the map: the owner's pin if they placed one,
+// otherwise the address looked up on the map (best effort: if that fails the
+// listing is saved without a location and can get one later).
+async function resolveLocation(req, point, data) {
+    if (point) return { point, source: 'pin' };
+    try {
+        const found = await geocodeAddress({ street: data.street, city: data.city, postal_code: data.postal_code });
+        return found ? { point: { latitude: found.latitude, longitude: found.longitude }, source: 'address' } : null;
+    } catch (err) {
+        req.log.warn({ err: err.message }, 'geocoding failed, saving without a map location');
+        return null;
+    }
+}
+
+function sameAddress(a, b) {
+    const norm = (v) => String(v || '').trim().toLowerCase();
+    return ['street', 'city', 'postal_code'].every(key => norm(a[key]) === norm(b[key]));
+}
+
 function validationFailed(res, errors) {
     return res.status(400).json({ error: 'Please fix the highlighted fields', fields: errors });
 }
@@ -80,6 +101,8 @@ async function createListing(req, res) {
 
     const { data, errors } = validateListing(input);
     if (data.spots_open === 0) errors.spots_open = 'A new listing needs at least one open spot';
+    const pin = readCoordinates(input);
+    if (pin.error) errors.location = pin.error;
     const photoUrls = uploadedPhotoUrls(req);
     if (photoUrls.length === 0) errors.photos = 'Add at least one photo';
     if (Object.keys(errors).length) return validationFailed(res, errors);
@@ -90,8 +113,10 @@ async function createListing(req, res) {
         if (problem) return res.status(problem.status).json({ error: problem.error });
 
         const live = autoApprove();
+        const located = await resolveLocation(req, pin.value, data);
         const created = await createListingRow({
             ...data,
+            ...(located ? locationFields(located.point, located.source, null) : {}),
             owner_id: user.id,
             status: live ? 'active' : 'pending_review',
             reviewed_at: live ? new Date() : null,
@@ -100,7 +125,7 @@ async function createListing(req, res) {
         req.log.info({ listingId: created.id, status: created.status }, 'housing listing created');
         res.status(201).json({
             message: live ? 'Your listing is live.' : 'Thanks! Your listing will go live after a quick review.',
-            listing: toHousingDto(created),
+            listing: toHousingDto(created, { viewerId: req.user.id }),
         });
     } catch (err) {
         req.log.error({ err }, 'failed to create housing listing');
@@ -183,7 +208,7 @@ async function getListing(req, res) {
             ratingSummary({ reviewee_id: listing.owner_id }),
             ratingSummary({ housing_listing_id: listing.id, reviewee_id: listing.owner_id, context: 'housing' }),
         ]);
-        const dto = toHousingDto(listing);
+        const dto = toHousingDto(listing, { viewerId: req.user.id });
         if (dto.owner) dto.owner.rating = ownerRating;
         dto.rating = listingRating;
         res.json(dto);
@@ -196,7 +221,7 @@ async function getListing(req, res) {
 async function myListings(req, res) {
     try {
         const listings = await listOwnListings(req.user.id);
-        res.json(listings.map(toHousingDto));
+        res.json(listings.map(listing => toHousingDto(listing, { viewerId: req.user.id })));
     } catch (err) {
         req.log.error({ err }, 'failed to load own housing listings');
         res.status(500).json({ error: 'Could not load your listings' });
@@ -223,6 +248,8 @@ async function updateListing(req, res) {
     if (!input) return res.status(400).json({ error: 'Invalid listing data' });
 
     const { data, errors } = validateListing(input);
+    const pin = readCoordinates(input);
+    if (pin.error) errors.location = pin.error;
 
     try {
         const [existing, user] = await Promise.all([findListingOwnerAndStatus(id), findUserForHousing(req.user.id)]);
@@ -243,12 +270,22 @@ async function updateListing(req, res) {
             if (problem) return res.status(problem.status).json({ error: problem.error });
         }
 
+        // The pin moves when the owner moved it, or when the address changed
+        // without a new pin (then the new address is looked up)
+        let location = {};
+        if (pin.value || !sameAddress(existing, data)) {
+            const located = await resolveLocation(req, pin.value, data);
+            location = located
+                ? locationFields(located.point, located.source, existing)
+                : { latitude: null, longitude: null, public_latitude: null, public_longitude: null, location_source: null };
+        }
+
         const startPosition = existing.photos.reduce((max, photo) => Math.max(max, photo.position), -1) + 1;
-        await updateListingRow(id, data, { removePhotoIds, newPhotoUrls, startPosition });
+        await updateListingRow(id, { ...data, ...location }, { removePhotoIds, newPhotoUrls, startPosition });
 
         const updated = await findListing(id, req.user.id);
         req.log.info({ listingId: id }, 'housing listing updated');
-        res.json({ message: 'Listing updated', listing: toHousingDto(updated) });
+        res.json({ message: 'Listing updated', listing: toHousingDto(updated, { viewerId: req.user.id }) });
     } catch (err) {
         req.log.error({ err, listingId: id }, 'failed to update housing listing');
         res.status(500).json({ error: 'Could not update the listing. Please try again.' });
@@ -377,7 +414,32 @@ async function listingReviews(req, res) {
     }
 }
 
+// "Find on the map" in the listing form: address -> pin position
+async function geocode(req, res) {
+    const q = req.query || {};
+    const street = typeof q.street === 'string' ? q.street.trim().slice(0, 200) : '';
+    const city = typeof q.city === 'string' ? q.city.trim().slice(0, 100) : '';
+    const postal_code = typeof q.postal_code === 'string' ? q.postal_code.trim().slice(0, 10) : '';
+    if (street.length < 3 || city.length < 2) return res.status(400).json({ error: 'Enter the street and city first' });
+
+    try {
+        const found = await geocodeAddress({ street, city, postal_code });
+        if (!found) {
+            return res.status(404).json({ error: 'We couldn’t find that address on the map. Check the street and city, or place the pin yourself.' });
+        }
+        res.json(found);
+    } catch (err) {
+        if (err instanceof GeocoderUnavailable) {
+            req.log.warn({ err: err.message }, 'geocoder unavailable');
+            return res.status(503).json({ error: 'The map search isn’t available right now. You can place the pin yourself.' });
+        }
+        req.log.error({ err }, 'geocode failed');
+        res.status(500).json({ error: 'Could not search the map. Please try again.' });
+    }
+}
+
 module.exports = {
+    geocode,
     contactOwner,
     listingReviews,
     createListing,

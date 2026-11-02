@@ -1,6 +1,6 @@
-# Kampus — Design
+# Sidro / Anchor — Design
 
-The rules for how Kampus looks, reads and behaves. Check this before building a page; update it whenever a rule changes (in the same commit as the code).
+The rules for how Sidro (Anchor in English) looks, reads and behaves. Check this before building a page; update it whenever a rule changes (in the same commit as the code).
 
 _Last updated: 2 November 2026_
 
@@ -10,7 +10,7 @@ _Last updated: 2 November 2026_
 
 **One-liner:** Find a room, furnish it and settle in — with verified students and checked landlords only.
 
-**Name: Kampus** (until 2 Nov 2026: "Student Trade"). The name lives in one place, `client/src/lib/brand.js`. Check the .si/.com domain and trademark before printing anything.
+**Name: Sidro in Slovenian, Anchor in English** (was "Kampus" briefly, and "Student Trade" before 2 Nov 2026). The name follows the language: public pages switch with the SL/EN button; the logged-in pages are English for now, so they say Anchor, and so do the confirmation email and server messages. The names live in one place, `client/src/lib/brand.js` (`BRAND_NAMES`, `brandFor(lang)`, `BRAND` = Anchor). In Slovenian the name declines like a noun: _Sidro_, _Sidra_ (after a negation: "Sidra ne morete uporabljati"). Check the .si/.com domains and trademarks before printing anything.
 
 A student platform for Slovenia (starting in Koper / University of Primorska, then Ljubljana and Maribor). One account, three platforms:
 
@@ -86,11 +86,11 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 - **Live:** light blue background, ink text.
 - **Soon:** transparent, dashed border.
 
-**Logo (`components/Logo.jsx`)** — a white "K" on a rounded ink tile with a raspberry dot, next to the word "Kampus" in Bricolage Grotesque. The favicon (`client/public/favicon.svg`) is the same mark. On phones the bars show the mark only.
+**Logo (`components/Logo.jsx`)** — a white anchor on a rounded ink tile, its ring in raspberry, next to the name (Sidro / Anchor, passed as `name`) in Bricolage Grotesque. The favicon (`client/public/favicon.svg`) is the same mark. On phones the bars show the mark only.
 
 **Top bars** — `PublicNav` for everyone logged out (landing, log in, sign up, email confirmation) and `AppNav` for every logged-in page. See section 5.
 
-**Auth pages (`components/AuthShell.jsx`)** — `PublicNav` + "Back to the homepage" + one white card. The two sign-up pages add a **Student / Landlord or agency** switch at the top of the card and an ink side panel ("What you get as…") that links to that side's explainer on the landing page. Student panel on the left, landlord panel on the right, as on the landing page; on phones the form comes first.
+**Auth pages (`components/AuthShell.jsx`)** — `PublicNav` + "Back to the homepage" + one white card. The two sign-up pages add a **Student / Landlord or agency** switch at the top of the card and an ink side panel ("What you get as…") that links to that side's explainer on the landing page. Student panel on the left, landlord panel on the right, as on the landing page; on phones the form comes first. Behind it, the three landing scenes (room, desk, map) sit side by side, faded and blended into each other, with a calm area in the middle so the form stays readable; the background doesn't slide with the page.
 
 **Housing tabs (`HousingTabs`)** — Browse · Saved · My listings · My stays (landlords: Browse · My listings). "Post a place" lives in the top bar, not in the tabs.
 
@@ -112,7 +112,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 **"Coming soon" pages** — list what's coming with Soon tags and link back to what already works (see `SettleInPage.jsx`).
 
 **CSS class prefixes** — Vite loads all CSS globally, so each area uses its own prefix:
-`lp-` landing · `pn-` public top bar · `appnav-` logged-in top bar · `auth-` log in / sign up / confirmation · `brand-` logo · `hs-` housing and profile pages · `si-` Settle In · `mk-` marketplace additions.
+`lp-` landing · `pn-` public top bar · `appnav-` logged-in top bar · `auth-` log in / sign up / confirmation · `brand-` logo · `hs-` housing and profile pages · `si-` Settle In · `mk-` marketplace additions · `ch-` messages · `mp-` my profile · `loc-` map pin picker.
 
 ---
 
@@ -135,7 +135,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 
 **Page transitions (`components/PageSlide.jsx`)** — each page has a step in the visitor's journey: landing 0 → log in 1 → sign up 2 → landlord sign-up 3 → email confirmation 4 → the app 10. Going to a higher step slides the content in from the right, a lower step from the left; same step, no animation (e.g. moving inside the app). Only the content slides — the top bars stay still. No animation with reduced motion.
 
-**Tab titles (`components/RouteTitle.jsx`)** — "Log in · Kampus", "Housing · Kampus" and so on, from one list; the landing page is just "Kampus".
+**Tab titles (`components/RouteTitle.jsx`)** — public pages follow the language ("Prijava · Sidro" / "Log in · Anchor"; the landing page is just the name); logged-in pages are "Housing · Anchor" and so on.
 
 **Getting into the app**
 - Guests who open Housing or the Marketplace (from the landing columns or a link) go to log in, which says what they were trying to open ("Log in to see the marketplace.") and takes them there afterwards.
@@ -162,6 +162,16 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 The logged-in user's profile is loaded once per login and shared (`lib/useCurrentUser.js`). Call `refreshCurrentUser()` after the user changes their own name or photo.
 
 ---
+
+### Maps
+
+Housing listings have a map location; the Marketplace doesn't need one.
+- **Two points per listing** (`server/lib/location.js`): the exact pin (`latitude`, `longitude`), sent back only to the owner as `exact_location`, and a public point (`public_latitude`, `public_longitude`) moved a random 80–200 m, sent to everyone as `location` (`approximate: true`). Maps show the public point as an area of about 200 m, never the building. The public point is made once and kept until the exact pin moves, so saving again can't reveal the real spot.
+- **Placing the pin** (`components/LocationPicker.jsx`, step "Address & dates" of the listing form): when the owner leaves the address fields, the address is looked up once and the pin appears; they can drag it, click the map, use "Pin the middle of the map" (keyboard users), find the address again or remove the pin. If there's no pin when they save, the server looks up the address itself. If the address changes without a new pin, the location is looked up again.
+- **Looking up addresses** (`server/lib/geocode.js`, `GET /api/housing/geocode`): OpenStreetMap's free Nominatim for now — one request at a time, at least 1.1 s apart, answers cached, 30 lookups per account per hour, never while typing. Settings: `GEOCODER_URL`, `GEOCODER_EMAIL`, `GEOCODER_USER_AGENT` in `server/.env`.
+- **Map pictures (tiles):** OpenStreetMap's free tile server for now, with the required "© OpenStreetMap contributors" credit. Settings: `VITE_MAP_TILE_URL`, `VITE_MAP_ATTRIBUTION` in `client/.env` (`lib/mapConfig.js`). Leaflet loads only on pages with a map (lazy-loaded).
+- **Pins outside Slovenia are refused.** Existing listings get a location with `node scripts/geocode-housing.js` (one per second; lists addresses it couldn't find).
+- **Pin style:** steel-blue drop with a white dot (`loc-` classes).
 
 ## 6. Guests (logged-out visitors)
 
@@ -221,7 +231,9 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 - [ ] **Partner logos** once organisations agree.
 - [ ] **Logged-in pages are English only** (and have no language switch) — decide on Slovenian for the app.
 - [ ] **Server messages and the confirmation email are English only.**
-- [ ] **Kampus:** check the .si/.com domain and trademark before it's final.
+- [ ] **Sidro / Anchor:** check the .si/.com domains and trademarks before it's final. "Anchor" is a common name for other products, so the English name especially needs a check.
+- [ ] **Map provider before launch:** the map uses OpenStreetMap's free tiles and geocoder, which are best-effort and can block heavy users. Switch to a paid plan or self-hosted tiles before public launch (two settings, see "Maps").
+- [ ] **Maps, next steps:** approximate-area map on each listing page, then a map view in Housing → Browse (rectangle search, price labels, grouping), then "minutes to your faculty".
 - [ ] **Different experience per account type** — no account / student / landlord (next round).
 - [ ] **Forgot password** doesn't exist yet.
 
@@ -229,6 +241,7 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 
 ## 10. Change log
 
+- **2026-11-02** — Renamed to **Sidro (SL) / Anchor (EN)** with an anchor logo and favicon; tab titles follow the language. Housing listings get map locations: pin picker in the listing form, address lookup, exact pin private to the owner, public point 80–200 m off, backfill script. Needs `npx prisma db push` and `npm install` (Leaflet).
 - **2026-11-02** — Log in / sign up get a blended background of the three landing scenes. Messages rebuilt: list with previews and newest first (server now sends the last message), day separators, my messages on the right, errors shown instead of silently failing, phone layout, clear empty states, review dialog without browser pop-ups. My profile restyled with shortcuts and rental-profile status; the old "My listings" block is gone. Focus outline is raspberry everywhere and only shows for keyboard users.
 - **2026-11-02** — Marketplace rebuilt in the housing layout: tabs (Browse · My items), filter box, cards, item page (`/marketplace/:id`) with Message / Report, Sell and Edit form pages with live preview, My items list. New server route `GET /api/listings/item/:id` (with tests). Price filters on Housing and Marketplace no longer drop keystrokes; tall photos no longer stretch cards.
 - **2026-11-02** — Renamed to **Kampus**: logo, favicon, tab titles, confirmation email. Shared `PublicNav` for all logged-out pages; slide transitions between pages; log in / sign up / confirmation redesigned and bilingual, with a Student / Landlord switch on sign-up.

@@ -35,7 +35,12 @@ async function findListing(id, viewerId) {
 async function findListingOwnerAndStatus(id) {
     return prisma.housingListing.findUnique({
         where: { id },
-        select: { id: true, owner_id: true, status: true, title: true, photos: { select: { id: true, position: true } } },
+        select: {
+            id: true, owner_id: true, status: true, title: true, photos: { select: { id: true, position: true } },
+            // to tell whether the address or the pin moved
+            street: true, city: true, postal_code: true,
+            latitude: true, longitude: true, public_latitude: true, public_longitude: true,
+        },
     });
 }
 

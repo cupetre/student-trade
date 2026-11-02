@@ -35,24 +35,24 @@ async function sendVerificationEmail({ email, fullname, token, role = 'student' 
     const link = `${appUrl}/verify-email?token=${token}`;
     const firstName = (fullname || '').trim().split(/\s+/)[0] || 'there';
 
-    const subject = 'Confirm your Kampus account';
+    const subject = 'Confirm your Anchor account';
 
     const text =
 `Hi ${firstName},
 
-Welcome to Kampus! Confirm ${whatToConfirm} to activate your account:
+Welcome to Anchor! Confirm ${whatToConfirm} to activate your account:
 
 ${link}
 
 This link expires in ${TOKEN_TTL_HOURS} hours. If you didn't create an account, you can ignore this email.
 
-Kampus`;
+Anchor`;
 
     const html = `
 <div style="font-family: Arial, Helvetica, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1f2937;">
-  <h2 style="color: #1B2A41; margin: 0 0 16px;">Kampus</h2>
+  <h2 style="color: #1B2A41; margin: 0 0 16px;">Anchor</h2>
   <p>Hi ${escapeHtml(firstName)},</p>
-  <p>Welcome to Kampus! Confirm ${whatToConfirm} to activate your account.</p>
+  <p>Welcome to Anchor! Confirm ${whatToConfirm} to activate your account.</p>
   <p style="margin: 28px 0;">
     <a href="${link}" style="background: #3C6E91; color: #ffffff; padding: 12px 22px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Confirm my email</a>
   </p>

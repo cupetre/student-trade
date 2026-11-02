@@ -4,7 +4,7 @@ const { authenticationToken } = require('../configs/authConfig');
 const { uploadHousingPhotos } = require('../configs/multerConfig');
 const {
     createListing, browseListings, getListing, myListings, savedListings,
-    updateListing, changeStatus, deleteListing, save, unsave, contactOwner, listingReviews,
+    updateListing, changeStatus, deleteListing, save, unsave, contactOwner, listingReviews, geocode,
 } = require('../controllers/housingController');
 const {
     listTenants, tenantCandidates, addTenant, changeTenancy, myStays, reviewTenancy,
@@ -20,6 +20,14 @@ const writeLimiter = createRateLimiter({
 // Everything in housing needs a login. This runs before the photo upload,
 // so nobody can push files to S3 without an account.
 router.use(authenticationToken);
+
+// Address -> map pin for the listing form. The free geocoder allows one
+// request per second for the whole site, so each account gets a small budget.
+const geocodeLimiter = createRateLimiter({
+    windowMs: 60 * 60 * 1000, max: 30, keyFn: (req) => `geocode:${req.user && req.user.id}`,
+    message: 'Too many map searches. Place the pin yourself, or try again later.',
+});
+router.get('/geocode', geocodeLimiter, geocode);
 
 router.get('/listings', browseListings);
 router.get('/listings/saved', savedListings); // before /listings/:id so "saved" isn't read as an id

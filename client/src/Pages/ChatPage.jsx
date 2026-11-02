@@ -259,7 +259,7 @@ const ChatPage = () => {
 
     const landlord = isLandlord(user);
     const noChats = !listState.loading && !listState.error && chats.length === 0;
-    const person = selected && { id: selected.owner_of_post_id, name: selected.owner_of_post_fullname || 'Kampus user', photo: selected.owner_of_post_photo };
+    const person = selected && { id: selected.owner_of_post_id, name: selected.owner_of_post_fullname || 'Anchor user', photo: selected.owner_of_post_photo };
     const firstName = person?.name.split(' ')[0];
 
     // Nobody to talk to yet: one clear empty state instead of two empty panes
@@ -310,7 +310,7 @@ const ChatPage = () => {
                                             <Avatar src={resolveMediaUrl(chat.owner_of_post_photo)} name={chat.owner_of_post_fullname} size={44} />
                                             <span className="ch-item-text">
                                                 <span className="ch-item-top">
-                                                    <span className="ch-item-name">{chat.owner_of_post_fullname || 'Kampus user'}</span>
+                                                    <span className="ch-item-name">{chat.owner_of_post_fullname || 'Anchor user'}</span>
                                                     <span className="ch-item-time">{listTime(last?.sent_at || chat.last_activity || chat.chat_created_at)}</span>
                                                 </span>
                                                 <span className="ch-item-preview">

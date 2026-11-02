@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppNav from '../../components/AppNav.jsx';
 import HousingCard from '../../components/HousingCard.jsx';
@@ -10,6 +10,9 @@ import {
 } from '../../lib/housingOptions';
 import './Housing.css';
 
+// The map library is big, so it only loads when someone opens this form
+const LocationPicker = lazy(() => import('../../components/LocationPicker.jsx'));
+
 const MAX_PHOTO_MB = 8;
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -20,7 +23,7 @@ const FIELD_STEP = {
     listing_type: 0, property_type: 0, title: 0, description: 0,
     rent_per_person: 1, deposit: 1, utilities_estimate: 1, spots_total: 1, spots_open: 1,
     total_rooms: 1, bathrooms: 1, area_m2: 1, furnishing: 1,
-    street: 2, postal_code: 2, city: 2, neighbourhood: 2, available_from: 2, available_until: 2, min_stay_months: 2,
+    street: 2, postal_code: 2, city: 2, neighbourhood: 2, location: 2, available_from: 2, available_until: 2, min_stay_months: 2,
     amenities: 3, languages: 3, video_tour_url: 3,
     photos: 4,
 };
@@ -116,6 +119,8 @@ const HousingFormPage = () => {
     const [existingPhotos, setExistingPhotos] = useState([]);
     const [removedIds, setRemovedIds] = useState([]);
     const [newPhotos, setNewPhotos] = useState([]); // { file, url }
+    const [pin, setPin] = useState(null); // { latitude, longitude, source } on the map
+    const pickerRef = useRef(null);
 
     const allowedTypes = allowedListingTypes(user);
     const landlordPending = user?.role === 'landlord' && user.landlord_status !== 'approved';
@@ -129,6 +134,8 @@ const HousingFormPage = () => {
             if (!ok) { setFormError(data.error); return; }
             setForm(toForm(data));
             setExistingPhotos(data.photos || []);
+            // The owner gets the exact pin back; everyone else only the area
+            if (data.exact_location) setPin(data.exact_location);
         });
         return () => { cancelled = true; };
     }, [editing, id]);
@@ -228,6 +235,7 @@ const HousingFormPage = () => {
 
         const payload = { ...form };
         if (editing) payload.remove_photo_ids = removedIds;
+        if (pin) { payload.latitude = pin.latitude; payload.longitude = pin.longitude; }
 
         const body = new FormData();
         body.append('listing', JSON.stringify(payload));
@@ -427,6 +435,7 @@ const HousingFormPage = () => {
                             <fieldset>
                                 <legend>Address and dates</legend>
                                 <p className="hs-hint hs-hint--block">The address is shown on the listing so students can check the commute. Only real places get posted.</p>
+                                <div onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) pickerRef.current?.findIfEmpty(); }}>
                                 <Field id="street" label="Street and number" error={errors.street}>
                                     <input {...inputProps('street')} autoComplete="street-address" />
                                 </Field>
@@ -441,9 +450,21 @@ const HousingFormPage = () => {
                                         </datalist>
                                     </Field>
                                 </div>
+                                </div>
                                 <Field id="neighbourhood" label="Neighbourhood" optional hint="E.g. Bežigrad, Semedela, Tabor">
                                     <input {...inputProps('neighbourhood')} maxLength={100} />
                                 </Field>
+                                <Suspense fallback={<p className="hs-muted">Loading the map…</p>}>
+                                <LocationPicker
+                                    ref={pickerRef}
+                                    street={form.street}
+                                    city={form.city}
+                                    postalCode={form.postal_code}
+                                    value={pin}
+                                    onChange={(next) => { setPin(next); if (errors.location) setErrors(prev => ({ ...prev, location: '' })); }}
+                                    error={errors.location}
+                                />
+                                </Suspense>
                                 <div className="hs-row">
                                     <Field id="available_from" label="Available from" error={errors.available_from}>
                                         <input {...inputProps('available_from')} type="date" />

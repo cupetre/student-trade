@@ -1,0 +1,62 @@
+/* Map pin picker in the housing form. Classes start with "loc-". */
+
+.loc {
+    margin-top: 6px;
+    padding: 16px;
+    border: 1px solid var(--hs-border, #DDD4C5);
+    border-radius: 14px;
+    background: var(--hs-bg, #FAF7F0);
+}
+.loc.has-error { border-color: #b42318; }
+.loc-title { margin: 0 0 4px; font-weight: 700; color: var(--hs-text, #1B2A41); }
+.loc .hs-hint { margin: 0; }
+.loc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 12px 0 10px; }
+.loc-actions .hs-link-btn { margin-left: 2px; }
+.loc-note { margin: -4px 0 10px !important; }
+
+.loc-map {
+    height: 320px;
+    border-radius: 12px;
+    border: 1px solid var(--hs-border, #DDD4C5);
+    overflow: hidden;
+    background: #EEEAE2;
+    z-index: 0; /* keep Leaflet's layers under the sticky top bar */
+}
+.loc-map:focus-visible { outline: 3px solid #C2305A; outline-offset: 2px; }
+.loc-map .leaflet-control-attribution { font-size: 11px; }
+
+.loc-status { margin: 8px 0 0; font-size: 0.88rem; color: var(--hs-muted, #5D6470); }
+.loc-status--ok { color: #1b6e3c; font-weight: 600; }
+.loc-status--error { color: #b42318; font-weight: 600; }
+
+/* the pin: a steel-blue drop with a white dot, like the rest of the palette */
+.loc-pin { background: none; border: 0; }
+.loc-pin-head {
+    position: absolute;
+    left: 3px;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50% 50% 50% 0;
+    background: #3C6E91;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(27, 42, 65, 0.35);
+    transform: rotate(-45deg);
+    cursor: grab;
+}
+.loc-pin-head::after {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 7px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+}
+.leaflet-dragging .loc-pin-head { cursor: grabbing; }
+
+@media (max-width: 560px) {
+    .loc { padding: 12px; }
+    .loc-map { height: 260px; }
+}

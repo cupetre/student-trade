@@ -1,18 +1,18 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Logo from './Logo.jsx';
-import { BRAND } from '../lib/brand';
+import { BRAND_NAMES } from '../lib/brand';
 import { LANGUAGES, useLanguage } from '../lib/language';
 import './PublicNav.css';
 
 const COPY = {
     sl: {
-        main: 'Glavni meni', home: `${BRAND}, na začetek`, language: 'Jezik',
+        brand: BRAND_NAMES.sl, main: 'Glavni meni', home: `${BRAND_NAMES.sl}, na začetek`, language: 'Jezik',
         housing: 'Bivanje', market: 'Tržnica', settle: 'Udomači se', landlords: 'Za najemodajalce', partners: 'Partnerji',
         login: 'Prijava', signup: 'Registracija',
     },
     en: {
-        main: 'Main', home: `${BRAND}, home`, language: 'Language',
+        brand: BRAND_NAMES.en, main: 'Main', home: `${BRAND_NAMES.en}, home`, language: 'Language',
         housing: 'Housing', market: 'Marketplace', settle: 'Settle In', landlords: 'For landlords', partners: 'Partners',
         login: 'Log in', signup: 'Sign up',
     },
@@ -69,7 +69,7 @@ const PublicNav = () => {
         <header className="pn">
             <div className="pn-inner">
                 <Link to="/" className="pn-logo" aria-label={t.home} onClick={handleLogo}>
-                    <Logo size={34} hideWordOnPhone />
+                    <Logo size={34} hideWordOnPhone name={t.brand} />
                 </Link>
 
                 <nav className="pn-links" aria-label={t.main}>

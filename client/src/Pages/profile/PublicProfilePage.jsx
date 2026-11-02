@@ -67,7 +67,7 @@ const PublicProfilePage = () => {
     const isStudent = person.role === 'student';
     const roleTag = person.role === 'landlord'
         ? (person.verified_landlord ? <span className="hs-tag hs-tag--good">Verified landlord</span> : <span className="hs-tag">Landlord</span>)
-        : person.role === 'admin' ? <span className="hs-tag">Kampus team</span> : <span className="hs-tag">Student</span>;
+        : person.role === 'admin' ? <span className="hs-tag">Anchor team</span> : <span className="hs-tag">Student</span>;
 
     return (
         <div className="hs-shell">

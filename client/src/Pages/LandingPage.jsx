@@ -5,7 +5,7 @@ import { copy } from './landingCopy';
 import PublicNav from '../components/PublicNav.jsx';
 import Logo from '../components/Logo.jsx';
 import SideArt from '../components/SideArt.jsx';
-import { BRAND } from '../lib/brand';
+import { brandFor } from '../lib/brand';
 import { useLanguage } from '../lib/language';
 import housingImg from '../assets/landing/housing.svg';
 import marketImg from '../assets/landing/market.svg';
@@ -403,7 +403,7 @@ const LandingPage = () => {
 
             <main>
                 {/* 1 · THREE COLUMNS */}
-                <section id="top" className="lp-cols" aria-label={BRAND} onMouseLeave={() => setActive(null)}>
+                <section id="top" className="lp-cols" aria-label={brandFor(lang)} onMouseLeave={() => setActive(null)}>
                     {COLUMNS.map(col => {
                         const c = t.columns[col.key];
                         const state = active === col.key ? 'is-active' : (active ? 'is-dimmed' : '');
@@ -693,7 +693,7 @@ const LandingPage = () => {
 
             <footer className="lp-footer">
                 <div className="lp-footer-inner">
-                    <span className="lp-footer-logo"><Logo size={28} /></span>
+                    <span className="lp-footer-logo"><Logo size={28} name={brandFor(lang)} /></span>
                     <span>{t.footer.made}</span>
                     <span className="lp-footer-links">
                         <a href="#lane-housing">{t.nav.housing}</a>

@@ -33,11 +33,24 @@ function numberOrNull(value) {
 // Housing listing as the pages read it. Prisma's Decimal values become plain
 // numbers, the owner only exposes public fields (never email or phone), and
 // is_saved tells the page whether to fill the heart.
-function toHousingDto(listing) {
+// `viewerId`: the exact pin (exact_location) is only included for the owner.
+// Everyone else gets `location`, the public point that's 80-200 m off.
+// (options is an object so that list.map(toHousingDto) can't pass the index as a viewer)
+function toHousingDto(listing, options) {
     if (!listing) return listing;
-    const { savedBy, owner, ...rest } = listing;
+    const viewerId = options && typeof options === 'object' ? options.viewerId : undefined;
+    const {
+        savedBy, owner, latitude, longitude, public_latitude, public_longitude, location_source, ...rest
+    } = listing;
+    const isOwner = viewerId !== undefined && viewerId === listing.owner_id;
     return {
         ...rest,
+        location: public_latitude != null && public_longitude != null
+            ? { latitude: public_latitude, longitude: public_longitude, approximate: true }
+            : null,
+        ...(isOwner ? {
+            exact_location: latitude != null && longitude != null ? { latitude, longitude, source: location_source || null } : null,
+        } : {}),
         rent_per_person: Number(listing.rent_per_person),
         deposit: numberOrNull(listing.deposit),
         utilities_estimate: numberOrNull(listing.utilities_estimate),

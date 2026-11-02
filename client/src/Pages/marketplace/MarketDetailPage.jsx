@@ -168,7 +168,7 @@ const MarketDetailPage = () => {
                             <ul>
                                 <li>Meet in a public place, on campus if you can.</li>
                                 <li>Check the item before you pay.</li>
-                                <li>Keep the conversation in Kampus messages until you’ve met.</li>
+                                <li>Keep the conversation in Anchor messages until you’ve met.</li>
                             </ul>
                         </div>
 
