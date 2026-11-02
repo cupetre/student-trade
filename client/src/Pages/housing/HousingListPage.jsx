@@ -26,8 +26,11 @@ const HousingListPage = ({ mode = 'browse' }) => {
     const [error, setError] = useState('');
     const [profileMissing, setProfileMissing] = useState(false);
 
-    // The city box updates the URL only after typing stops, not on every key
+    // The city and price boxes keep their own value while you type and update
+    // the URL only after typing stops (typing straight into the URL state loses
+    // keystrokes, because the URL updates a moment later)
     const [cityInput, setCityInput] = useState(params.get('city') || '');
+    const [priceInput, setPriceInput] = useState(params.get('max_price') || '');
 
     const query = saved ? '' : params.toString();
 
@@ -60,34 +63,36 @@ const HousingListPage = ({ mode = 'browse' }) => {
 
     useEffect(() => {
         if (saved) return undefined;
-        const current = params.get('city') || '';
-        if (cityInput.trim() === current) return undefined;
-        const timer = setTimeout(() => setFilter('city', cityInput.trim()), 400);
+        const city = cityInput.trim();
+        if (city === (params.get('city') || '') && priceInput === (params.get('max_price') || '')) return undefined;
+        const timer = setTimeout(() => setFilters({ city, max_price: priceInput }), 400);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [cityInput]);
+    }, [cityInput, priceInput]);
 
-    function setFilter(key, value) {
-        setParams(prev => {
-            const next = new URLSearchParams(prev);
+    // Starts from the URL as it is now, not as it was when this render
+    // happened, so a delayed update never undoes a newer one
+    function setFilters(changes) {
+        const next = new URLSearchParams(window.location.search);
+        Object.entries(changes).forEach(([key, value]) => {
             if (value === '' || value === false || value === null) next.delete(key);
             else next.set(key, value === true ? 'true' : value);
-            next.delete('page'); // a new filter starts again from page 1
-            return next;
         });
+        next.delete('page'); // a new filter starts again from page 1
+        setParams(next);
     }
+    const setFilter = (key, value) => setFilters({ [key]: value });
 
     function goToPage(page) {
-        setParams(prev => {
-            const next = new URLSearchParams(prev);
-            if (page <= 1) next.delete('page'); else next.set('page', String(page));
-            return next;
-        });
+        const next = new URLSearchParams(window.location.search);
+        if (page <= 1) next.delete('page'); else next.set('page', String(page));
+        setParams(next);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function clearFilters() {
         setCityInput('');
+        setPriceInput('');
         setParams({});
     }
 
@@ -172,8 +177,8 @@ const HousingListPage = ({ mode = 'browse' }) => {
                                 min="0"
                                 inputMode="numeric"
                                 placeholder="Any"
-                                value={params.get('max_price') || ''}
-                                onChange={(e) => setFilter('max_price', e.target.value)}
+                                value={priceInput}
+                                onChange={(e) => setPriceInput(e.target.value)}
                             />
                         </div>
 

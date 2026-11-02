@@ -103,9 +103,9 @@ button {
   transition: all 0.15s ease-in-out;
 }
 
-button:focus,
+/* Focus ring only for keyboard users, in the attention colour (see DESIGN.md) */
 button:focus-visible {
-  outline: 2px solid #0284c7;
+  outline: 3px solid #C2305A;
   outline-offset: 2px;
 }
 
@@ -119,4 +119,32 @@ button:focus-visible {
   .container {
     padding: 0 2rem;
   }
+}
+/* ---------- Page transitions (components/PageSlide.jsx) ---------- */
+/* Only the page content slides: the top bars (.pn, .appnav) stay where they are,
+   so moving between pages that share a bar feels like one continuous app.
+   Full-screen overlays (.lp-view) keep their own animation. */
+.page-slide {
+  min-height: 100vh;
+  overflow-x: clip; /* no sideways scrollbar while a page slides in */
+}
+.page-slide--from-right > * > :not(.pn):not(.appnav):not(.lp-view):not(.auth-backdrop) {
+  animation: page-from-right 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+.page-slide--from-left > * > :not(.pn):not(.appnav):not(.lp-view):not(.auth-backdrop) {
+  animation: page-from-left 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+@keyframes page-from-right {
+  from { transform: translateX(72px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes page-from-left {
+  from { transform: translateX(-72px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-slide--from-right > * > *,
+  .page-slide--from-left > * > * { animation: none; }
 }

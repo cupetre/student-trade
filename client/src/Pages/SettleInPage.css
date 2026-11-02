@@ -1,0 +1,83 @@
+/* Settle In placeholder page. Every class starts with "si-" because Vite loads all CSS globally. */
+
+.si-shell {
+    min-height: 100vh;
+    background: #FAF7F0;
+    color: #1B2A41;
+    text-align: left;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+.si-page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 56px 20px 80px;
+}
+
+.si-eyebrow {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3C6E91;
+}
+
+.si-page h1 {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(30px, 4vw, 42px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+}
+
+.si-lede {
+    margin: 14px 0 0;
+    font-size: 17px;
+    line-height: 1.55;
+    color: #5D6470;
+}
+
+.si-list {
+    margin: 36px 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 2px solid #1B2A41;
+}
+.si-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1px solid #DDD4C5;
+}
+.si-list li > div { flex: 1 1 0; }
+.si-list strong { display: block; font-size: 17px; }
+.si-list span { display: block; margin-top: 3px; font-size: 15px; line-height: 1.45; color: #5D6470; }
+.si-list .si-soon {
+    flex: none;
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #4E4636;
+    border: 1.5px dashed #A99F8E;
+    border-radius: 999px;
+    padding: 3px 9px;
+}
+
+.si-actions { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; }
+.si-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 20px;
+    border-radius: 12px;
+    background: #3C6E91;
+    color: #ffffff;
+    font-weight: 700;
+    text-decoration: none;
+}
+.si-btn:hover { background: #2F5875; color: #ffffff; }
+.si-btn--quiet { background: #ffffff; color: #1B2A41; border: 1px solid #DDD4C5; }
+.si-btn--quiet:hover { background: #F3EFE7; color: #1B2A41; }
+.si-btn:focus-visible { outline: 3px solid #C2305A; outline-offset: 2px; }

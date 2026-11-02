@@ -21,6 +21,8 @@ function toChatSummary(chat, myId) {
         owner_of_post_fullname: other?.fullname ?? null,
         owner_of_post_photo: other?.profile_picture ?? null,
         chat_created_at: chat.date,
+        last_message: chat.messages?.[0] ?? null,
+        last_activity: chat.messages?.[0]?.sent_at ?? chat.date,
     };
 }
 

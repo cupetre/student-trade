@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { postJson } from '../lib/api';
-import './AuthPages.css';
+import { useLanguage } from '../lib/language';
+import AuthShell from '../components/AuthShell.jsx';
+import { authCopy } from './authCopy';
 
 const RESEND_COOLDOWN = 60; // seconds, matches the backend
 const STORAGE_KEY = 'pendingVerificationEmail';
@@ -16,10 +18,14 @@ function storeEmail(email) {
 
 const VerifyPendingPage = () => {
     const location = useLocation();
+    const [lang] = useLanguage();
+    const t = authCopy[lang];
+    const p = t.pending;
+
     const fromLogin = Boolean(location.state?.fromLogin);
     const emailSendFailed = location.state?.emailSent === false;
     const isLandlord = location.state?.role === 'landlord';
-    const emailWord = isLandlord ? 'email' : 'university email';
+    const emailWord = p.word[isLandlord ? 'landlord' : 'student'];
 
     const [email, setEmail] = useState(location.state?.email || readStoredEmail());
     const [knownEmail] = useState(Boolean(location.state?.email || readStoredEmail()));
@@ -27,8 +33,9 @@ const VerifyPendingPage = () => {
     // Coming from login (or if sending failed), allow an immediate resend.
     const [cooldown, setCooldown] = useState(fromLogin || emailSendFailed ? 0 : RESEND_COOLDOWN);
     const [sending, setSending] = useState(false);
-    const [notice, setNotice] = useState('');
-    const [error, setError] = useState(emailSendFailed ? "We couldn't send the confirmation email. Press the button below to try again." : '');
+    const [sent, setSent] = useState(false);
+    // A key from the copy ('sendFailed', 'enterEmail') or { text } from the server
+    const [error, setError] = useState(emailSendFailed ? 'sendFailed' : '');
 
     useEffect(() => {
         if (email) storeEmail(email);
@@ -43,89 +50,79 @@ const VerifyPendingPage = () => {
     const handleResend = async () => {
         if (sending || cooldown > 0) return;
         if (!email.trim()) {
-            setError('Enter the email you registered with.');
+            setError('enterEmail');
             return;
         }
 
         setSending(true);
         setError('');
-        setNotice('');
+        setSent(false);
         const { ok, data } = await postJson('/api/users/resend-verification', { email: email.trim() });
         setSending(false);
 
         if (ok) {
-            setNotice('A new confirmation link is on its way. Check your inbox and spam folder.');
+            setSent(true);
             setCooldown(RESEND_COOLDOWN);
         } else {
-            setError(data.error);
+            setError({ text: data.error });
         }
     };
 
+    const errorMessage = typeof error === 'object' ? error.text : (error ? p[error] : '');
+
     return (
-        <div className="auth-page">
-            <div className="auth-card auth-card--center">
-                <div className="auth-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="30" height="30">
-                        <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
-                        <path d="M3.5 6.5l8.5 6.5 8.5-6.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                    </svg>
-                </div>
-
-                <Link to="/" className="auth-brand">Student Trade</Link>
-                <h1 className="auth-title">
-                    {fromLogin ? 'Your email isn’t confirmed yet' : `Confirm your ${emailWord}`}
-                </h1>
-
-                {knownEmail && email ? (
-                    <p className="auth-subtitle">
-                        We sent a confirmation link to <strong className="auth-email">{email}</strong>.
-                        Open it to activate your account.
-                    </p>
-                ) : (
-                    <p className="auth-subtitle">Open the confirmation link we sent to your {emailWord}.</p>
-                )}
-
-                <p className="auth-lock-note">
-                    Until you confirm your {isLandlord ? 'email' : 'existing university email'}, you can&apos;t access Student Trade.
-                </p>
-
-                {error && <div className="auth-alert auth-alert--error" role="alert">{error}</div>}
-                {notice && <div className="auth-alert auth-alert--success" role="status">{notice}</div>}
-
-                {!knownEmail && (
-                    <div className="auth-field auth-field--left">
-                        <label htmlFor="email">Your {emailWord}</label>
-                        <input
-                            id="email"
-                            type="email"
-                            autoComplete="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                    </div>
-                )}
-
-                <p className="auth-hint auth-hint--center">Didn&apos;t get it? Check your spam folder, or send a new link.</p>
-
-                <button
-                    type="button"
-                    className="auth-submit"
-                    onClick={handleResend}
-                    disabled={sending || cooldown > 0}
-                >
-                    {sending && <span className="auth-spinner" aria-hidden="true" />}
-                    {sending
-                        ? 'Sending…'
-                        : cooldown > 0
-                            ? `Resend email in ${cooldown}s`
-                            : 'Resend confirmation email'}
-                </button>
-
-                <p className="auth-switch">
-                    Already confirmed? <Link to="/login">Log in</Link>
-                </p>
+        <AuthShell center>
+            <div className="auth-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="30" height="30">
+                    <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M3.5 6.5l8.5 6.5 8.5-6.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                </svg>
             </div>
-        </div>
+
+            <h1 className="auth-title">{fromLogin ? p.titleFromLogin : p.title(emailWord)}</h1>
+
+            {knownEmail && email ? (
+                <p className="auth-subtitle">
+                    {p.sentBefore}<strong className="auth-email">{email}</strong>{p.sentAfter}
+                </p>
+            ) : (
+                <p className="auth-subtitle">{p.openLink(emailWord)}</p>
+            )}
+
+            <p className="auth-lock-note">{p.lockNote}</p>
+
+            {errorMessage && <div className="auth-alert auth-alert--error" role="alert">{errorMessage}</div>}
+            {sent && <div className="auth-alert auth-alert--success" role="status">{p.sent}</div>}
+
+            {!knownEmail && (
+                <div className="auth-field auth-field--left">
+                    <label htmlFor="email">{p.yourEmail(emailWord)}</label>
+                    <input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                </div>
+            )}
+
+            <p className="auth-hint auth-hint--center">{p.spamHint}</p>
+
+            <button
+                type="button"
+                className="auth-submit"
+                onClick={handleResend}
+                disabled={sending || cooldown > 0}
+            >
+                {sending && <span className="auth-spinner" aria-hidden="true" />}
+                {sending ? p.sending : cooldown > 0 ? p.resendIn(cooldown) : p.resend}
+            </button>
+
+            <p className="auth-switch">
+                {p.alreadyConfirmed} <Link to="/login">{p.login}</Link>
+            </p>
+        </AuthShell>
     );
 };
 

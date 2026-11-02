@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { postJson } from '../lib/api';
-import './AuthPages.css';
+import { useLanguage } from '../lib/language';
+import AuthShell from '../components/AuthShell.jsx';
+import { authCopy } from './authCopy';
 
 // The page the link in the confirmation email opens: /verify-email?token=...
 const VerifyEmailPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const [lang] = useLanguage();
+    const v = authCopy[lang].verify;
     const token = searchParams.get('token') || '';
 
     // 'loading' | 'success' | 'expired' | 'invalid' | 'error'
@@ -42,66 +46,56 @@ const VerifyEmailPage = () => {
     }, [token]);
 
     return (
-        <div className="auth-page">
-            <div className="auth-card auth-card--center">
-                <Link to="/" className="auth-brand">Student Trade</Link>
+        <AuthShell center>
+            {status === 'loading' && (
+                <>
+                    <div className="auth-icon"><span className="auth-spinner auth-spinner--dark" aria-hidden="true" /></div>
+                    <h1 className="auth-title" role="status">{v.confirming}</h1>
+                </>
+            )}
 
-                {status === 'loading' && (
-                    <>
-                        <div className="auth-icon"><span className="auth-spinner auth-spinner--dark" aria-hidden="true" /></div>
-                        <h1 className="auth-title">Confirming your email…</h1>
-                    </>
-                )}
+            {status === 'success' && (
+                <>
+                    <div className="auth-icon auth-icon--success" aria-hidden="true">&#10003;</div>
+                    <h1 className="auth-title">{v.confirmed}</h1>
+                    <p className="auth-subtitle">{v.active}</p>
+                    <button
+                        type="button"
+                        className="auth-submit auth-submit--spaced"
+                        onClick={() => navigate('/login', { replace: true, state: { verified: true, email } })}
+                    >
+                        {v.login}
+                    </button>
+                </>
+            )}
 
-                {status === 'success' && (
-                    <>
-                        <div className="auth-icon auth-icon--success" aria-hidden="true">&#10003;</div>
-                        <h1 className="auth-title">Email confirmed!</h1>
-                        <p className="auth-subtitle">Your account is active. Log in to start using Student Trade.</p>
-                        <button
-                            type="button"
-                            className="auth-submit auth-submit--spaced"
-                            onClick={() => navigate('/login', { replace: true, state: { verified: true, email } })}
-                        >
-                            Log in
-                        </button>
-                    </>
-                )}
+            {status === 'expired' && (
+                <>
+                    <div className="auth-icon auth-icon--warning" aria-hidden="true">!</div>
+                    <h1 className="auth-title">{v.expired}</h1>
+                    <p className="auth-subtitle">{message}</p>
+                    <button
+                        type="button"
+                        className="auth-submit auth-submit--spaced"
+                        onClick={() => navigate('/verify-pending', { state: { email, fromLogin: true } })}
+                    >
+                        {v.newLink}
+                    </button>
+                </>
+            )}
 
-                {status === 'expired' && (
-                    <>
-                        <div className="auth-icon auth-icon--warning" aria-hidden="true">!</div>
-                        <h1 className="auth-title">This link has expired</h1>
-                        <p className="auth-subtitle">{message}</p>
-                        <button
-                            type="button"
-                            className="auth-submit auth-submit--spaced"
-                            onClick={() => navigate('/verify-pending', { state: { email, fromLogin: true } })}
-                        >
-                            Send a new link
-                        </button>
-                    </>
-                )}
-
-                {(status === 'invalid' || status === 'error') && (
-                    <>
-                        <div className="auth-icon auth-icon--warning" aria-hidden="true">!</div>
-                        <h1 className="auth-title">
-                            {status === 'invalid' ? 'This link doesn’t work' : 'Something went wrong'}
-                        </h1>
-                        <p className="auth-subtitle">
-                            {message || 'This confirmation link is missing or incomplete.'}
-                        </p>
-                        <p className="auth-hint auth-hint--center">
-                            If you already confirmed your email, you can just log in.
-                        </p>
-                        <p className="auth-switch">
-                            <Link to="/login">Go to login</Link>
-                        </p>
-                    </>
-                )}
-            </div>
-        </div>
+            {(status === 'invalid' || status === 'error') && (
+                <>
+                    <div className="auth-icon auth-icon--warning" aria-hidden="true">!</div>
+                    <h1 className="auth-title">{status === 'invalid' ? v.invalid : v.error}</h1>
+                    <p className="auth-subtitle">{message || v.missing}</p>
+                    <p className="auth-hint auth-hint--center">{v.already}</p>
+                    <p className="auth-switch">
+                        <Link to="/login">{v.goLogin}</Link>
+                    </p>
+                </>
+            )}
+        </AuthShell>
     );
 };
 

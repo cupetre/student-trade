@@ -787,3 +787,68 @@
     transform: scale(1);
   }
 }
+/* ---------- Marketplace page with the shared top bar (palette "Nordic Stone") ---------- */
+/* .main-container is also used by the chat page, so both get the same background */
+.main-container {
+  min-height: 100vh;
+  background-color: #FAF7F0;
+}
+
+.main-content.mk-main {
+  max-width: 1280px;
+  padding: 28px 24px 48px;
+}
+
+.mk-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 32px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+.mk-head h1 {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(28px, 3.4vw, 36px);
+  letter-spacing: -0.02em;
+  color: #1B2A41;
+}
+.mk-head p { margin: 4px 0 0; color: #5D6470; }
+
+.mk-search {
+  flex: 0 1 420px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1px solid #DDD4C5;
+  border-radius: 12px;
+}
+.mk-search:focus-within { border-color: #3C6E91; box-shadow: 0 0 0 3px #D5E3EC; }
+.mk-search svg { width: 20px; height: 20px; fill: none; stroke: #5D6470; stroke-width: 2; stroke-linecap: round; flex: none; }
+.mk-search input {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  padding: 12px 0;
+  font: inherit;
+  font-size: 15px;
+  color: #1B2A41;
+}
+
+.mk-empty { grid-column: 1 / -1; margin: 8px 0; color: #5D6470; }
+
+.mk-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

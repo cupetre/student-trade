@@ -3,6 +3,7 @@ const {
     addListing,
     viewListings,
     fetchMyListings,
+    findListing,
     removeListing,
 } = require('../models/listingModels.js');
 const { toId, toTrimmedString, toPrice } = require('../lib/parse');
@@ -90,6 +91,21 @@ async function showMyListings(req, res) {
     }
 };
 
+// GET /api/listings/item/:listingId — one item, for the item page
+async function showListing(req, res) {
+    const id = toId(req.params.listingId);
+    if (!id) return res.status(400).json({ error: 'Invalid listing' });
+
+    try {
+        const listing = await findListing(id);
+        if (!listing) return res.status(404).json({ error: 'This item is no longer available.' });
+        res.json(toListingDto(listing));
+    } catch (err) {
+        req.log.error({ err, listingId: id }, 'failed to load listing');
+        res.status(500).json({ error: 'Failed to load this item' });
+    }
+};
+
 async function deleteListing(req, res) {
     const id = toId(req.params.listingId);
     if (!id) return res.status(400).json({ error: 'Invalid listing' });
@@ -115,5 +131,6 @@ module.exports = {
     uploadListing,
     showListings,
     showMyListings,
+    showListing,
     deleteListing,
 };

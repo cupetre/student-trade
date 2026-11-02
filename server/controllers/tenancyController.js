@@ -93,7 +93,7 @@ async function addTenant(req, res) {
         if (!listing) return;
         if (studentId === listing.owner_id) return res.status(400).json({ error: "You can't add yourself as a tenant" });
         if (!(await haveChatted(listing.owner_id, studentId))) {
-            return res.status(403).json({ error: 'You can only add people you have talked to in Student Trade.' });
+            return res.status(403).json({ error: 'You can only add people you have talked to in Kampus messages.' });
         }
 
         const title = listing.title;

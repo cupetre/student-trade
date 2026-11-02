@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap');
+
+.brand-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+.brand-mark { flex: none; display: block; }
+
+@media (max-width: 720px) {
+    .brand-logo--compact .brand-word { display: none; }
+}

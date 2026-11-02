@@ -128,7 +128,7 @@ const TenantsPanel = ({ listing }) => {
                         </div>
                     </>
                 ) : !loading && (
-                    <p className="hs-hint">People appear here once you’ve chatted with them in Student Trade.</p>
+                    <p className="hs-hint">People appear here once you’ve chatted with them in Kampus.</p>
                 )}
             </div>
         </div>

@@ -28,6 +28,14 @@ async function fetchMyListings({ owner_id, title, description, price, photo }) {
     });
 };
 
+// One item with its seller, for the item page
+async function findListing(id) {
+    return prisma.listingItem.findUnique({
+        where: { id },
+        include: { owner: { select: { id: true, fullname: true, profile_picture: true } } },
+    });
+};
+
 async function removeListing({ id, owner_id }) {
     return prisma.listingItem.deleteMany({
         where: { id , owner_id }
@@ -39,5 +47,6 @@ module.exports = {
     addListing,
     viewListings,
     fetchMyListings,
+    findListing,
     removeListing
  };

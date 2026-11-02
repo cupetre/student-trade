@@ -43,7 +43,10 @@ async function getHistory(req, res) {
 
     try {
         const chats = await chatHistory({ user1_id: myId });
-        res.json(chats.map(chat => toChatSummary(chat, myId)));
+        // Newest conversation first: by the last message, or when it was opened
+        const list = chats.map(chat => toChatSummary(chat, myId))
+            .sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity));
+        res.json(list);
     } catch (err) {
         req.log.error({ err }, 'failed to load chat history');
         res.status(500).json({ error: 'Failed to load chat history' });

@@ -70,7 +70,7 @@ const MyStaysPage = () => {
                 {!loading && !error && stays.length === 0 && (
                     <div className="hs-empty">
                         <h2>No stays yet</h2>
-                        <p>Once you move in, ask your landlord to add you as a tenant on Student Trade. Then you can leave a review.</p>
+                        <p>Once you move in, ask your landlord to add you as a tenant on Kampus. Then you can leave a review.</p>
                         <Link to="/housing" className="hs-btn">Browse places</Link>
                     </div>
                 )}

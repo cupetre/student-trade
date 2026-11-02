@@ -1,590 +1,297 @@
 import React, { useEffect, useState } from 'react';
-import './ProfilePage.css';
+import { Link } from 'react-router-dom';
+import AppNav from '../components/AppNav.jsx';
 import Avatar from '../components/Avatar.jsx';
+import ReviewList from '../components/ReviewList.jsx';
+import { RatingSummary } from '../components/Stars.jsx';
+import { apiRequest } from '../lib/api';
 import { resolveMediaUrl } from '../lib/media';
-import { useNavigate } from 'react-router-dom';
-import { createLogger } from '../lib/logger';
+import { refreshCurrentUser, isLandlord } from '../lib/useCurrentUser';
+import './housing/Housing.css';
+import './profile/Profile.css';
+import './ProfilePage.css';
 
-const log = createLogger('profile');
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_PHOTO_MB = 5;
+const MAX_BIO = 1000;
 
+function memberSince(value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+}
+
+const Chevron = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="mp-chevron"><path d="M9 6l6 6-6 6" /></svg>
+);
+
+// My profile (/profilepage): name, photo and bio, reviews about me, and
+// shortcuts to everything else that's mine. Same look as the housing pages.
 const ProfilePage = () => {
-    const navigate = useNavigate();
+    const [me, setMe] = useState(null);
+    const [loadError, setLoadError] = useState('');
+    const [reviews, setReviews] = useState([]);
+    const [counts, setCounts] = useState({ items: null, places: null });
+    const [rentalComplete, setRentalComplete] = useState(null);
 
-    const [isEditing, setIsEditing] = useState(false);
-    const [profileData, setProfileData] = useState({
-        fullname: '',
-        email: '',
-        bio: '',
-        created_at: '',
-        profilePicture: null,
-        profilePicturePreview: null
-    });
-
-    const [originalProfileData, setOriginalProfileData] = useState(null);
-
-    const [itemListings2, setItemListings2] = useState([]);
+    const [editing, setEditing] = useState(false);
+    const [form, setForm] = useState({ fullname: '', bio: '' });
+    const [photo, setPhoto] = useState(null); // { file, url }
+    const [errors, setErrors] = useState({});
+    const [formError, setFormError] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [flash, setFlash] = useState('');
 
     useEffect(() => {
-        const fetchMyListings = async () => {
+        let cancelled = false;
+        apiRequest('/api/users/fetch_profile').then(({ ok, data }) => {
+            if (cancelled) return;
+            if (!ok) { setLoadError(data.error); return; }
+            setMe(data);
+            const landlord = isLandlord(data);
 
-            const token = localStorage.getItem('token');
-            if (!token) {
-                log.warn('No token found');
-                return;
+            // Everything else loads alongside; a failure just leaves that part out
+            apiRequest('/api/rr/get_reviews').then(r => { if (!cancelled && r.ok) setReviews(r.data); });
+            apiRequest('/api/housing/mine').then(r => { if (!cancelled && r.ok) setCounts(c => ({ ...c, places: r.data.length })); });
+            if (!landlord) {
+                apiRequest('/api/listings/fetch_my_listings').then(r => { if (!cancelled && r.ok) setCounts(c => ({ ...c, items: r.data.length })); });
+                apiRequest('/api/users/me/student-profile').then(r => { if (!cancelled && r.ok) setRentalComplete(Boolean(r.data.complete)); });
             }
-            try {
-                const resp = await fetch(`/api/listings/fetch_my_listings`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                });
-
-                if (!resp.ok) throw new Error("failed to fetch the prof data");
-
-                const data = await resp.json();
-                setItemListings2(data);
-            } catch (err) {
-                log.error('Failed to fetch listings', err);
-            }
-        };
-        fetchMyListings();
-    }, []);
-
-    useEffect(() => {
-        const fetchProfileData = async () => {
-            const token = localStorage.getItem('token');
-
-            try {
-                const response = await fetch(`/api/users/fetch_profile`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) throw new Error("failed to fetch the prof data");
-
-                const data = await response.json();
-
-                const fetchedData = {
-                    fullname: data.fullname,
-                    email: data.email,
-                    bio: data.bio,
-                    created_at: data.created_at,
-                    id: data.id,
-                    role: data.role,
-                    profilePicturePreview: resolveMediaUrl(data.profile_picture),
-                };
-
-                setProfileData(fetchedData);
-                setOriginalProfileData(fetchedData);
-            } catch (err) {
-                log.error('Failed to load profile data: ', err);
-            }
-        };
-
-        fetchProfileData();
-
-    }, []);
-
-    const handleSave = async () => {
-
-        try {
-            const token = localStorage.getItem('token');
-            const formData = new FormData();
-
-            formData.append('fullname', profileData.fullname);
-            // a null bio would otherwise be saved as the text "null"
-            formData.append('bio', profileData.bio || '');
-
-            if (profileData.profilePicture) {
-                formData.append('profilePicture', profileData.profilePicture);
-            }
-
-            const response = await fetch(`/api/users/edit_profile`, {
-                method: 'PUT',
-                headers: {
-                    Authorization: `Bearer ${token}`
-                },
-                body: formData,
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save and change');
-            }
-
-            const result = await response.json();
-
-            log.debug('Profile saved', result);
-
-            setProfileData(prev => ({
-                ...prev,
-                profilePicture: null, // clear the file and also in the database its null so it HAS to be null if not anything
-                profilePicturePreview: resolveMediaUrl(result.result?.profile_picture) || prev.profilePicturePreview
-            }));
-
-            
-
-            setIsEditing(false);
-        } catch (err) {
-            log.error('Failed to save profile', err);
-        }
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setProfileData(prevData => ({
-            ...prevData,
-            [name]: value
-        }));
-    };
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                setProfileData(prev => ({
-                    ...prev,
-                    profilePicture: file,
-                    profilePicturePreview: reader.result
-                }));
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const handleCancel = () => {
-        if (originalProfileData) {
-            setProfileData(originalProfileData);
-        }
-        setIsEditing(false);
-    };
-
-    // heere's the reviews sections
-
-    const [userReviews, setUserReviews] = useState([]);
-
-    useEffect(() => {
-        const showReviews = async () => {
-
-            const token = localStorage.getItem('token');
-
-            try {
-
-                const response = await fetch(`/api/rr/get_reviews`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    }
-
-                });
-
-                if (!response.ok) {
-                    throw new Error("Failed to fetch reviews");
-                }
-
-                const newData = await response.json();
-
-                const dataForAssigning = newData.map((review) => ({
-                    id: review.id,
-                    rating: review.rating,
-                    text: review.description,
-                    date: new Date(review.created_at).toLocaleDateString(),
-                }));
-
-                setUserReviews(dataForAssigning);
-            } catch (err) {
-                log.error('Could not load your reviews', err);
-            }
-        };
-
-        showReviews();
-    }, []);
-
-    const renderStarRating = (rating) => {
-        return (
-            <div className="star-rating">
-                {'⭐'.repeat(rating)}
-                {'☆'.repeat(5 - rating)}
-            </div>
-        );
-    };
-
-    // lets edit/delete listings here
-
-    const [selectedListing, setSelectedListing] = useState(null);
-    const [isListingModalOpen, setIsListingModalOpen] = useState(false);
-
-    const [editFormData, setEditFormData] = useState({
-        id: '',
-        title: '',
-        description: '',
-        price: '',
-        photo: null,
-        photoPreview: ''
-    });
-
-    const openListingModal = (listing) => {
-
-        setEditFormData({
-            id: listing.id,
-            title: listing.title,
-            description: listing.description,
-            price: listing.price,
-            photo: null,
-            photoPreview: resolveMediaUrl(listing.photo)
         });
+        return () => { cancelled = true; };
+    }, []);
 
-        setSelectedListing(listing);
-        setIsListingModalOpen(true);
+    // Free the photo preview when it's replaced or the page closes
+    useEffect(() => () => { if (photo) URL.revokeObjectURL(photo.url); }, [photo]);
+
+    const startEditing = () => {
+        setForm({ fullname: me.fullname || '', bio: me.bio || '' });
+        setPhoto(null);
+        setErrors({});
+        setFormError('');
+        setFlash('');
+        setEditing(true);
     };
 
-    const closeListingModal = () => {
-        setIsListingModalOpen(false);
-        setSelectedListing(null);
+    const cancel = () => { setEditing(false); setPhoto(null); };
 
-        setEditFormData({
-            id: '',
-            title: '',
-            description: '',
-            price: '',
-            photo: null,
-            currentPhoto: ''
-        })
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm(prev => ({ ...prev, [name]: value }));
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
 
-    const handleFormSubmit = async (e) => {
+    const handleFile = (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        if (!PHOTO_TYPES.includes(file.type)) { setErrors(prev => ({ ...prev, photo: 'Use a JPG, PNG or WebP photo.' })); return; }
+        if (file.size > MAX_PHOTO_MB * 1024 * 1024) { setErrors(prev => ({ ...prev, photo: `The photo can be at most ${MAX_PHOTO_MB} MB.` })); return; }
+        setErrors(prev => ({ ...prev, photo: '' }));
+        setPhoto({ file, url: URL.createObjectURL(file) });
+    };
+
+    const save = async (e) => {
         e.preventDefault();
+        const name = form.fullname.trim();
+        if (name.length < 2) { setErrors({ fullname: 'Enter your full name.' }); return; }
 
-        const token = localStorage.getItem('token');
+        const data = new FormData();
+        data.append('fullname', name);
+        data.append('bio', form.bio.trim());
+        if (photo) data.append('profilePicture', photo.file);
 
-        const newAddedForm = new FormData();
-
-        newAddedForm.append('id', editFormData.id);
-        newAddedForm.append('title', editFormData.title);
-        newAddedForm.append('description', editFormData.description);
-        newAddedForm.append('price', editFormData.price);
-
-        if (editFormData.photo) {
-            newAddedForm.append('photo', editFormData.photo);
-        }
-
-        log.debug('Listing saved', newAddedForm);
-
-        try {
-            const resp = await fetch(`/api/listings/edit_listing`, {
-                method: 'PUT',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-
-                body: newAddedForm,
-
-            });
-
-            if (!resp.ok) {
-                throw new Error(`HTTP error! status: ${resp.status}`);
-            }
-
-            // show the new text right away (a new photo appears on the next reload)
-            setItemListings2(prev => prev.map(item => item.id === editFormData.id
-                ? { ...item, title: editFormData.title, description: editFormData.description, price: editFormData.price }
-                : item));
-            closeListingModal();
-
-        } catch (err) {
-            log.error('Could not save the listing', err);
-        }
-    };
-
-    const handleDelete = async (listingId) => {
-        const token = localStorage.getItem('token');
-
-        if (!window.confirm("Are you sure you want to delete this listing?")) {
+        setSaving(true);
+        setFormError('');
+        const { ok, data: result } = await apiRequest('/api/users/edit_profile', { method: 'PUT', formData: data });
+        setSaving(false);
+        if (!ok) {
+            if (result.field) setErrors({ [result.field]: result.error });
+            else setFormError(result.error);
             return;
         }
 
-        try {
-            const respo = await fetch(`/api/listings/delete_listing/${listingId}`, {
-                method: 'DELETE',
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-
-            if (!respo.ok) throw new Error(`HTTP error! status: ${respo.status}`);
-
-            // remove it from the list right away instead of waiting for a reload
-            setItemListings2(prev => prev.filter(item => item.id !== listingId));
-        } catch (err) {
-            log.error('Could not delete the listing', err);
-        }
+        setMe(prev => ({
+            ...prev,
+            fullname: name,
+            bio: form.bio.trim(),
+            profile_picture: result.result?.profile_picture || prev.profile_picture,
+        }));
+        refreshCurrentUser(); // the top bar shows the new name and photo
+        setEditing(false);
+        setPhoto(null);
+        setFlash('Your profile was saved.');
     };
 
-    const handleFormChange = (e) => {
-        const { name, value, files } = e.target;
+    if (loadError || !me) {
+        return (
+            <div className="hs-shell">
+                <AppNav />
+                <main className="hs-page">
+                    {loadError ? <div className="hs-alert hs-alert--error" role="alert">{loadError}</div> : <p className="hs-muted">Loading…</p>}
+                </main>
+            </div>
+        );
+    }
 
-        if (name === 'photo' && files && files.length > 0) {
-            const file = files[0];
-            const reader = new FileReader();
+    const landlord = isLandlord(me);
+    const currentPhoto = photo?.url || resolveMediaUrl(me.profile_picture);
+    const rating = reviews.length
+        ? { count: reviews.length, average: reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length }
+        : null;
 
-            reader.onload = (event) => {
-                setEditFormData(prevData => ({
-                    ...prevData,
-                    photo: file,
-                    photoPreview: event.target.result
-                }));
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setEditFormData(prevData => ({
-                ...prevData,
-                [name]: value
-            }));
-        }
-    };
+    const roleTag = landlord
+        ? (me.landlord_status === 'approved' ? <span className="hs-tag hs-tag--good">Verified landlord</span> : <span className="hs-tag">Landlord · being reviewed</span>)
+        : <span className="hs-tag hs-tag--good">Verified student</span>;
 
     return (
-        <div className="profile-page">
-            <header className="profile-header">
-                <div className="profile-header-content">
-                    <h1 className="profile-page-title">My Profile</h1>
-                    <div className="profile-header-actions">
-                        {profileData.role !== 'landlord' && (
-                            <button className="settings-btn" onClick={() => navigate('/profile/student')}>
-                                <span>Rental profile</span>
-                            </button>
-                        )}
-                        {profileData.id && (
-                            <button className="settings-btn" onClick={() => navigate(`/users/${profileData.id}`)}>
-                                <span>How others see me</span>
-                            </button>
-                        )}
-                        <button className="settings-btn" onClick={() => navigate('/')}>
-                            <span>Back</span>
-                        </button>
-                    </div>
-                </div>
-            </header>
+        <div className="hs-shell">
+            <AppNav />
+            <main className="hs-page mp-page">
+                <header className="hs-head">
+                    <h1>My profile</h1>
+                    <p>Your name, photo and bio appear on your {landlord ? 'places' : 'items, places'} and in messages.</p>
+                </header>
 
-            <main className="profile-main">
-                <div className="profile-container">
+                {flash && <div className="hs-alert hs-alert--success" role="status">{flash}</div>}
 
-                    <div className="profile-info-card">
-                        <div className="profile-info-header">
-                            <h2 className="profile-section-title">Profile Information</h2>
-                            {!isEditing ? (
-                                <button className="edit-btn" onClick={() => setIsEditing(true)}>
-                                    <span>Edit Profile</span>
-                                </button>
-                            ) : (
-                                <div className="edit-buttons">
-                                    <button className="cancel-edit-btn" onClick={handleCancel}>
-                                        <span>Cancel</span>
-                                    </button>
-                                    <button className="save-btn" onClick={handleSave}>
-                                        <span>Save</span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="profile-info-content">
-                            <div className="profile-picture-section">
-                                <div className="profile-picture-container">
-                                    {/* 112 = the 120px container minus its 4px border on each side */}
-                                    <Avatar
-                                        src={profileData.profilePicturePreview}
-                                        name={profileData.fullname}
-                                        size={112}
-                                        className="profile-picture"
-                                    />
-                                </div>
-                                {isEditing && (
-                                    <div className="profile-picture-upload">
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleImageChange}
-                                            className="picture-input"
-                                            id="profile-picture-upload"
-                                        />
-                                        <label htmlFor="profile-picture-upload" className="picture-upload-label">
-                                            Change Photo
-                                        </label>
+                <div className="mp-grid">
+                    <div className="mp-main">
+                        {/* ---- about you ---- */}
+                        {!editing ? (
+                            <section className="mp-card mp-about" aria-label="About you">
+                                <Avatar src={currentPhoto} name={me.fullname} size={104} className="mp-avatar" />
+                                <div className="mp-about-info">
+                                    <div className="mp-about-top">
+                                        <h2>{me.fullname}</h2>
+                                        <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" onClick={startEditing}>Edit profile</button>
                                     </div>
+                                    <div className="mp-tags">
+                                        {roleTag}
+                                        {me.created_at && <span className="hs-muted">Member since {memberSince(me.created_at)}</span>}
+                                    </div>
+                                    <p className="mp-email">{me.email}</p>
+                                    {me.bio
+                                        ? <p className="mp-bio">{me.bio}</p>
+                                        : (
+                                            <p className="mp-bio mp-bio--empty">
+                                                No bio yet. <button type="button" className="hs-link-btn" onClick={startEditing}>Add a few words</button> about
+                                                {landlord ? ' you or your agency' : ' what you study and where you’re from'}. It helps people trust you.
+                                            </p>
+                                        )}
+                                </div>
+                            </section>
+                        ) : (
+                            <form className="mp-card mp-edit" onSubmit={save} noValidate aria-label="Edit your profile">
+                                <h2>Edit profile</h2>
+                                {formError && <div className="hs-alert hs-alert--error" role="alert">{formError}</div>}
+
+                                <div className="mp-photo">
+                                    <Avatar src={currentPhoto} name={form.fullname || me.fullname} size={88} className="mp-avatar" />
+                                    <div>
+                                        <div className="mp-photo-actions">
+                                            <label className="hs-btn hs-btn--small hs-btn--ghost mp-upload">
+                                                <input type="file" accept={PHOTO_TYPES.join(',')} onChange={handleFile} />
+                                                {currentPhoto ? 'Change photo' : 'Add a photo'}
+                                            </label>
+                                            {photo && <button type="button" className="hs-link-btn" onClick={() => setPhoto(null)}>Undo</button>}
+                                        </div>
+                                        <p className="hs-hint">A clear photo of your face. JPG, PNG or WebP, up to {MAX_PHOTO_MB} MB.</p>
+                                        {errors.photo && <p className="hs-field-error" role="alert">{errors.photo}</p>}
+                                    </div>
+                                </div>
+
+                                <div className={`hs-field ${errors.fullname ? 'has-error' : ''}`}>
+                                    <label htmlFor="mp-name">Full name</label>
+                                    <input id="mp-name" name="fullname" type="text" maxLength={100} value={form.fullname} onChange={handleChange}
+                                        aria-invalid={Boolean(errors.fullname)} aria-describedby={errors.fullname ? 'mp-name-error' : undefined} />
+                                    {errors.fullname && <p className="hs-field-error" id="mp-name-error">{errors.fullname}</p>}
+                                </div>
+
+                                <div className="hs-field">
+                                    <label htmlFor="mp-email">Email</label>
+                                    <input id="mp-email" type="email" value={me.email} readOnly disabled aria-describedby="mp-email-hint" />
+                                    <p className="hs-hint" id="mp-email-hint">
+                                        {landlord ? 'Your login email can’t be changed here.' : 'Your verified university email can’t be changed.'}
+                                    </p>
+                                </div>
+
+                                <div className="hs-field">
+                                    <label htmlFor="mp-bio">Bio <span className="hs-optional">(optional)</span></label>
+                                    <textarea id="mp-bio" name="bio" rows="4" maxLength={MAX_BIO} value={form.bio} onChange={handleChange} aria-describedby="mp-bio-hint" />
+                                    <p className="hs-hint" id="mp-bio-hint">
+                                        {landlord ? 'Who you are and what you rent out.' : 'What you study, where you’re from, what you’re into.'} {form.bio.length}/{MAX_BIO}
+                                    </p>
+                                </div>
+
+                                <div className="hs-form-nav">
+                                    <button type="button" className="hs-btn hs-btn--ghost" onClick={cancel}>Cancel</button>
+                                    <button type="submit" className="hs-btn" disabled={saving}>{saving ? 'Saving…' : 'Save profile'}</button>
+                                </div>
+                            </form>
+                        )}
+
+                        {/* ---- reviews ---- */}
+                        <section className="mp-reviews" aria-labelledby="mp-reviews-title">
+                            <div className="mp-section-head">
+                                <h2 id="mp-reviews-title">Reviews about you</h2>
+                                {rating && <RatingSummary rating={rating} />}
+                            </div>
+                            <ReviewList reviews={reviews}
+                                emptyText={landlord
+                                    ? 'No reviews yet. Tenants can review you once they’ve stayed in one of your places.'
+                                    : 'No reviews yet. After you buy, sell or rent through Kampus, people can review you from your conversation.'} />
+                        </section>
+                    </div>
+
+                    {/* ---- shortcuts ---- */}
+                    <aside className="mp-side" aria-label="Your things on Kampus">
+                        {!landlord && (
+                            <Link to="/profile/student" className={`mp-card mp-rental ${rentalComplete ? 'is-done' : ''}`}>
+                                <span className="mp-rental-text">
+                                    <strong>Rental profile</strong>
+                                    <span>
+                                        {rentalComplete === null ? 'What landlords see when you message them.'
+                                            : rentalComplete ? 'Complete. Landlords see it when you message them.'
+                                                : 'Not finished. Complete it before you message landlords.'}
+                                    </span>
+                                </span>
+                                {rentalComplete !== null && (
+                                    <span className={`hs-status ${rentalComplete ? 'hs-status--live' : 'hs-status--soon'}`}>
+                                        {rentalComplete ? 'Complete' : 'To do'}
+                                    </span>
                                 )}
-                            </div>
+                                <Chevron />
+                            </Link>
+                        )}
 
-                            <div className="profile-details">
-                                <div className="profile-field">
-                                    <label className="profile-label">Full Name</label>
-                                    {isEditing ? (
-                                        <input
-                                            type="text"
-                                            name="fullname"
-                                            value={profileData.fullname}
-                                            onChange={handleInputChange}
-                                            className="profile-input"
-                                        />
-                                    ) : (
-                                        <p className="profile-value">{profileData.fullname}</p>
-                                    )}
-                                </div>
+                        <nav className="mp-card mp-links" aria-label="Shortcuts">
+                            {!landlord && (
+                                <Link to="/marketplace/mine">
+                                    <span>My items</span>
+                                    {counts.items !== null && <span className="mp-count">{counts.items}</span>}
+                                    <Chevron />
+                                </Link>
+                            )}
+                            <Link to="/housing/mine">
+                                <span>My places</span>
+                                {counts.places !== null && <span className="mp-count">{counts.places}</span>}
+                                <Chevron />
+                            </Link>
+                            {!landlord && <Link to="/housing/saved"><span>Saved places</span><Chevron /></Link>}
+                            {!landlord && <Link to="/housing/stays"><span>My stays</span><Chevron /></Link>}
+                            <Link to="/chatpage"><span>Messages</span><Chevron /></Link>
+                        </nav>
 
-                                <div className="profile-field">
-                                    <label className="profile-label">Email Address</label>
-                                    {/* Read-only: the email is the verified university address the account is tied to */}
-                                    <div className="profile-value-with-icon">
-                                        <p className="profile-value">{profileData.email}</p>
-                                    </div>
-                                </div>
-
-                                <div className="profile-field">
-                                    <label className="profile-label">Bio</label>
-                                    {isEditing ? (
-                                        <textarea
-                                            name="bio"
-                                            value={profileData.bio}
-                                            onChange={handleInputChange}
-                                            className="profile-textarea"
-                                            rows="3"
-                                        />
-                                    ) : (
-                                        <p className="profile-value bio-text">{profileData.bio}</p>
-                                    )}
-                                </div>
-
-                                <div className="profile-field">
-                                    <label className="profile-label">Member Since</label>
-                                    <p className="profile-value bio-text">{profileData.created_at}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="reviews-section">
-                        <div className="reviews-header">
-                            <h2 className="reviews-section-title">Recent Reviews</h2>
-                        </div>
-                        <div className="user-reviews-grid">
-                            {userReviews.map((review) => (
-                                <div key={review.id} className="review-card">
-                                    {renderStarRating(review.rating)}
-                                    <p className="review-text">{review.text}</p>
-                                    <div className="review-meta">
-                                        <span className="review-date">{review.date}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="listings-section">
-                        <div className="listings-header">
-                            <h2 className="listings-section-title">My Listings</h2>
-                        </div>
-
-                        <div className="listings-grid">
-                            {itemListings2.map((listing) => (
-                                <div key={listing.id} className="listing-card">
-                                    <div className="listing-info">
-                                        <h3 className="listing-title">{listing.title}</h3>
-                                        <div className="listing-details">
-                                            <span className="listing-price">{listing.price}</span>
-                                        </div>
-                                        <span className="listing-date">
-                                            {new Date(listing.date).toLocaleDateString()}
-                                        </span>
-                                        <div className="listing-actions">
-                                            <button
-                                                className="listing-action-btn edit"
-                                                onClick={() => openListingModal(listing)}
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                className="listing-action-btn delete"
-                                                onClick={() => handleDelete(listing.id)}
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="listing-image">
-                                        <img
-                                            src={resolveMediaUrl(listing.photo)}
-                                            alt={listing.title}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                        <Link to={`/users/${me.id}`} className="mp-card mp-preview">
+                            <span>
+                                <strong>How others see you</strong>
+                                <span>Your public page, the way students and landlords see it.</span>
+                            </span>
+                            <Chevron />
+                        </Link>
+                    </aside>
                 </div>
             </main>
-
-            {isListingModalOpen && selectedListing && (
-                <div className="edit-modal-overlay" onClick={closeListingModal}>
-                    <div className="edit-modal-content" onClick={(e) => e.stopPropagation()}>
-                        <button className="edit-modal-close" onClick={closeListingModal}>&times;</button>
-                        <h2>Edit Listing</h2>
-                        <form onSubmit={handleFormSubmit} className="edit-form">
-                            <div className="form-group">
-                                <label htmlFor="title">Title</label>
-                                <input
-                                    type="text"
-                                    id="title"
-                                    name="title"
-                                    value={editFormData.title}
-                                    onChange={handleFormChange}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="description">Description</label>
-                                <textarea
-                                    id="description"
-                                    name="description"
-                                    value={editFormData.description}
-                                    onChange={handleFormChange}
-                                    rows="4"
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="price">Price</label>
-                                <input
-                                    type="number"
-                                    id="price"
-                                    name="price"
-                                    value={editFormData.price}
-                                    onChange={handleFormChange}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Current Image</label>
-                                {editFormData.photoPreview && (
-                                    <img
-                                        src={editFormData.photoPreview}
-                                        alt="Listing preview"
-                                        className="edit-current-image"
-                                    />
-                                )}
-                                <label htmlFor="photo" className="file-input-label">
-                                    Choose a new image (optional)
-                                </label>
-                                <input
-                                    type="file"
-                                    id="photo"
-                                    name="photo"
-                                    onChange={handleFormChange}
-                                />
-                            </div>
-                            <button type="submit" className="edit-submit-btn">Save Changes</button>
-                        </form>
-                    </div>
-                </div>
-            )}
-
         </div>
     );
 };

@@ -303,7 +303,7 @@ const HousingDetailPage = () => {
                             <ul>
                                 <li>Never pay a deposit or rent before you’ve seen the place (in person or on a live video call).</li>
                                 <li>Always sign a written lease. It’s required by law in Slovenia.</li>
-                                <li>Keep the conversation in Student Trade messages until you’ve met.</li>
+                                <li>Keep the conversation in Kampus messages until you’ve met.</li>
                             </ul>
                         </div>
                     </aside>

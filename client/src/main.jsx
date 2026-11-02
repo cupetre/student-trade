@@ -15,12 +15,18 @@ import HousingDetailPage from './Pages/housing/HousingDetailPage.jsx';
 import HousingFormPage from './Pages/housing/HousingFormPage.jsx';
 import MyHousingPage from './Pages/housing/MyHousingPage.jsx';
 import MyStaysPage from './Pages/housing/MyStaysPage.jsx';
+import MarketDetailPage from './Pages/marketplace/MarketDetailPage.jsx';
+import MarketFormPage from './Pages/marketplace/MarketFormPage.jsx';
+import MyItemsPage from './Pages/marketplace/MyItemsPage.jsx';
 import StudentProfilePage from './Pages/profile/StudentProfilePage.jsx';
 import PublicProfilePage from './Pages/profile/PublicProfilePage.jsx';
-import { RequireAuth, PublicOnly, HomeSwitch } from './components/RouteGuards.jsx';
+import SettleInPage from './Pages/SettleInPage.jsx';
+import { RequireAuth, PublicOnly, HomeSwitch, StudentOnly } from './components/RouteGuards.jsx';
 import { installFetchWrapper } from './lib/auth';
 import { appLog } from './lib/logger';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+import PageSlide from './components/PageSlide.jsx';
+import RouteTitle from './components/RouteTitle.jsx';
 
 installFetchWrapper();
 
@@ -39,38 +45,51 @@ const root = ReactDOM.createRoot(document.getElementById('root'), {
   onRecoverableError: (error) => appLog.warn('React recovered from an error:', error),
 });
 
+// Where each page sits in the visitor's journey; PageSlide uses it to pick the slide direction
+const STEP = { landing: 0, login: 1, register: 2, landlordRegister: 3, confirm: 4, app: 10 };
+const slide = (step, page) => <PageSlide step={step}>{page}</PageSlide>;
+
 root.render(
   <BrowserRouter>
     <ErrorBoundary>
+    <RouteTitle />
     <Routes>
-      {/* Start page: the marketplace when logged in, the landing page otherwise */}
-      <Route path="/" element={<HomeSwitch app={<App />} landing={<LandingPage />} />} />
+      {/* Start page: the landing page for visitors; logged-in users go to their platform */}
+      <Route path="/" element={<HomeSwitch landing={slide(STEP.landing, <LandingPage />)} />} />
+
+      {/* Student platforms: landlords are sent to their housing listings instead */}
+      <Route path="/marketplace" element={<RequireAuth><StudentOnly>{slide(STEP.app, <App />)}</StudentOnly></RequireAuth>} />
+      <Route path="/marketplace/new" element={<RequireAuth><StudentOnly>{slide(STEP.app, <MarketFormPage key="new" />)}</StudentOnly></RequireAuth>} />
+      <Route path="/marketplace/mine" element={<RequireAuth><StudentOnly>{slide(STEP.app, <MyItemsPage />)}</StudentOnly></RequireAuth>} />
+      <Route path="/marketplace/:id" element={<RequireAuth><StudentOnly>{slide(STEP.app, <MarketDetailPage />)}</StudentOnly></RequireAuth>} />
+      <Route path="/marketplace/:id/edit" element={<RequireAuth><StudentOnly>{slide(STEP.app, <MarketFormPage key="edit" />)}</StudentOnly></RequireAuth>} />
+      <Route path="/settle-in" element={<RequireAuth><StudentOnly>{slide(STEP.app, <SettleInPage />)}</StudentOnly></RequireAuth>} />
 
       {/* The rest of the app: only for logged-in users, everyone else goes to /login */}
-      <Route path="/profilepage" element={<RequireAuth><Profile /></RequireAuth>} />
-      <Route path="/chatpage" element={<RequireAuth><ChatPage /></RequireAuth>} />
+      <Route path="/profilepage" element={<RequireAuth>{slide(STEP.app, <Profile />)}</RequireAuth>} />
+      <Route path="/chatpage" element={<RequireAuth>{slide(STEP.app, <ChatPage />)}</RequireAuth>} />
 
       {/* Housing */}
-      <Route path="/housing" element={<RequireAuth><HousingListPage mode="browse" key="browse" /></RequireAuth>} />
-      <Route path="/housing/saved" element={<RequireAuth><HousingListPage mode="saved" key="saved" /></RequireAuth>} />
-      <Route path="/housing/mine" element={<RequireAuth><MyHousingPage /></RequireAuth>} />
-      <Route path="/housing/stays" element={<RequireAuth><MyStaysPage /></RequireAuth>} />
-      <Route path="/housing/new" element={<RequireAuth><HousingFormPage key="new" /></RequireAuth>} />
-      <Route path="/housing/:id" element={<RequireAuth><HousingDetailPage /></RequireAuth>} />
-      <Route path="/housing/:id/edit" element={<RequireAuth><HousingFormPage key="edit" /></RequireAuth>} />
+      <Route path="/housing" element={<RequireAuth>{slide(STEP.app, <HousingListPage mode="browse" key="browse" />)}</RequireAuth>} />
+      <Route path="/housing/saved" element={<RequireAuth><StudentOnly>{slide(STEP.app, <HousingListPage mode="saved" key="saved" />)}</StudentOnly></RequireAuth>} />
+      <Route path="/housing/mine" element={<RequireAuth>{slide(STEP.app, <MyHousingPage />)}</RequireAuth>} />
+      <Route path="/housing/stays" element={<RequireAuth><StudentOnly>{slide(STEP.app, <MyStaysPage />)}</StudentOnly></RequireAuth>} />
+      <Route path="/housing/new" element={<RequireAuth>{slide(STEP.app, <HousingFormPage key="new" />)}</RequireAuth>} />
+      <Route path="/housing/:id" element={<RequireAuth>{slide(STEP.app, <HousingDetailPage />)}</RequireAuth>} />
+      <Route path="/housing/:id/edit" element={<RequireAuth>{slide(STEP.app, <HousingFormPage key="edit" />)}</RequireAuth>} />
 
       {/* Profiles */}
-      <Route path="/profile/student" element={<RequireAuth><StudentProfilePage /></RequireAuth>} />
-      <Route path="/users/:id" element={<RequireAuth><PublicProfilePage /></RequireAuth>} />
+      <Route path="/profile/student" element={<RequireAuth><StudentOnly>{slide(STEP.app, <StudentProfilePage />)}</StudentOnly></RequireAuth>} />
+      <Route path="/users/:id" element={<RequireAuth>{slide(STEP.app, <PublicProfilePage />)}</RequireAuth>} />
 
       {/* Login and register: logged-in users are sent to the app instead */}
-      <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
-      <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
-      <Route path="/register/landlord" element={<PublicOnly><LandlordRegisterPage /></PublicOnly>} />
+      <Route path="/login" element={<PublicOnly>{slide(STEP.login, <Login />)}</PublicOnly>} />
+      <Route path="/register" element={<PublicOnly>{slide(STEP.register, <Register />)}</PublicOnly>} />
+      <Route path="/register/landlord" element={<PublicOnly>{slide(STEP.landlordRegister, <LandlordRegisterPage />)}</PublicOnly>} />
 
       {/* Email confirmation works either way */}
-      <Route path="/verify-pending" element={<VerifyPendingPage />} />
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/verify-pending" element={slide(STEP.confirm, <VerifyPendingPage />)} />
+      <Route path="/verify-email" element={slide(STEP.confirm, <VerifyEmailPage />)} />
 
       {/* Any unknown address goes to the start */}
       <Route path="*" element={<Navigate to="/" replace />} />

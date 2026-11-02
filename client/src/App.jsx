@@ -1,506 +1,157 @@
-import { useState, useEffect } from 'react';
-import './App.css';
-import Avatar from './components/Avatar.jsx';
-import { useNavigate } from 'react-router-dom';
-import { createLogger } from './lib/logger';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import AppNav from './components/AppNav.jsx';
+import MarketTabs from './Pages/marketplace/MarketTabs.jsx';
+import MarketCard from './Pages/marketplace/MarketCard.jsx';
+import { SORTS } from './Pages/marketplace/marketOptions';
+import { apiRequest } from './lib/api';
+import './Pages/housing/Housing.css';
+import './Pages/marketplace/Market.css';
 
-const log = createLogger('marketplace');
+// Marketplace › Browse (/marketplace). Built like Housing › Browse: tabs, a page
+// header, filters that live in the address (?q=lamp&max=20&sort=price_asc, so a
+// search can be shared and the back button works) and a grid of cards.
+const MarketplacePage = () => {
+    const [params, setParams] = useSearchParams();
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-function App() {
+    // The search and price boxes keep their own value while you type and update
+    // the address only after typing stops (typing straight into the address
+    // state loses keystrokes, because the address updates a moment later)
+    const [searchInput, setSearchInput] = useState(params.get('q') || '');
+    const [maxInput, setMaxInput] = useState(params.get('max') || '');
 
-  const navigate = useNavigate();
+    useEffect(() => {
+        let cancelled = false;
+        apiRequest('/api/listings/show_listings').then(({ ok, data }) => {
+            if (cancelled) return;
+            setLoading(false);
+            if (ok) setItems(Array.isArray(data) ? data : []);
+            else setError(data.error);
+        });
+        return () => { cancelled = true; };
+    }, []);
 
-  const [profileData, setProfileData] = useState({});
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price: '',
-    photo: null,
-    photoPreview: null,
-  });
-
-  const [itemListings, setItemListings] = useState([]);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      log.debug('No token found, user might not be logged in');
-      return;
+    // Starts from the address as it is now, not as it was when this render
+    // happened, so a delayed update never undoes a newer one
+    function setFilters(changes, replace = false) {
+        const next = new URLSearchParams(window.location.search);
+        Object.entries(changes).forEach(([key, value]) => {
+            if (value === '' || value === null) next.delete(key);
+            else next.set(key, value);
+        });
+        setParams(next, { replace });
     }
 
-    const fetchProfileData = async () => {
-      try {
-        const res = await fetch('/api/users/fetch_profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+    useEffect(() => {
+        const q = searchInput.trim();
+        if (q === (params.get('q') || '') && maxInput === (params.get('max') || '')) return undefined;
+        const timer = setTimeout(() => setFilters({ q, max: maxInput }, true), 300);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchInput, maxInput]);
 
-        if (!res.ok) throw new Error('Failed to fetch profile');
+    const query = (params.get('q') || '').toLowerCase();
+    const max = params.get('max') || '';  // what the list is filtered by right now
+    const sort = params.get('sort') || 'newest';
 
-        const data = await res.json();
+    const shown = useMemo(() => {
+        let list = items;
+        if (query) list = list.filter(i => `${i.title} ${i.description || ''}`.toLowerCase().includes(query));
+        if (max !== '') list = list.filter(i => Number(i.price) <= Number(max));
+        const sorted = [...list];
+        if (sort === 'price_asc') sorted.sort((a, b) => Number(a.price) - Number(b.price));
+        else if (sort === 'price_desc') sorted.sort((a, b) => Number(b.price) - Number(a.price));
+        else sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+        return sorted;
+    }, [items, query, max, sort]);
 
-        // The marketplace is for students; landlords only use housing
-        if (data.role === 'landlord') {
-          navigate('/housing/mine', { replace: true });
-          return;
-        }
-
-        setProfileData(data);
-      } catch (err) {
-        log.error('Error fetching profile:', err);
-      }
+    const hasFilters = Boolean(query || max);
+    const clearFilters = () => {
+        setSearchInput('');
+        setMaxInput('');
+        setParams({});
     };
 
-    fetchProfileData();
-  }, [navigate]);
+    return (
+        <div className="hs-shell">
+            <AppNav />
+            <main className="hs-page">
+                <MarketTabs />
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+                <header className="hs-head">
+                    <h1>Marketplace</h1>
+                    <p>Second-hand furniture, books, tech and bikes from students near you.</p>
+                </header>
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData({
-        ...formData,
-        photo: file,
-        photoPreview: URL.createObjectURL(file),
-      });
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      log.warn('No login token found');
-    }
-
-    const formDataToSend = new FormData();
-
-    formDataToSend.append('title', formData.title);
-    formDataToSend.append('description', formData.description);
-    formDataToSend.append('price', formData.price);
-    if (formData.photo) {
-      formDataToSend.append('photo', formData.photo);
-    }
-
-    log.debug('Form submitted:', formData);
-
-    try {
-      const response = await fetch(`/api/listings/upload_listing`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formDataToSend,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload to db ');
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        log.error('Saving the listing failed: no OK response from the server');
-      }
-
-      log.debug(result.message);
-      setIsModalOpen(false);
-    } catch (err) {
-      log.error('Could not save the listing', err);
-    }
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setFormData({
-      title: '',
-      description: '',
-      price: '',
-      photo: null,
-      photoPreview: null
-    });
-  };
-
-  const handleButtonClick = () => {
-    navigate('/profilePage#listing-content');
-  };
-
-  useEffect(() => {
-    const fetchListings = async () => {
-      const token = localStorage.getItem('token');
-      try {
-        const response = await fetch('/api/listings/show_Listings', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          }
-        });
-        const data = await response.json();
-        setItemListings(data);
-      } catch (err) {
-        log.error('Failed to fetch listings', err);
-      }
-    };
-
-    fetchListings();
-  }, []);
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
-
-  //modals for the listings view
-
-  const [isListingModalOpen, setIsListingModalOpen] = useState(false);
-  const [selectedListing, setSelectedListing] = useState(null);
-
-  const openListingModal = (listing) => {
-    setSelectedListing(listing);
-    setIsListingModalOpen(true);
-  }
-
-  const closeListingModal = () => {
-    setIsListingModalOpen(false);
-  }
-
-  const handleMessageButton = async () => {
-
-    const token = localStorage.getItem('token');
-
-    try {
-      const receiverId = selectedListing.owner_id;
-      log.debug('Opening chat with user', receiverId);
-
-      const resp = await fetch('/api/messages/create_chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ user2_id: receiverId }),
-      });
-      if (!resp.ok) {
-        throw new Error('Failed to create or get the damn chat');
-      }
-      const data = await resp.json();
-
-      const chatId = data.chat_id;
-      navigate(`/chatPage?chatId=${chatId}`);
-    } catch (err) {
-      log.error('Could not open the chat', err);
-    }
-  };
-
-  // report submitting part
-
-  const [reportReason, setReportReason] = useState("");
-  const [customReportReason, setCustomReportReason] = useState("");
-
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-
-  const openReportModal = () => {
-    setIsListingModalOpen(false);
-    setIsReportModalOpen(true);
-  };
-
-  const closeReportModal = () => {
-    setIsReportModalOpen(false);
-  };
-
-  const handleReportSubmit = async () => {
-
-    const token = localStorage.getItem('token');
-    const reasonToSend = reportReason === "Other" ? customReportReason : reportReason;
-
-    try {
-      await fetch('/api/rr/submit_report', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          reported_id: selectedListing.owner_id,
-          item_id: selectedListing.id,
-          description: reasonToSend,
-        }),
-
-      });
-
-      closeReportModal(true);
-      setIsListingModalOpen(true);
-    } catch (err) {
-      log.error('Could not submit the report', err);
-    }
-  };
-
-  return (
-    <div className="main-container">
-      <header className="header">
-        <div className="header-content">
-          <div className="header-nav">
-            {/* Logo */}
-            <div className="logo-section">
-              <h1 className="logo-text">Student Trade</h1>
-            </div>
-
-            <div className="search-container">
-              <div className="search-input-wrapper">
-                <input
-                  type="text"
-                  placeholder="Search for items..."
-                  className="search-input"
-                />
-              </div>
-            </div>
-
-            <div className="user-section">
-              <button className="post-item-btn" onClick={() => setIsModalOpen(true)}>
-                <span>Post Item</span>
-              </button>
-              <div className="user-profile" onClick={() => navigate('/profilepage')}>
-                <div className="user-avatar">
-                  <Avatar src={profileData.profile_picture} name={profileData.fullname} size={32} />
-                </div>
-                <span className="user-name"> {profileData.fullname || 'Loading ...'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="main-content">
-        <div className="content-wrapper">
-          <aside className="sidebar">
-            <h3 className="sidebar-title">Quick Actions</h3>
-            <div className="quick-actions">
-              <button className="quick-action-btn" onClick={(handleButtonClick)}>
-                My Listings
-              </button>
-              <button className="quick-action-btn" onClick={(handleButtonClick)}>
-                My Reviews
-              </button>
-              <button className="quick-action-btn" onClick={() => navigate('/chatPage')}>
-                Messages
-              </button>
-              <button className="quick-action-btn" onClick={() => navigate('/housing')}>
-                Housing
-              </button>
-              <button className="quick-action-btn" onClick={logout}>
-                Log Out
-              </button>
-            </div>
-          </aside>
-
-          <div className="listings-container">
-            <div className="listings-grid">
-              {itemListings.map((listing) => (
-                <div key={listing.id} className="listing-card" onClick={() => openListingModal(listing)}>
-                  <div className="listing-info">
-                    <h3 className="listing-title">{listing.title}</h3>
-                    <div className="listing-details">
-                      <span className="listing-price">{listing.price}$</span>
+                <form className="hs-filters mk-filters" role="search" onSubmit={(e) => e.preventDefault()} aria-label="Search and filters">
+                    <div className="hs-filter mk-filter-search">
+                        <label htmlFor="mk-q">Search</label>
+                        <input
+                            id="mk-q"
+                            type="search"
+                            placeholder="Books, bikes, furniture…"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                        />
                     </div>
-                    <p className="listing-seller">Seller: {listing.owner_name}</p>
-                    <span className="listing-date">
-                      {new Date(listing.date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="listing-image">
-                    <img
-                      src={`${listing.photo}`}
-                      alt={listing.title}
-                    />
-                  </div>
+                    <div className="hs-filter hs-filter--small">
+                        <label htmlFor="mk-max">Max price (€)</label>
+                        <input
+                            id="mk-max"
+                            type="number"
+                            min="0"
+                            inputMode="decimal"
+                            placeholder="Any"
+                            value={maxInput}
+                            onChange={(e) => setMaxInput(e.target.value)}
+                        />
+                    </div>
+                </form>
+
+                <div className="hs-results-bar">
+                    <p aria-live="polite">
+                        {loading ? 'Loading…' : `${shown.length} ${shown.length === 1 ? 'item' : 'items'}`}
+                        {hasFilters && !loading && (
+                            <button type="button" className="hs-link-btn" onClick={clearFilters}>Clear filters</button>
+                        )}
+                    </p>
+                    <label className="hs-sort">
+                        Sort
+                        <select value={sort} onChange={(e) => setFilters({ sort: e.target.value === 'newest' ? '' : e.target.value })}>
+                            {Object.entries(SORTS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                        </select>
+                    </label>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </main>
 
-      {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <div className="modal-header">
-              <h3 className="modal-title">Post New Item</h3>
-              <button className="modal-close-btn" onClick={closeModal}>
-              </button>
-            </div>
+                {error && <div className="hs-alert hs-alert--error" role="alert">{error}</div>}
 
-            <form className="modal-form" onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">Item Name</label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  placeholder="Enter item name..."
-                  required
-                />
-              </div>
+                {!loading && !error && shown.length === 0 && (
+                    <div className="hs-empty">
+                        {hasFilters ? (
+                            <>
+                                <h2>Nothing matches yet</h2>
+                                <p>Try another word or a higher price. New items are posted every day.</p>
+                                <button type="button" className="hs-btn hs-btn--ghost" onClick={clearFilters}>Clear filters</button>
+                            </>
+                        ) : (
+                            <>
+                                <h2>Nothing for sale yet</h2>
+                                <p>Be the first: sell something you don’t need any more.</p>
+                                <Link to="/marketplace/new" className="hs-btn">Sell an item</Link>
+                            </>
+                        )}
+                    </div>
+                )}
 
-              <div className="form-group">
-                <label className="form-label">Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className="form-textarea"
-                  placeholder="Describe your item..."
-                  rows="3"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Price</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Add Picture</label>
-                <div className="image-upload-container">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="image-input"
-                    id="image-upload"
-                  />
-                  <label htmlFor="image-upload" className="image-upload-label">
-                    {formData.photoPreview ? (
-                      <img src={formData.photoPreview} alt="Preview" className="image-preview" />
-                    ) : (
-                      <div className="upload-placeholder">
-                        <span className="upload-text">Click to upload image</span>
-                      </div>
-                    )}
-                  </label>
+                <div className="hs-grid mk-grid">
+                    {shown.map(item => <MarketCard key={item.id} item={item} />)}
                 </div>
-              </div>
-
-              <div className="form-buttons">
-                <button type="button" className="cancel-btn" onClick={closeModal}>
-                  Cancel
-                </button>
-                <button type="submit" className="submit-btn">
-                  Post Item
-                </button>
-              </div>
-            </form>
-          </div>
+            </main>
         </div>
-      )}
+    );
+};
 
-      {isListingModalOpen && selectedListing && (
-        <div className="modal2-overlay" onClick={closeListingModal}>
-          <div className="modal2-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close2-button" onClick={closeListingModal}>&times;</button>
-
-            <div className="modal2-grid-container">
-              <div className="listing2-details-column">
-                <h2>{selectedListing.title}</h2>
-                <p className="listing2-description">
-                  <strong>Description:</strong> {selectedListing.description}
-                </p>
-                <p>
-                  <strong>Price:</strong> ${selectedListing.price}
-                </p>
-                <p>
-                  <strong>Date Posted:</strong> {selectedListing.date}
-                </p>
-                <div className="2seller-info">
-                  <Avatar
-                    src={selectedListing.owner_profile_picture}
-                    name={selectedListing.owner_name}
-                    size={40}
-                    className="seller2-profile-pic"
-                  />
-                  <p>
-                    <strong>Seller:</strong> {selectedListing.owner_name}
-                  </p>
-                </div>
-              </div>
-
-              <div className="listing2-photo-column">
-                <img
-                  src={`${selectedListing.photo}`}
-                  className="modal2-image"
-                />
-              </div>
-            </div>
-
-            <div className="modal2-actions">
-              <button className="message2-button" onClick={handleMessageButton}>Message</button>
-              <button className="report2-button" onClick={openReportModal}>Report</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isReportModalOpen && (
-        <div className="report-modal-overlay" onClick={closeReportModal}>
-          <div className="report-modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Report Listing</h2>
-
-            {["Scam", "Inappropriate", "Spam", "Misleading", "Other"].map((reason) => (
-              <label key={reason}>
-                <input
-                  type="radio"
-                  name="reportReason"
-                  value={reason}
-                  onChange={(e) => setReportReason(e.target.value)}
-                />
-                {reason}
-              </label>
-            ))}
-
-            {reportReason === "Other" && (
-              <textarea
-                placeholder="Describe the issue..."
-                value={customReportReason}
-                onChange={(e) => setCustomReportReason(e.target.value)}
-              />
-            )}
-
-            <div className="report-modal-actions">
-              <button className="report-submit-btn" onClick={handleReportSubmit}>
-                Submit
-              </button>
-              <button className="report-cancel-btn" onClick={closeReportModal}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
-}
-
-export default App
+export default MarketplacePage;

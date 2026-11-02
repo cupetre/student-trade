@@ -1,13 +1,13 @@
 /* Housing pages. Every class starts with "hs-" because Vite loads all CSS globally. */
 
 .hs-shell {
-    --hs-brand: #2c66a8;
-    --hs-brand-dark: #22528a;
-    --hs-brand-soft: #e7eff9;
-    --hs-text: #13233a;
-    --hs-muted: #5d6b7e;
-    --hs-border: #dce3ed;
-    --hs-bg: #f5f8fc;
+    --hs-brand: #3C6E91;
+    --hs-brand-dark: #2F5875;
+    --hs-brand-soft: #D5E3EC;
+    --hs-text: #1B2A41;
+    --hs-muted: #5D6470;
+    --hs-border: #DDD4C5;
+    --hs-bg: #FAF7F0;
     --hs-card: #ffffff;
     --hs-good: #1b6e3c;
     --hs-good-bg: #e5f5ea;
@@ -36,7 +36,7 @@
 .hs-shell input:focus-visible,
 .hs-shell select:focus-visible,
 .hs-shell textarea:focus-visible {
-    outline: 3px solid #f2b544;
+    outline: 3px solid #C2305A;
     outline-offset: 2px;
 }
 
@@ -188,7 +188,7 @@
 .hs-field textarea:focus {
     outline: none;
     border-color: var(--hs-brand);
-    box-shadow: 0 0 0 3px rgba(44, 102, 168, 0.15);
+    box-shadow: 0 0 0 3px rgba(60, 110, 145, 0.18);
 }
 
 .hs-filter-checks { display: flex; flex-wrap: wrap; gap: 6px 16px; flex: 1 1 100%; }
@@ -231,7 +231,8 @@
     position: relative;
     display: block;
     aspect-ratio: 4 / 3;
-    background: #e8eef6;
+    overflow: hidden; /* keeps tall photos from stretching the card */
+    background: #EEEAE2;
 }
 .hs-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
@@ -242,9 +243,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #e8eef6;
+    background: #EEEAE2;
 }
-.hs-card-noimg svg { width: 42px; height: 42px; fill: #b7c5d8; }
+.hs-card-noimg svg { width: 42px; height: 42px; fill: #C9BFAE; }
 
 .hs-badge {
     position: absolute;
@@ -311,7 +312,7 @@
     display: inline-block;
     padding: 3px 9px;
     border-radius: 999px;
-    background: #eef2f7;
+    background: #F1EEE7;
     color: #34445a;
     font-size: 0.75rem;
     font-weight: 700;
@@ -329,7 +330,7 @@
     aspect-ratio: 16 / 9;
     max-height: 520px;
     width: 100%;
-    background: #e8eef6;
+    background: #EEEAE2;
     border-radius: var(--hs-radius);
     overflow: hidden;
 }
@@ -480,7 +481,7 @@ a.hs-owner-name:hover { color: var(--hs-brand); text-decoration: underline; }
     flex: 0 0 24px;
     height: 24px;
     border-radius: 50%;
-    background: #eef2f7;
+    background: #F1EEE7;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -559,7 +560,7 @@ a.hs-owner-name:hover { color: var(--hs-brand); text-decoration: underline; }
     aspect-ratio: 4 / 3;
     border-radius: 10px;
     overflow: hidden;
-    background: #e8eef6;
+    background: #EEEAE2;
 }
 .hs-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hs-photo button {
@@ -594,7 +595,7 @@ a.hs-owner-name:hover { color: var(--hs-brand); text-decoration: underline; }
     align-items: center;
     justify-content: center;
     gap: 2px;
-    border: 2px dashed #b7c5d8;
+    border: 2px dashed #C9BFAE;
     background: #fff;
     cursor: pointer;
     color: var(--hs-brand);
@@ -630,7 +631,7 @@ a.hs-owner-name:hover { color: var(--hs-brand); text-decoration: underline; }
     border-radius: var(--hs-radius);
     padding: 12px;
 }
-.hs-mine-thumb { display: block; width: 120px; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: #e8eef6; }
+.hs-mine-thumb { display: block; width: 120px; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: #EEEAE2; }
 .hs-mine-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hs-mine-top { display: flex; gap: 10px; align-items: center; font-size: 0.85rem; margin-bottom: 4px; }
 .hs-mine-title { display: block; font-weight: 700; color: var(--hs-text); text-decoration: none; margin-bottom: 4px; }
@@ -642,7 +643,7 @@ a.hs-owner-name:hover { color: var(--hs-brand); text-decoration: underline; }
 .hs-status { padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 800; }
 .hs-status--live { background: var(--hs-good-bg); color: var(--hs-good); }
 .hs-status--soon { background: var(--hs-warn-bg); color: var(--hs-warn); }
-.hs-status--muted { background: #eef2f7; color: var(--hs-muted); }
+.hs-status--muted { background: #F1EEE7; color: var(--hs-muted); }
 .hs-status--error { background: var(--hs-error-bg); color: var(--hs-error); }
 
 /* ---------- tenants + stays ---------- */

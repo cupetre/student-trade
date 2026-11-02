@@ -1,72 +1,218 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap');
+
+/* Top bar for logged-in pages. Palette "Nordic Stone", same as the landing page. */
+
 .appnav {
+    --an-ink: #1B2A41;
+    --an-blue: #3C6E91;
+    --an-blue-dark: #2F5875;
+    --an-light: #D5E3EC;
+    --an-cream: #FAF7F0;
+    --an-beige: #DDD4C5;
+    --an-muted: #5D6470;
+    --an-attention: #C2305A;
+
     position: sticky;
     top: 0;
-    z-index: 20;
+    z-index: 40;
     background: #ffffff;
-    border-bottom: 1px solid #dce3ed;
+    border-bottom: 1px solid var(--an-beige);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    text-align: left;
 }
 
 .appnav-inner {
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: 12px 20px;
+    padding: 10px 32px;
+    min-height: 64px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    gap: 10px 28px;
     flex-wrap: wrap;
+    box-sizing: border-box;
 }
 
-.appnav-logo {
-    font-weight: 800;
-    font-size: 1.25rem;
-    letter-spacing: -0.02em;
-    color: #2c66a8;
-    text-decoration: none;
-}
-
-.appnav-links {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-wrap: wrap;
-}
-
-.appnav-links a,
-.appnav-links button {
-    padding: 8px 12px;
-    border-radius: 8px;
-    color: #13233a;
-    font-weight: 600;
-    font-size: 0.95rem;
-    text-decoration: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: inherit;
-}
-
-.appnav-links a:hover,
-.appnav-links button:hover {
-    background: #eef3fa;
-}
-
-.appnav-links a.active {
-    background: #e7eff9;
-    color: #2c66a8;
-}
-
-.appnav-links a:focus-visible,
-.appnav-links button:focus-visible,
-.appnav-logo:focus-visible {
-    outline: 3px solid #f2b544;
+.appnav a:focus-visible,
+.appnav button:focus-visible {
+    outline: 3px solid var(--an-attention);
     outline-offset: 2px;
 }
 
-@media (max-width: 560px) {
-    .appnav-links a,
-    .appnav-links button {
-        padding: 6px 8px;
-        font-size: 0.88rem;
-    }
+/* logo */
+.appnav .appnav-logo {
+    color: var(--an-ink);
+    font-size: 20px;
+    text-decoration: none;
+    border-radius: 10px;
+}
+.appnav .appnav-logo:hover { color: var(--an-ink); }
+
+/* the platform switch: one light pill, the current platform is raised */
+.appnav-switch {
+    display: flex;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--an-cream);
+    border: 1px solid var(--an-beige);
+}
+.appnav-switch a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 9px;
+    color: var(--an-muted);
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    transition: background 150ms ease, color 150ms ease;
+}
+.appnav-switch a:hover { color: var(--an-ink); background: #ffffff; }
+.appnav-switch a.is-active {
+    background: #ffffff;
+    color: var(--an-ink);
+    font-weight: 700;
+    box-shadow: 0 1px 2px rgba(27, 42, 65, 0.12), 0 0 0 1px var(--an-beige);
+}
+.appnav-soon {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--an-muted);
+    border: 1px dashed #A99F8E;
+    border-radius: 999px;
+    padding: 1px 7px;
+}
+
+.appnav-badge {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--an-ink);
+    background: var(--an-light);
+    border-radius: 999px;
+    padding: 6px 12px;
+}
+
+/* right side */
+.appnav-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.appnav-icon {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex: none;
+}
+
+.appnav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 6px;
+    padding: 9px 16px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--an-blue);
+    color: #ffffff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+.appnav-btn:hover { background: var(--an-blue-dark); color: #ffffff; }
+.appnav-btn .appnav-icon { width: 16px; height: 16px; stroke-width: 2.4; }
+
+.appnav-iconlink {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--an-ink);
+}
+.appnav-iconlink:hover { background: var(--an-cream); color: var(--an-ink); }
+.appnav-iconlink.active { background: var(--an-light); }
+
+.appnav-account { position: relative; }
+.appnav-account-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px 4px 4px;
+    border: 1px solid var(--an-beige);
+    border-radius: 999px;
+    background: #ffffff;
+    color: var(--an-ink);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.appnav-account-btn:hover { background: var(--an-cream); }
+.appnav-account-btn .appnav-icon { width: 16px; height: 16px; color: var(--an-muted); }
+
+.appnav-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 260px;
+    background: #ffffff;
+    border: 1px solid var(--an-beige);
+    border-radius: 14px;
+    box-shadow: 0 18px 40px rgba(27, 42, 65, 0.16);
+    padding: 6px;
+    z-index: 50;
+}
+.appnav-menu-head {
+    padding: 10px 12px 12px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #EEE9E0;
+}
+.appnav-menu-head strong { display: block; font-size: 15px; color: var(--an-ink); }
+.appnav-menu-head span { font-size: 13px; color: var(--an-muted); }
+.appnav-menu-label {
+    margin: 10px 12px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--an-muted);
+}
+.appnav-menu a,
+.appnav-menu button {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 9px;
+    background: none;
+    color: var(--an-ink);
+    font: inherit;
+    font-size: 15px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+.appnav-menu a:hover,
+.appnav-menu button:hover { background: var(--an-cream); color: var(--an-ink); }
+.appnav-menu-foot { margin-top: 4px; padding-top: 4px; border-top: 1px solid #EEE9E0; }
+
+/* phones: the switch gets its own full-width row under the logo */
+@media (max-width: 720px) {
+    .appnav-inner { padding: 8px 14px; gap: 8px 12px; }
+    .appnav-switch { order: 3; width: 100%; }
+    .appnav-switch a { flex: 1 1 0; justify-content: center; padding: 8px 6px; font-size: 14px; }
+    .appnav-soon { display: none; }
+    .appnav-account-name { display: none; }
+    .appnav-btn { padding: 9px 12px; margin-right: 0; }
 }

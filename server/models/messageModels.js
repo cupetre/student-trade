@@ -32,6 +32,8 @@ async function chatHistory({ user1_id }) {
         include: {
             user1: { select: { id:true , fullname: true, profile_picture: true }},
             user2: { select: { id:true , fullname: true, profile_picture: true }},
+            // the newest message, for the preview line and the order of the list
+            messages: { orderBy: { sent_at: 'desc' }, take: 1, select: { content: true, sent_at: true, sender_id: true } },
         },
         orderBy: { date: 'desc'}
     });

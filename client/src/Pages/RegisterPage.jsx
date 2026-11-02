@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { postJson } from '../lib/api';
-import './AuthPages.css';
+import { useLanguage } from '../lib/language';
+import AuthShell from '../components/AuthShell.jsx';
+import { authCopy, errorText, MIN_PASSWORD_LENGTH } from './authCopy';
 
-const MIN_PASSWORD_LENGTH = 8;
 const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const Register = () => {
-    const [form, setForm] = useState({ fullname: '', email: '', password: '', repeatPassword: '' });
+    // The landing page can pass the email the student already typed in
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [lang] = useLanguage();
+    const t = authCopy[lang];
+
+    const [form, setForm] = useState({ fullname: '', email: location.state?.email || '', password: '', repeatPassword: '' });
     const [fieldErrors, setFieldErrors] = useState({});
     const [formError, setFormError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-
-    const navigate = useNavigate();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -30,25 +35,12 @@ const Register = () => {
         const errors = {};
         const email = form.email.trim();
 
-        if (form.fullname.trim().length < 2) {
-            errors.fullname = 'Please enter your full name.';
-        }
-
-        if (!email) {
-            errors.email = 'Email is required.';
-        } else if (!EMAIL_FORMAT.test(email)) {
-            errors.email = "That doesn't look like a valid email address.";
-        }
-
-        if (form.password.length < MIN_PASSWORD_LENGTH) {
-            errors.password = `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
-        }
-
-        if (!form.repeatPassword) {
-            errors.repeatPassword = 'Please repeat your password.';
-        } else if (form.repeatPassword !== form.password) {
-            errors.repeatPassword = 'Passwords do not match.';
-        }
+        if (form.fullname.trim().length < 2) errors.fullname = 'name';
+        if (!email) errors.email = 'emailRequired';
+        else if (!EMAIL_FORMAT.test(email)) errors.email = 'emailInvalid';
+        if (form.password.length < MIN_PASSWORD_LENGTH) errors.password = 'password';
+        if (!form.repeatPassword) errors.repeatPassword = 'repeat';
+        else if (form.repeatPassword !== form.password) errors.repeatPassword = 'mismatch';
 
         setFieldErrors(errors);
         return Object.keys(errors).length === 0;
@@ -78,124 +70,103 @@ const Register = () => {
 
         // When the backend knows which field is wrong, show it under that field
         if (data.field) {
-            setFieldErrors(prev => ({ ...prev, [data.field]: data.error }));
+            setFieldErrors(prev => ({ ...prev, [data.field]: { text: data.error } }));
         } else {
             setFormError(data.error);
         }
     };
 
+    const fieldProps = (name) => ({
+        id: name,
+        name,
+        value: form[name],
+        onChange: handleChange,
+        className: fieldErrors[name] ? 'has-error' : '',
+        'aria-invalid': Boolean(fieldErrors[name]),
+    });
+
+    const err = (name) => fieldErrors[name] && (
+        <p id={`${name}-error`} className="auth-field-error">{errorText(t, fieldErrors[name])}</p>
+    );
+
     return (
-        <div className="auth-page">
-            <div className="auth-card">
-                <div className="auth-header">
-                    <Link to="/" className="auth-brand">Student Trade</Link>
-                    <h1 className="auth-title">Create your account</h1>
-                    <p className="auth-subtitle">Buy, sell and chat with students from your university.</p>
+        <AuthShell
+            roleTabs
+            aside={{ kind: 'student', href: '/#for-students', ...t.register.aside }}
+        >
+            <div className="auth-header">
+                <h1 className="auth-title">{t.register.title}</h1>
+                <p className="auth-subtitle">{t.register.subtitle}</p>
+            </div>
+
+            {formError && <div className="auth-alert auth-alert--error" role="alert">{formError}</div>}
+
+            <form className="auth-form" onSubmit={handleSubmit} noValidate>
+                <div className="auth-field">
+                    <label htmlFor="fullname">{t.register.fullname}</label>
+                    <input
+                        {...fieldProps('fullname')}
+                        type="text"
+                        autoComplete="name"
+                        aria-describedby={fieldErrors.fullname ? 'fullname-error' : undefined}
+                    />
+                    {err('fullname')}
                 </div>
 
-                {formError && (
-                    <div className="auth-alert auth-alert--error" role="alert">{formError}</div>
-                )}
+                <div className="auth-field">
+                    <label htmlFor="email">{t.register.email}</label>
+                    <input
+                        {...fieldProps('email')}
+                        type="email"
+                        autoComplete="email"
+                        inputMode="email"
+                        aria-describedby={fieldErrors.email ? 'email-error' : 'email-hint'}
+                    />
+                    {err('email') || <p id="email-hint" className="auth-hint">{t.register.emailHint}</p>}
+                </div>
 
-                <form className="auth-form" onSubmit={handleSubmit} noValidate>
-                    <div className="auth-field">
-                        <label htmlFor="fullname">Full name</label>
+                <div className="auth-field">
+                    <label htmlFor="password">{t.register.password}</label>
+                    <div className="auth-password">
                         <input
-                            id="fullname"
-                            name="fullname"
-                            type="text"
-                            autoComplete="name"
-                            value={form.fullname}
-                            onChange={handleChange}
-                            className={fieldErrors.fullname ? 'has-error' : ''}
-                            aria-invalid={Boolean(fieldErrors.fullname)}
-                            aria-describedby={fieldErrors.fullname ? 'fullname-error' : undefined}
-                        />
-                        {fieldErrors.fullname && (
-                            <p id="fullname-error" className="auth-field-error">{fieldErrors.fullname}</p>
-                        )}
-                    </div>
-
-                    <div className="auth-field">
-                        <label htmlFor="email">University email</label>
-                        <input
-                            id="email"
-                            name="email"
-                            type="email"
-                            autoComplete="email"
-                            inputMode="email"
-                            value={form.email}
-                            onChange={handleChange}
-                            className={fieldErrors.email ? 'has-error' : ''}
-                            aria-invalid={Boolean(fieldErrors.email)}
-                            aria-describedby={fieldErrors.email ? 'email-error' : 'email-hint'}
-                        />
-                        {fieldErrors.email ? (
-                            <p id="email-error" className="auth-field-error">{fieldErrors.email}</p>
-                        ) : (
-                            <p id="email-hint" className="auth-hint">Use the email address your university gave you.</p>
-                        )}
-                    </div>
-
-                    <div className="auth-field">
-                        <label htmlFor="password">Password</label>
-                        <div className="auth-password">
-                            <input
-                                id="password"
-                                name="password"
-                                type={showPassword ? 'text' : 'password'}
-                                autoComplete="new-password"
-                                value={form.password}
-                                onChange={handleChange}
-                                className={fieldErrors.password ? 'has-error' : ''}
-                                aria-invalid={Boolean(fieldErrors.password)}
-                                aria-describedby={fieldErrors.password ? 'password-error' : 'password-hint'}
-                            />
-                            <button
-                                type="button"
-                                className="auth-toggle"
-                                onClick={() => setShowPassword(s => !s)}
-                                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                            >
-                                {showPassword ? 'Hide' : 'Show'}
-                            </button>
-                        </div>
-                        {fieldErrors.password ? (
-                            <p id="password-error" className="auth-field-error">{fieldErrors.password}</p>
-                        ) : (
-                            <p id="password-hint" className="auth-hint">At least {MIN_PASSWORD_LENGTH} characters.</p>
-                        )}
-                    </div>
-
-                    <div className="auth-field">
-                        <label htmlFor="repeatPassword">Repeat password</label>
-                        <input
-                            id="repeatPassword"
-                            name="repeatPassword"
+                            {...fieldProps('password')}
                             type={showPassword ? 'text' : 'password'}
                             autoComplete="new-password"
-                            value={form.repeatPassword}
-                            onChange={handleChange}
-                            className={fieldErrors.repeatPassword ? 'has-error' : ''}
-                            aria-invalid={Boolean(fieldErrors.repeatPassword)}
-                            aria-describedby={fieldErrors.repeatPassword ? 'repeatPassword-error' : undefined}
+                            aria-describedby={fieldErrors.password ? 'password-error' : 'password-hint'}
                         />
-                        {fieldErrors.repeatPassword && (
-                            <p id="repeatPassword-error" className="auth-field-error">{fieldErrors.repeatPassword}</p>
-                        )}
+                        <button
+                            type="button"
+                            className="auth-toggle"
+                            onClick={() => setShowPassword(s => !s)}
+                            aria-label={showPassword ? t.hidePassword : t.showPassword}
+                        >
+                            {showPassword ? t.hide : t.show}
+                        </button>
                     </div>
+                    {err('password') || <p id="password-hint" className="auth-hint">{t.register.passwordHint(MIN_PASSWORD_LENGTH)}</p>}
+                </div>
 
-                    <button type="submit" className="auth-submit" disabled={submitting}>
-                        {submitting && <span className="auth-spinner" aria-hidden="true" />}
-                        {submitting ? 'Creating account…' : 'Create account'}
-                    </button>
-                </form>
+                <div className="auth-field">
+                    <label htmlFor="repeatPassword">{t.register.repeat}</label>
+                    <input
+                        {...fieldProps('repeatPassword')}
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        aria-describedby={fieldErrors.repeatPassword ? 'repeatPassword-error' : undefined}
+                    />
+                    {err('repeatPassword')}
+                </div>
 
-                <p className="auth-switch">
-                    Already have an account? <Link to="/login">Log in</Link>
-                </p>
-            </div>
-        </div>
+                <button type="submit" className="auth-submit" disabled={submitting}>
+                    {submitting && <span className="auth-spinner" aria-hidden="true" />}
+                    {submitting ? t.register.submitting : t.register.submit}
+                </button>
+            </form>
+
+            <p className="auth-switch">
+                {t.register.haveAccount} <Link to="/login">{t.register.login}</Link>
+            </p>
+        </AuthShell>
     );
 };
 

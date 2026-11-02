@@ -1,0 +1,60 @@
+/* Marketplace pages. They reuse the housing layout (hs- classes); only what differs lives here, prefixed "mk-". */
+
+/* card: seller row under the title */
+.mk-card-seller {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.mk-card-seller span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* filters: the search box takes most of the row */
+.mk-filter-search { flex: 4 1 260px; }
+
+/* item page: show the whole photo, not a crop */
+.mk-gallery .hs-gallery-main {
+    aspect-ratio: 4 / 3;
+    max-height: 560px;
+    background: #EEEAE2;
+}
+.mk-gallery .hs-gallery-main img { object-fit: contain; }
+
+/* report panel */
+.mk-report fieldset {
+    border: 0;
+    margin: 0 0 10px;
+    padding: 0;
+}
+.mk-report legend {
+    font-weight: 700;
+    margin-bottom: 8px;
+    padding: 0;
+}
+.mk-report-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+.mk-report-option input { width: 18px; height: 18px; accent-color: var(--hs-brand); }
+.mk-report-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+/* my items: price stands out in the row */
+.mk-mine-price {
+    font-weight: 800;
+    color: var(--hs-text);
+}
+
+/* sell form: one photo only, so no "Cover" label */
+.mk-photo-single .hs-photo::after { content: none; }
