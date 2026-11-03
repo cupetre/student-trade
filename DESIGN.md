@@ -142,7 +142,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 - Guests who open Housing or the Marketplace (from the landing columns or a link) go to log in, which says what they were trying to open ("Log in to see the marketplace.") and takes them there afterwards.
 - Log in links to both sign-ups; each sign-up links to log in and to the other sign-up (the switch at the top).
 - **Forgot password:** "Forgot your password?" sits next to the Password label on log in → `/forgot-password` (email is carried over) → "Check your email" with a resend after 60 s → the link opens `/reset-password?token=…` → new password twice → "Password changed" → log in with a green note. The answer never says whether an account exists. Links work once, for one hour; only a hash is stored; one email per minute per account, 5 requests per 15 min per IP + email. Using a reset link also confirms the email. The email is in the language of the page (Sidro / Anchor).
-- After log in: students → `/marketplace`, landlords → `/housing/mine`. Log out → log in (slides back from the left).
+- After log in: students → `/marketplace`, landlords → `/housing/mine`. A login lasts 3 hours (`expiresIn` in `server/controllers/userController.js`); after that the app sends you to log in again. Log out → log in (slides back from the left).
 
 **Routes**
 
@@ -245,6 +245,7 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 
 ## 10. Change log
 
+- **2026-11-03** — Logins last 3 hours (was 1). The logo in both top bars sits exactly in the middle of the bar (the link around it was adding space for letter descenders).
 - **2026-11-03** — Landing page fits any window: the three columns stay in a row down to 701px and fill the window height; one side margin everywhere. Public top bar stays one row and moves links into a menu on narrower screens. Forgot password: link on log in, `/forgot-password`, `/reset-password`, bilingual email, server endpoints with tests. Needs `npx prisma db push`.
 - **2026-11-02** — Renamed to **Sidro (SL) / Anchor (EN)** with an anchor logo and favicon; tab titles follow the language. Housing listings get map locations: pin picker in the listing form, address lookup, exact pin private to the owner, public point 80–200 m off, backfill script. Needs `npx prisma db push` and `npm install` (Leaflet).
 - **2026-11-02** — Log in / sign up get a blended background of the three landing scenes. Messages rebuilt: list with previews and newest first (server now sends the last message), day separators, my messages on the right, errors shown instead of silently failing, phone layout, clear empty states, review dialog without browser pop-ups. My profile restyled with shortcuts and rental-profile status; the old "My listings" block is gone. Focus outline is raspberry everywhere and only shows for keyboard users.

@@ -1023,7 +1023,7 @@
 
 .lp-footer { background: var(--lp-ink); color: var(--lp-on-dark); padding: 28px 0; }
 .lp-footer-inner { max-width: 1240px; margin: 0 auto; padding-inline: var(--lp-gutter); display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; font-size: 14px; }
-.lp-footer-logo { color: #ffffff; font-size: 18px; }
+.lp-footer-logo { color: #ffffff; font-size: 18px; display: inline-flex; align-items: center; }
 .lp-footer-links { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px 20px; }
 .lp .lp-footer-links a { color: #ffffff; }
 

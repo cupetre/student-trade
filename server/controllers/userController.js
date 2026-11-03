@@ -179,7 +179,7 @@ async function loginUser(req, res) {
         const token = jwt.sign(
             { id: loggedUser.id, email: loggedUser.email },
             JWT_SECRET,
-            { expiresIn: '1h' }
+            { expiresIn: '3h' } // stay logged in for 3 hours
         );
 
         req.log.info({ userId: loggedUser.id }, 'user logged in');

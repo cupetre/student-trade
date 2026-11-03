@@ -38,6 +38,10 @@
 
 .pn .pn-logo {
     flex: none;
+    /* a flex box, not an inline link: an inline link adds room for text
+       descenders under the logo, which pushed it a few pixels above centre */
+    display: inline-flex;
+    align-items: center;
     color: var(--pn-ink);
     font-size: 22px;
     text-decoration: none;
