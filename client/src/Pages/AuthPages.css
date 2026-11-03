@@ -290,6 +290,28 @@
 .auth-submit:active:not(:disabled) { transform: translateY(1px); }
 .auth-submit:disabled { opacity: 0.75; cursor: wait; }
 .auth-submit--spaced { margin-top: 18px; }
+/* the submit style on a link ("Send a new link") */
+.auth-page a.auth-submit { box-sizing: border-box; text-decoration: none; color: #ffffff; }
+.auth-page a.auth-submit:hover { color: #ffffff; }
+
+/* "Password" label with "Forgot your password?" on the same line */
+.auth-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.auth-label-row label { margin-bottom: 0; }
+.auth-page .auth-forgot { font-size: 14px; font-weight: 600; color: var(--auth-blue); text-decoration: none; }
+.auth-page .auth-forgot:hover { color: var(--auth-blue-dark); text-decoration: underline; }
+
+.auth-link-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--auth-blue);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.auth-link-btn:hover { color: var(--auth-blue-dark); }
 
 .auth-spinner {
     width: 16px;

@@ -10,6 +10,8 @@ import VerifyPendingPage from './Pages/VerifyPendingPage.jsx';
 import VerifyEmailPage from './Pages/VerifyEmailPage.jsx';
 import LandingPage from './Pages/LandingPage.jsx';
 import LandlordRegisterPage from './Pages/LandlordRegisterPage.jsx';
+import ForgotPasswordPage from './Pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './Pages/ResetPasswordPage.jsx';
 import HousingListPage from './Pages/housing/HousingListPage.jsx';
 import HousingDetailPage from './Pages/housing/HousingDetailPage.jsx';
 import HousingFormPage from './Pages/housing/HousingFormPage.jsx';
@@ -90,6 +92,9 @@ root.render(
       {/* Email confirmation works either way */}
       <Route path="/verify-pending" element={slide(STEP.confirm, <VerifyPendingPage />)} />
       <Route path="/verify-email" element={slide(STEP.confirm, <VerifyEmailPage />)} />
+      {/* Forgot password: ask for a link, then set a new password from the email */}
+      <Route path="/forgot-password" element={<PublicOnly>{slide(STEP.login, <ForgotPasswordPage />)}</PublicOnly>} />
+      <Route path="/reset-password" element={slide(STEP.confirm, <ResetPasswordPage />)} />
 
       {/* Any unknown address goes to the start */}
       <Route path="*" element={<Navigate to="/" replace />} />

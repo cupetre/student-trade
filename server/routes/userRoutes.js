@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticationToken } = require('../configs/authConfig');
-const { editProfile, registerUser, registerLandlord, loginUser, viewProfile, verifyEmail, resendVerification } = require('../controllers/userController');
+const { editProfile, registerUser, registerLandlord, loginUser, viewProfile, verifyEmail, resendVerification, requestPasswordReset, resetPassword } = require('../controllers/userController');
 const { upload1 } = require('../configs/multerConfig');
 const { getMyStudentProfile, updateMyStudentProfile, getPublicProfile } = require('../controllers/profileController');
 const { createRateLimiter } = require('../lib/rateLimit');
@@ -26,6 +26,10 @@ const resendLimiter = createRateLimiter({
     windowMs: FIFTEEN_MINUTES, max: 5, keyFn: byIpAndEmail,
     message: 'Too many emails requested. Please wait a few minutes.',
 });
+const forgotLimiter = createRateLimiter({
+    windowMs: FIFTEEN_MINUTES, max: 5, keyFn: byIpAndEmail,
+    message: 'Too many emails requested. Please wait a few minutes.',
+});
 const verifyLimiter = createRateLimiter({
     windowMs: FIFTEEN_MINUTES, max: 30,
     message: 'Too many attempts. Please wait a few minutes.',
@@ -36,6 +40,8 @@ router.post('/register-landlord', registerLimiter, registerLandlord);
 router.post('/login', loginLimiter, loginUser);
 router.post('/verify-email', verifyLimiter, verifyEmail);
 router.post('/resend-verification', resendLimiter, resendVerification);
+router.post('/forgot-password', forgotLimiter, requestPasswordReset);
+router.post('/reset-password', verifyLimiter, resetPassword);
 router.put('/edit_profile', authenticationToken, upload1.single('profilePicture'), editProfile);
 router.get('/fetch_profile', authenticationToken, viewProfile);
 router.get('/me/student-profile', authenticationToken, getMyStudentProfile);

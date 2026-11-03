@@ -131,7 +131,8 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 - Logo → the landing page (on the landing page it scrolls to the top).
 - Section links: Housing, Marketplace, Settle In → the matching lane on the landing page; For landlords → opens the landlord explainer (`/#for-landlords`); Partners → the partner band. From another page they go to the landing page and it scrolls there.
 - SL/EN switch (shared with every public page, `lib/language.js`), Log in (underlined when you're on it), **Sign up** (raspberry; turns quiet while you're on a sign-up page).
-- Phones (≤760px): section links hide, logo shows the mark only.
+- Always one row, 72px high (64px on phones); side margin grows from 16px to 40px with the window, the same as the landing sections.
+- ≤1180px: For landlords and Partners move into a **menu** (button with three lines, at the right end); ≤900px: all section links are in the menu; ≤520px: the SL/EN switch moves into the menu too; ≤420px: logo shows the mark only; ≤360px: Log in hides (it's on the sign-up page anyway). The menu closes on a link, Escape, a click outside, or a page change.
 
 **Page transitions (`components/PageSlide.jsx`)** — each page has a step in the visitor's journey: landing 0 → log in 1 → sign up 2 → landlord sign-up 3 → email confirmation 4 → the app 10. Going to a higher step slides the content in from the right, a lower step from the left; same step, no animation (e.g. moving inside the app). Only the content slides — the top bars stay still. No animation with reduced motion.
 
@@ -140,6 +141,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 **Getting into the app**
 - Guests who open Housing or the Marketplace (from the landing columns or a link) go to log in, which says what they were trying to open ("Log in to see the marketplace.") and takes them there afterwards.
 - Log in links to both sign-ups; each sign-up links to log in and to the other sign-up (the switch at the top).
+- **Forgot password:** "Forgot your password?" sits next to the Password label on log in → `/forgot-password` (email is carried over) → "Check your email" with a resend after 60 s → the link opens `/reset-password?token=…` → new password twice → "Password changed" → log in with a green note. The answer never says whether an account exists. Links work once, for one hour; only a hash is stored; one email per minute per account, 5 requests per 15 min per IP + email. Using a reset link also confirms the email. The email is in the language of the page (Sidro / Anchor).
 - After log in: students → `/marketplace`, landlords → `/housing/mine`. Log out → log in (slides back from the left).
 
 **Routes**
@@ -156,6 +158,8 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 | `/chatpage`, `/profilepage`, `/users/:id` | students + landlords | |
 | `/login`, `/register`, `/register/landlord` | logged out | Logged-in users go to `/` |
 | `/verify-pending`, `/verify-email` | everyone | Email confirmation |
+| `/forgot-password` | logged out | Ask for a reset link |
+| `/reset-password?token=…` | everyone | Set a new password from the emailed link |
 
 **Guards** (`components/RouteGuards.jsx`): `RequireAuth` (must be logged in), `StudentOnly` (landlords → `/housing/mine`), `PublicOnly`, `HomeSwitch`. Home paths are the constants `STUDENT_HOME` and `LANDLORD_HOME`.
 
@@ -187,7 +191,8 @@ Housing listings have a map location; the Marketplace doesn't need one.
 ## 7. Landing page (`/`)
 
 Sections, top to bottom:
-1. **Three columns** — Housing / Marketplace / Settle In, title centred over a light illustration. Hover widens a column and shows a short description and tags (always shown on phones).
+1. **Three columns** — Housing / Marketplace / Settle In, title centred over a light illustration. Hover widens a column and shows a short description and tags (always shown on phones). They stay side by side down to 701px wide and stack below that. Their height fills the window under the top bar (at least 460px, at most 900px); titles, text and padding shrink with the width. On short windows (≤660px high) the hover details leave out the tags so nothing gets cut off.
+   Lower sections share one side margin (`--lp-gutter`, 16–40px) and a 1240px max width, the footer included; the "What's inside" lanes are three side by side or one under the other (≤900px), never 2 + 1.
 2. **Find your side of the story** — two large panels, "I'm a student." and "I have a place.", with simple drawings (graduation cap on books / house with key). Hovering one grows it while the other narrows. Each ends with a directional arrow (student ←, landlord →), never a sign-up button. Clicking opens a full-screen view that slides in from that side:
    - each view covers **what you can do · what your account includes · what you get · how to join**;
    - "Back to both sides" (also Escape or the browser's back button) and a link to switch to the other side;
@@ -235,12 +240,12 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 - [ ] **Map provider before launch:** the map uses OpenStreetMap's free tiles and geocoder, which are best-effort and can block heavy users. Switch to a paid plan or self-hosted tiles before public launch (two settings, see "Maps").
 - [ ] **Maps, next steps:** approximate-area map on each listing page, then a map view in Housing → Browse (rectangle search, price labels, grouping), then "minutes to your faculty".
 - [ ] **Different experience per account type** — no account / student / landlord (next round).
-- [ ] **Forgot password** doesn't exist yet.
 
 ---
 
 ## 10. Change log
 
+- **2026-11-03** — Landing page fits any window: the three columns stay in a row down to 701px and fill the window height; one side margin everywhere. Public top bar stays one row and moves links into a menu on narrower screens. Forgot password: link on log in, `/forgot-password`, `/reset-password`, bilingual email, server endpoints with tests. Needs `npx prisma db push`.
 - **2026-11-02** — Renamed to **Sidro (SL) / Anchor (EN)** with an anchor logo and favicon; tab titles follow the language. Housing listings get map locations: pin picker in the listing form, address lookup, exact pin private to the owner, public point 80–200 m off, backfill script. Needs `npx prisma db push` and `npm install` (Leaflet).
 - **2026-11-02** — Log in / sign up get a blended background of the three landing scenes. Messages rebuilt: list with previews and newest first (server now sends the last message), day separators, my messages on the right, errors shown instead of silently failing, phone layout, clear empty states, review dialog without browser pop-ups. My profile restyled with shortcuts and rental-profile status; the old "My listings" block is gone. Focus outline is raspberry everywhere and only shows for keyboard users.
 - **2026-11-02** — Marketplace rebuilt in the housing layout: tabs (Browse · My items), filter box, cards, item page (`/marketplace/:id`) with Message / Report, Sell and Edit form pages with live preview, My items list. New server route `GET /api/listings/item/:id` (with tests). Price filters on Housing and Marketplace no longer drop keystrokes; tall photos no longer stretch cards.

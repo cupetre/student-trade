@@ -23,6 +23,8 @@ const Login = () => {
 
     // Set by the confirmation page after the email link worked
     const justVerified = Boolean(location.state?.verified);
+    // Set by the reset-password page after a new password was saved
+    const flash = location.state?.flash || '';
     const from = location.state?.from;
     const area = areaFor(from);
 
@@ -86,7 +88,10 @@ const Login = () => {
             {justVerified && !shownError && (
                 <div className="auth-alert auth-alert--success" role="status">{t.login.verified}</div>
             )}
-            {area && !justVerified && !shownError && (
+            {flash && !justVerified && !shownError && (
+                <div className="auth-alert auth-alert--success" role="status">{flash}</div>
+            )}
+            {area && !justVerified && !flash && !shownError && (
                 <div className="auth-alert auth-alert--info" role="status">{t.login.continue[area]}</div>
             )}
 
@@ -105,7 +110,12 @@ const Login = () => {
                 </div>
 
                 <div className="auth-field">
-                    <label htmlFor="password">{t.login.password}</label>
+                    <div className="auth-label-row">
+                        <label htmlFor="password">{t.login.password}</label>
+                        <Link to="/forgot-password" state={{ email: email.trim() || undefined }} className="auth-forgot">
+                            {t.login.forgot}
+                        </Link>
+                    </div>
                     <div className="auth-password">
                         <input
                             id="password"

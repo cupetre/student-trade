@@ -36,6 +36,11 @@ model User {
   verification_expires_at DateTime?
   verification_sent_at    DateTime?
 
+  // "Forgot password": hash of the emailed reset token (one hour, single use)
+  password_reset_token_hash String?   @unique @db.VarChar(64)
+  password_reset_expires_at DateTime?
+  password_reset_sent_at    DateTime?
+
   listings         ListingItem[]
   chatsAsUser1     Chat[]        @relation("ChatUser1")
   chatsAsUser2     Chat[]        @relation("ChatUser2")

@@ -88,7 +88,41 @@ async function viewInformation(owner_id) {
     });
 }
 
+// Replaces any earlier reset link: only the newest one works.
+async function setPasswordResetToken({ id, tokenHash, expiresAt, sentAt }) {
+    return prisma.user.update({
+        where: { id },
+        data: { password_reset_token_hash: tokenHash, password_reset_expires_at: expiresAt, password_reset_sent_at: sentAt },
+    });
+}
+
+async function findUserByResetTokenHash(tokenHash) {
+    return prisma.user.findUnique({ where: { password_reset_token_hash: tokenHash } });
+}
+
+// New password, and the link stops working. The reset link proved the person
+// can read the inbox, so an unconfirmed email counts as confirmed now.
+async function setNewPassword({ id, password }) {
+    const hashedpassword = await bcrypt.hash(password, 10);
+    return prisma.user.update({
+        where: { id },
+        data: {
+            hashedpassword,
+            password_reset_token_hash: null,
+            password_reset_expires_at: null,
+            password_reset_sent_at: null,
+            email_verified: true,
+            verification_token_hash: null,
+            verification_expires_at: null,
+            verification_sent_at: null,
+        },
+    });
+}
+
 module.exports = {
+    setPasswordResetToken,
+    findUserByResetTokenHash,
+    setNewPassword,
     updateUserProfile,
     registerUserData,
     loginUserData,

@@ -8,7 +8,11 @@ const {
     setVerificationToken,
     findUserByVerificationTokenHash,
     markEmailVerified,
+    setPasswordResetToken,
+    findUserByResetTokenHash,
+    setNewPassword,
 } = require('../models/userModels.js');
+const { createResetToken, sendPasswordResetEmail, RESET_COOLDOWN_SECONDS } = require('../lib/passwordReset');
 const {
     hashToken,
     createVerificationToken,
@@ -270,7 +274,75 @@ async function viewProfile(req, res) {
     }
 };
 
+// ---------- forgot password ----------
+
+// Step 1: "Send me a link". Same answer whether or not the account exists,
+// so this can't be used to find out which emails are registered.
+async function requestPasswordReset(req, res) {
+    const email = normalizeEmail(req.body && req.body.email);
+    const lang = req.body && req.body.language === 'sl' ? 'sl' : 'en';
+    const GENERIC = { message: 'If an account exists for this email, a link to reset the password is on its way.' };
+
+    if (!email) return res.status(400).json({ error: 'Email is required', field: 'email' });
+
+    try {
+        const user = await loginUserData({ email });
+        if (!user) {
+            req.log.info('password reset asked for an unknown email');
+            return res.json(GENERIC);
+        }
+
+        // At most one email per minute per account
+        const lastSent = user.password_reset_sent_at ? new Date(user.password_reset_sent_at).getTime() : 0;
+        if (Date.now() - lastSent < RESET_COOLDOWN_SECONDS * 1000) {
+            req.log.info({ userId: user.id }, 'password reset skipped: cooldown active');
+            return res.json(GENERIC);
+        }
+
+        const { token, tokenHash, expiresAt, sentAt } = createResetToken();
+        await setPasswordResetToken({ id: user.id, tokenHash, expiresAt, sentAt });
+        await sendPasswordResetEmail({ email: user.email, fullname: user.fullname, token, lang });
+
+        req.log.info({ userId: user.id }, 'password reset email sent');
+        res.json(GENERIC);
+    } catch (err) {
+        req.log.error({ err }, 'failed to send password reset email');
+        res.status(500).json({ error: 'Could not send the email right now. Please try again shortly.' });
+    }
+}
+
+// Step 2: the link from the email + a new password
+async function resetPassword(req, res) {
+    const token = req.body && req.body.token;
+    const password = req.body && req.body.password;
+    const INVALID = { error: 'This reset link is invalid or has expired. Ask for a new one.', code: 'RESET_LINK_INVALID' };
+
+    if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) return res.status(400).json(INVALID);
+    // bcrypt only uses the first 72 bytes, so longer passwords aren't allowed (same rule as sign-up)
+    if (typeof password !== 'string' || password.length < 8 || password.length > 72) {
+        return res.status(400).json({ error: 'Password must be between 8 and 72 characters', field: 'password' });
+    }
+
+    try {
+        const user = await findUserByResetTokenHash(hashToken(token));
+        const expired = !user || !user.password_reset_expires_at || new Date(user.password_reset_expires_at).getTime() < Date.now();
+        if (expired) {
+            req.log.info('password reset with an invalid or expired link');
+            return res.status(400).json(INVALID);
+        }
+
+        await setNewPassword({ id: user.id, password });
+        req.log.info({ userId: user.id }, 'password reset');
+        res.json({ message: 'Your password was changed. You can log in now.' });
+    } catch (err) {
+        req.log.error({ err }, 'password reset failed');
+        res.status(500).json({ error: 'Could not change the password. Please try again.' });
+    }
+}
+
 module.exports = {
+    requestPasswordReset,
+    resetPassword,
     editProfile,
     registerUser,
     registerLandlord,

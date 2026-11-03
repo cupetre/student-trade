@@ -11,6 +11,8 @@ const PUBLIC_TITLES = [
     ['/register', { sl: 'Registracija', en: 'Sign up' }],
     ['/verify-pending', { sl: 'Potrdite e-naslov', en: 'Confirm your email' }],
     ['/verify-email', { sl: 'Potrdite e-naslov', en: 'Confirm your email' }],
+    ['/forgot-password', { sl: 'Pozabljeno geslo', en: 'Forgot password' }],
+    ['/reset-password', { sl: 'Novo geslo', en: 'New password' }],
 ];
 
 const APP_TITLES = [
