@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import AppNav from '../../components/AppNav.jsx';
-import HousingCard from '../../components/HousingCard.jsx';
-import HousingTabs from './HousingTabs.jsx';
+import HousingRowCard from '../../components/HousingRowCard.jsx';
+import HousingLinks from './HousingLinks.jsx';
 import { apiRequest } from '../../lib/api';
-import { LISTING_TYPES, PROPERTY_TYPES, FURNISHING, CITY_SUGGESTIONS } from '../../lib/housingOptions';
+import { LISTING_TYPES, PROPERTY_TYPES, FURNISHING, CITY_SUGGESTIONS, formatEuro, formatDate, toDateInput } from '../../lib/housingOptions';
+import { STAY_LENGTHS } from '../../lib/profileOptions';
 import './Housing.css';
+
+// Leaflet is big, so the map loads after the listings
+const HousingBrowseMap = lazy(() => import('../../components/HousingBrowseMap.jsx'));
 
 // The filters live in the URL (?city=Koper&max_price=300...), so a search
 // can be bookmarked or sent to a friend, and the back button works.
@@ -18,6 +22,39 @@ async function toggleSaved(listing) {
     return ok;
 }
 
+// "What you're looking for", from the student's rental profile, beside the results
+const SearchProfile = ({ profile, onApply }) => {
+    const stay = STAY_LENGTHS[profile.stay_length];
+    const rows = [
+        ['City', profile.preferred_city],
+        ['Budget', profile.budget_max ? `Up to ${formatEuro(profile.budget_max)} / month` : ''],
+        ['Move in', profile.move_in_date ? `From ${formatDate(profile.move_in_date)}` : ''],
+        ['Stay', stay ? stay.label : ''],
+    ].filter(([, value]) => value);
+    const canApply = Boolean(profile.preferred_city || profile.budget_max || profile.move_in_date);
+
+    return (
+        <section className="hs-side-card hs-lookfor" aria-labelledby="hs-lookfor-title">
+            <div className="hs-side-head">
+                <h2 id="hs-lookfor-title">What you’re looking for</h2>
+                <Link to="/profile/student?edit=1" className="hs-side-edit">Edit</Link>
+            </div>
+            {rows.length > 0 ? (
+                <dl className="hs-lookfor-list">
+                    {rows.map(([label, value]) => (
+                        <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+                    ))}
+                </dl>
+            ) : (
+                <p className="hs-muted hs-side-text">Nothing added yet.</p>
+            )}
+            {canApply && (
+                <button type="button" className="hs-btn hs-btn--ghost hs-btn--block" onClick={onApply}>Use as filters</button>
+            )}
+        </section>
+    );
+};
+
 const HousingListPage = ({ mode = 'browse' }) => {
     const saved = mode === 'saved';
     const [params, setParams] = useSearchParams();
@@ -25,6 +62,10 @@ const HousingListPage = ({ mode = 'browse' }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [profileMissing, setProfileMissing] = useState(false);
+    const [lookingFor, setLookingFor] = useState(null); // the student's housing wishes (landlords: none)
+    const [hoveredId, setHoveredId] = useState(null);
+    const [filtersOpen, setFiltersOpen] = useState(false); // phones: the filter panel folds away
+    const navigate = useNavigate();
 
     // The city and price boxes keep their own value while you type and update
     // the URL only after typing stops (typing straight into the URL state loses
@@ -38,7 +79,9 @@ const HousingListPage = ({ mode = 'browse' }) => {
     useEffect(() => {
         let cancelled = false;
         apiRequest('/api/users/me/student-profile').then(({ ok, data }) => {
-            if (!cancelled && ok && !data.complete) setProfileMissing(true);
+            if (cancelled || !ok) return;
+            if (!data.complete) setProfileMissing(true);
+            setLookingFor(data.profile || {});
         });
         return () => { cancelled = true; };
     }, []);
@@ -90,6 +133,16 @@ const HousingListPage = ({ mode = 'browse' }) => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // Copies the wishes from the rental profile into the filters
+    function applyProfile() {
+        const p = lookingFor || {};
+        const changes = {};
+        if (p.preferred_city) { changes.city = p.preferred_city; setCityInput(p.preferred_city); }
+        if (p.budget_max) { changes.max_price = String(p.budget_max); setPriceInput(String(p.budget_max)); }
+        if (p.move_in_date) changes.move_in = toDateInput(p.move_in_date);
+        setFilters(changes);
+    }
+
     function clearFilters() {
         setCityInput('');
         setPriceInput('');
@@ -99,7 +152,7 @@ const HousingListPage = ({ mode = 'browse' }) => {
     const handleToggleSave = async (listing) => {
         const flip = (items) => items.map(item => (item.id === listing.id ? { ...item, is_saved: !item.is_saved } : item));
 
-        // On the Saved tab, un-saving removes the card
+        // On Liked listings, un-liking removes the card
         setResult(prev => ({
             ...prev,
             items: saved && listing.is_saved ? prev.items.filter(i => i.id !== listing.id) : flip(prev.items),
@@ -108,27 +161,22 @@ const HousingListPage = ({ mode = 'browse' }) => {
 
         const ok = await toggleSaved(listing);
         if (!ok) {
-            setError("Couldn't update your saved places. Please try again.");
+            setError("Couldn't update your liked listings. Please try again.");
             setResult(prev => ({ ...prev, items: saved ? [...prev.items, listing] : flip(prev.items) }));
         }
     };
 
     const hasFilters = FILTER_KEYS.some(key => key !== 'sort' && params.get(key));
+    const filterCount = FILTER_KEYS.filter(key => key !== 'sort' && params.get(key)).length;
 
     return (
         <div className="hs-shell">
             <AppNav />
-            <main className="hs-page">
-                <HousingTabs />
-
-                <header className="hs-head">
-                    <h1>{saved ? 'Saved places' : 'Find a place to live'}</h1>
-                    <p>
-                        {saved
-                            ? 'Places you saved with the heart. Message the owner when you are ready.'
-                            : 'Rooms, flats and roommates from verified landlords and students, all over Slovenia.'}
-                    </p>
-                </header>
+            <main className="hs-page hs-page--browse">
+                <div className="hs-topbar">
+                    <h1 className="hs-visually-hidden">{saved ? 'Liked listings' : 'Housing'}</h1>
+                    <HousingLinks />
+                </div>
 
                 {profileMissing && (
                     <div className="hs-alert hs-alert--info" role="status">
@@ -137,140 +185,187 @@ const HousingListPage = ({ mode = 'browse' }) => {
                     </div>
                 )}
 
-                {!saved && (
-                    <form className="hs-filters" onSubmit={(e) => e.preventDefault()} aria-label="Filters">
-                        <div className="hs-filter hs-filter--city">
-                            <label htmlFor="f-city">City</label>
-                            <input
-                                id="f-city"
-                                list="hs-cities"
-                                placeholder="Any city"
-                                value={cityInput}
-                                onChange={(e) => setCityInput(e.target.value)}
-                            />
-                            <datalist id="hs-cities">
-                                {CITY_SUGGESTIONS.map(city => <option key={city} value={city} />)}
-                            </datalist>
-                        </div>
-
-                        <div className="hs-filter">
-                            <label htmlFor="f-type">Listing</label>
-                            <select id="f-type" value={params.get('listing_type') || ''} onChange={(e) => setFilter('listing_type', e.target.value)}>
-                                <option value="">All</option>
-                                {Object.entries(LISTING_TYPES).map(([value, t]) => <option key={value} value={value}>{t.badge}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="hs-filter">
-                            <label htmlFor="f-prop">Place</label>
-                            <select id="f-prop" value={params.get('property_type') || ''} onChange={(e) => setFilter('property_type', e.target.value)}>
-                                <option value="">Any</option>
-                                {Object.entries(PROPERTY_TYPES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="hs-filter hs-filter--small">
-                            <label htmlFor="f-price">Max € / month</label>
-                            <input
-                                id="f-price"
-                                type="number"
-                                min="0"
-                                inputMode="numeric"
-                                placeholder="Any"
-                                value={priceInput}
-                                onChange={(e) => setPriceInput(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="hs-filter hs-filter--small">
-                            <label htmlFor="f-spots">Spots for</label>
-                            <select id="f-spots" value={params.get('min_spots') || ''} onChange={(e) => setFilter('min_spots', e.target.value)}>
-                                <option value="">1+</option>
-                                <option value="2">2+ (with a friend)</option>
-                                <option value="3">3+</option>
-                                <option value="4">4+</option>
-                            </select>
-                        </div>
-
-                        <div className="hs-filter">
-                            <label htmlFor="f-furn">Furnishing</label>
-                            <select id="f-furn" value={params.get('furnishing') || ''} onChange={(e) => setFilter('furnishing', e.target.value)}>
-                                <option value="">Any</option>
-                                {Object.entries(FURNISHING).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="hs-filter">
-                            <label htmlFor="f-move">Move in by</label>
-                            <input id="f-move" type="date" value={params.get('move_in') || ''} onChange={(e) => setFilter('move_in', e.target.value)} />
-                        </div>
-
-                        <div className="hs-filter-checks">
-                            <label>
-                                <input type="checkbox" checked={params.get('registration') === 'true'} onChange={(e) => setFilter('registration', e.target.checked)} />
-                                Address registration
-                            </label>
-                            <label>
-                                <input type="checkbox" checked={params.get('subsidy') === 'true'} onChange={(e) => setFilter('subsidy', e.target.checked)} />
-                                Student subsidy
-                            </label>
-                        </div>
-                    </form>
-                )}
-
-                <div className="hs-results-bar">
-                    <p aria-live="polite">
-                        {loading ? 'Loading…' : `${result.total} ${result.total === 1 ? 'place' : 'places'}`}
-                        {hasFilters && !loading && (
-                            <button type="button" className="hs-link-btn" onClick={clearFilters}>Clear filters</button>
-                        )}
-                    </p>
+                <div className={`hs-browse ${saved ? 'hs-browse--saved' : ''}`}>
                     {!saved && (
-                        <label className="hs-sort">
-                            Sort
-                            <select value={params.get('sort') || 'newest'} onChange={(e) => setFilter('sort', e.target.value === 'newest' ? '' : e.target.value)}>
-                                <option value="newest">Newest</option>
-                                <option value="price_asc">Cheapest first</option>
-                                <option value="price_desc">Most expensive first</option>
-                                <option value="soonest">Available soonest</option>
-                            </select>
-                        </label>
+                        <aside className="hs-browse-filters">
+                            <button
+                                type="button"
+                                className="hs-filters-toggle"
+                                aria-expanded={filtersOpen}
+                                aria-controls="hs-filters"
+                                onClick={() => setFiltersOpen(open => !open)}
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
+                                Filters{filterCount > 0 ? ` (${filterCount})` : ''}
+                                <svg className="hs-filters-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                            </button>
+
+                            <form
+                                id="hs-filters"
+                                className={`hs-filters ${filtersOpen ? 'is-open' : ''}`}
+                                onSubmit={(e) => e.preventDefault()}
+                                aria-label="Filters"
+                            >
+                                <h2 className="hs-filters-title">Filters</h2>
+
+                                <div className="hs-filter">
+                                    <label htmlFor="f-city">City</label>
+                                    <input
+                                        id="f-city"
+                                        list="hs-cities"
+                                        placeholder="Any city"
+                                        value={cityInput}
+                                        onChange={(e) => setCityInput(e.target.value)}
+                                    />
+                                    <datalist id="hs-cities">
+                                        {CITY_SUGGESTIONS.map(city => <option key={city} value={city} />)}
+                                    </datalist>
+                                </div>
+
+                                <div className="hs-filter">
+                                    <label htmlFor="f-type">Listing</label>
+                                    <select id="f-type" value={params.get('listing_type') || ''} onChange={(e) => setFilter('listing_type', e.target.value)}>
+                                        <option value="">All</option>
+                                        {Object.entries(LISTING_TYPES).map(([value, t]) => <option key={value} value={value}>{t.badge}</option>)}
+                                    </select>
+                                </div>
+
+                                <div className="hs-filter">
+                                    <label htmlFor="f-prop">Type of place</label>
+                                    <select id="f-prop" value={params.get('property_type') || ''} onChange={(e) => setFilter('property_type', e.target.value)}>
+                                        <option value="">Any</option>
+                                        {Object.entries(PROPERTY_TYPES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                                    </select>
+                                </div>
+
+                                <div className="hs-filter">
+                                    <label htmlFor="f-price">Max rent (€ / month)</label>
+                                    <input
+                                        id="f-price"
+                                        type="number"
+                                        min="0"
+                                        inputMode="numeric"
+                                        placeholder="Any"
+                                        value={priceInput}
+                                        onChange={(e) => setPriceInput(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="hs-filter">
+                                    <label htmlFor="f-spots">Spots for</label>
+                                    <select id="f-spots" value={params.get('min_spots') || ''} onChange={(e) => setFilter('min_spots', e.target.value)}>
+                                        <option value="">1+</option>
+                                        <option value="2">2+ (with a friend)</option>
+                                        <option value="3">3+</option>
+                                        <option value="4">4+</option>
+                                    </select>
+                                </div>
+
+                                <div className="hs-filter">
+                                    <label htmlFor="f-furn">Furnishing</label>
+                                    <select id="f-furn" value={params.get('furnishing') || ''} onChange={(e) => setFilter('furnishing', e.target.value)}>
+                                        <option value="">Any</option>
+                                        {Object.entries(FURNISHING).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                                    </select>
+                                </div>
+
+                                <div className="hs-filter">
+                                    <label htmlFor="f-move">Move in by</label>
+                                    <input id="f-move" type="date" value={params.get('move_in') || ''} onChange={(e) => setFilter('move_in', e.target.value)} />
+                                </div>
+
+                                <fieldset className="hs-filter-checks">
+                                    <legend>Must have</legend>
+                                    <label>
+                                        <input type="checkbox" checked={params.get('registration') === 'true'} onChange={(e) => setFilter('registration', e.target.checked)} />
+                                        Address registration
+                                    </label>
+                                    <label>
+                                        <input type="checkbox" checked={params.get('subsidy') === 'true'} onChange={(e) => setFilter('subsidy', e.target.checked)} />
+                                        Student subsidy
+                                    </label>
+                                </fieldset>
+
+                                {hasFilters && (
+                                    <button type="button" className="hs-link-btn hs-filters-clear" onClick={clearFilters}>Clear filters</button>
+                                )}
+                            </form>
+                        </aside>
                     )}
-                </div>
 
-                {error && <div className="hs-alert hs-alert--error" role="alert">{error}</div>}
+                    <section className="hs-browse-main" aria-label="Places">
+                        <div className="hs-results-bar">
+                            <p aria-live="polite">
+                                {loading ? 'Loading…' : `${result.total} ${result.total === 1 ? 'place' : 'places'}`}
+                            </p>
+                            {!saved && (
+                                <label className="hs-sort">
+                                    Sort
+                                    <select value={params.get('sort') || 'newest'} onChange={(e) => setFilter('sort', e.target.value === 'newest' ? '' : e.target.value)}>
+                                        <option value="newest">Newest</option>
+                                        <option value="price_asc">Cheapest first</option>
+                                        <option value="price_desc">Most expensive first</option>
+                                        <option value="soonest">Available soonest</option>
+                                    </select>
+                                </label>
+                            )}
+                        </div>
 
-                {!loading && !error && result.items.length === 0 && (
-                    <div className="hs-empty">
-                        {saved ? (
-                            <>
-                                <h2>Nothing saved yet</h2>
-                                <p>Tap the heart on a place to keep it here.</p>
-                                <Link to="/housing" className="hs-btn">Browse places</Link>
-                            </>
-                        ) : (
-                            <>
-                                <h2>No places match yet</h2>
-                                <p>Try another city or fewer filters. New places are added every week.</p>
-                                {hasFilters && <button type="button" className="hs-btn hs-btn--ghost" onClick={clearFilters}>Clear filters</button>}
-                            </>
+                        {error && <div className="hs-alert hs-alert--error" role="alert">{error}</div>}
+
+                        {!loading && !error && result.items.length === 0 && (
+                            <div className="hs-empty">
+                                {saved ? (
+                                    <>
+                                        <h2>No liked listings yet</h2>
+                                        <p>Tap the heart on a place to keep it here.</p>
+                                        <Link to="/housing" className="hs-btn">Browse places</Link>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h2>No places match yet</h2>
+                                        <p>Try another city or fewer filters. New places are added every week.</p>
+                                        {hasFilters && <button type="button" className="hs-btn hs-btn--ghost" onClick={clearFilters}>Clear filters</button>}
+                                    </>
+                                )}
+                            </div>
                         )}
-                    </div>
-                )}
 
-                <div className="hs-grid">
-                    {result.items.map(listing => (
-                        <HousingCard key={listing.id} listing={listing} onToggleSave={handleToggleSave} />
-                    ))}
+                        <div className="hs-rc-list">
+                            {result.items.map(listing => (
+                                <HousingRowCard
+                                    key={listing.id}
+                                    listing={listing}
+                                    onToggleSave={handleToggleSave}
+                                    onHover={setHoveredId}
+                                />
+                            ))}
+                        </div>
+
+                        {!saved && result.pages > 1 && (
+                            <nav className="hs-pager" aria-label="Pages">
+                                <button type="button" className="hs-btn hs-btn--ghost" disabled={result.page <= 1} onClick={() => goToPage(result.page - 1)}>Previous</button>
+                                <span>Page {result.page} of {result.pages}</span>
+                                <button type="button" className="hs-btn hs-btn--ghost" disabled={result.page >= result.pages} onClick={() => goToPage(result.page + 1)}>Next</button>
+                            </nav>
+                        )}
+                    </section>
+
+                    <aside className="hs-browse-side" aria-label="Your search and map">
+                        {lookingFor && <SearchProfile profile={lookingFor} onApply={applyProfile} />}
+                        <section className="hs-side-card hs-side-card--map">
+                            <h2 className="hs-side-title">{params.get('city') && !saved ? `Map · ${params.get('city')}` : 'Map'}</h2>
+                            <Suspense fallback={<div className="hs-map-canvas hs-map-loading">Loading map…</div>}>
+                                <HousingBrowseMap
+                                    listings={result.items}
+                                    city={saved ? '' : params.get('city') || ''}
+                                    activeId={hoveredId}
+                                    onOpen={(id) => navigate(`/housing/${id}`)}
+                                />
+                            </Suspense>
+                        </section>
+                    </aside>
                 </div>
-
-                {!saved && result.pages > 1 && (
-                    <nav className="hs-pager" aria-label="Pages">
-                        <button type="button" className="hs-btn hs-btn--ghost" disabled={result.page <= 1} onClick={() => goToPage(result.page - 1)}>Previous</button>
-                        <span>Page {result.page} of {result.pages}</span>
-                        <button type="button" className="hs-btn hs-btn--ghost" disabled={result.page >= result.pages} onClick={() => goToPage(result.page + 1)}>Next</button>
-                    </nav>
-                )}
             </main>
         </div>
     );

@@ -140,8 +140,9 @@ const AppNav = ({ action }) => {
                                 )}
 
                                 <p className="appnav-menu-label">Housing</p>
-                                <Link role="menuitem" to="/housing/mine">My places</Link>
-                                {!landlord && <Link role="menuitem" to="/housing/saved">Saved places</Link>}
+                                {landlord && <Link role="menuitem" to="/housing">Browse places</Link>}
+                                <Link role="menuitem" to="/housing/mine">My listings</Link>
+                                {!landlord && <Link role="menuitem" to="/housing/saved">Liked listings</Link>}
                                 {!landlord && <Link role="menuitem" to="/housing/stays">My stays</Link>}
 
                                 <div className="appnav-menu-foot">

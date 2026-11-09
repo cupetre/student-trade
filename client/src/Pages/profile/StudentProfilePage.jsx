@@ -77,7 +77,7 @@ const StudentProfilePage = () => {
     const [loading, setLoading] = useState(true);
     const [notAStudent, setNotAStudent] = useState(false);
     // Coming from "complete your profile to contact this landlord": open ready to edit
-    const [editing, setEditing] = useState(Boolean(next));
+    const [editing, setEditing] = useState(Boolean(next) || params.get('edit') === '1'); // ?edit=1 opens it ready to change
     const [saving, setSaving] = useState(false);
     const [notice, setNotice] = useState('');
     const [formError, setFormError] = useState('');

@@ -4,7 +4,6 @@ import AppNav from '../../components/AppNav.jsx';
 import Avatar from '../../components/Avatar.jsx';
 import ReviewForm from '../../components/ReviewForm.jsx';
 import { Stars } from '../../components/Stars.jsx';
-import HousingTabs from './HousingTabs.jsx';
 import { apiRequest } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
 import { formatDate, TENANCY_STATUS } from '../../lib/housingOptions';
@@ -40,7 +39,7 @@ const MyStaysPage = () => {
         const { ok, data } = await apiRequest(`/api/housing/tenancies/${stay.id}`, { method: 'PATCH', body: { action } });
         setBusyId(null);
         if (!ok) { setError(data.error); return; }
-        setNotice(action === 'confirm' ? 'Confirmed. You can now review the place and your landlord.' : '');
+        setNotice(action === 'confirm' ? 'Confirmed. You can now review your landlord.' : '');
         load();
     };
 
@@ -57,10 +56,8 @@ const MyStaysPage = () => {
         <div className="hs-shell">
             <AppNav />
             <main className="hs-page">
-                <HousingTabs />
                 <header className="hs-head">
                     <h1>My stays</h1>
-                    <p>When a landlord adds you as their tenant, it shows up here. Confirm it, and you can review the place and the landlord.</p>
                 </header>
 
                 {notice && <div className="hs-alert hs-alert--success" role="status">{notice}</div>}

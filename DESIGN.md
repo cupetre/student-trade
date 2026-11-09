@@ -49,7 +49,9 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 | **Raspberry** | `#C2305A` | **Attention only** — see rule below. Text on it is white. |
 | Raspberry dark | `#A82650` | Hover on raspberry |
 
-**The attention rule:** raspberry marks the one thing on a screen we want people to act on or notice — Sign up, Create account, Become a partner, "New", unread counts, focus outlines. At most one raspberry button per screen. Everything else uses steel blue or ink.
+**Only these colours.** Status colours use the palette too: "good" (bills included, address registration, Live) is steel blue dark on light blue; notices are ink on a light stone tint (`#EEE8DD`); errors are raspberry dark on a light raspberry tint. Listing badges: For rent light blue, Sublet stone beige, Roommate wanted ink. The saved heart is raspberry.
+
+**The attention rule:** raspberry marks the one thing on a screen we want people to act on or notice — Sign up, Create account, Become a partner, "New", unread counts, focus outlines, and the current platform in the top bar. At most one raspberry button per screen. Everything else uses steel blue or ink.
 
 **Contrast:** body text must pass 4.5:1. All pairs above were checked; muted text fails on beige, so don't put it there.
 
@@ -92,7 +94,25 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 
 **Auth pages (`components/AuthShell.jsx`)** — `PublicNav` + "Back to the homepage" + one white card. The two sign-up pages add a **Student / Landlord or agency** switch at the top of the card and an ink side panel ("What you get as…") that links to that side's explainer on the landing page. Student panel on the left, landlord panel on the right, as on the landing page; on phones the form comes first. Behind it, the three landing scenes (room, desk, map) sit side by side, faded and blended into each other, with a calm area in the middle so the form stays readable; the background doesn't slide with the page.
 
-**Housing tabs (`HousingTabs`)** — Browse · Saved · My listings · My stays (landlords: Browse · My listings). "Post a place" lives in the top bar, not in the tabs.
+**Housing quick links (`HousingLinks`)** — "My listings · Liked listings" at the top right of the browse page (and beside the "My listings" title); the current one is steel blue. Landlords only get My listings. Saved places are called **Liked listings** everywhere. My stays is in the account menu; landlords also get "Browse places" there. "Post a place" lives in the top bar. (`HousingTabs.jsx` is no longer used.)
+
+**Housing browse page (`/housing`, `/housing/saved`)** — no visible title (a hidden one for screen readers), only the quick links on the right. Three columns:
+- **Left: filters**, stacked (city, listing, type of place, max rent, spots, furnishing, move in by, must-haves, Clear filters link). White panel (12px corners); each filter is a bold label over a small box with 6px corners (dropdowns get a chevron). Sticky while scrolling. Sort stays above the results in the same style. Card headings use the body font, not Bricolage. Saved has no filter column.
+- **Middle: listing rows** (`components/HousingRowCard.jsx`) — about 65% text, 35% first photo. Rows: title · "City, Slovenia" far right / price · what the rent covers far right ("Rent + bills included", "Rent only · bills ~€X", "Rent only · bills extra") / size · type · spots · furnishing · from date / neighbourhood and address-registration tags / owner (photo, name, Verified landlord or Student) · "Message in the app". The whole row opens the listing; the heart and the owner's name are separate links.
+- **Right: "What you're looking for"** from the rental profile (city, budget, move-in, stay; Edit → `/profile/student?edit=1`; "Use as filters" copies city, budget and move-in into the filters; students only; no helper text under it) and **the map** below it (no note under it) (`components/HousingBrowseMap.jsx`, lazy-loaded): price tags at the approximate points, jumps to the city chosen in the filters (else fits the listings, else Slovenia), hovering a row lights its tag, clicking a tag opens the listing.
+- **No phone numbers on the rows.** Contact goes through in-app messages, which checks the student's rental profile first (section 1: "phone number stays private").
+- Under 1200px the right column moves above the listings (search and map side by side); under 860px everything is one column and the filters fold behind a "Filters (n)" button; under 600px the photo sits on top of the text.
+
+**Listing page (`/housing/:id`)**
+- The whole listing sits on **one white sheet**: thin border, 4px corners, no shadow. The main photo runs the full width of the sheet from its very top; thumbnails, then badge, title and the one-line summary under it.
+- **Three tabs** under the title — **Overview · Location · Contact** — bold words, the open one raspberry with a raspberry underline. The open tab is in the address (`?tab=location`, `?tab=contact`), switching doesn't add history, arrow keys move between tabs.
+  - **Overview:** facts grid, about this place, house rules, what's included, video tour.
+  - **Location:** street and postcode, "Open in Google Maps", and a map (`components/ListingMap.jsx`, loads only when the tab opens). Everyone sees a shaded 300 m circle around the approximate point; the owner sees their exact pin. No point yet → "Not on the map yet" (owner gets a link to place the pin).
+  - **Contact:** who posted it (photo, name, Verified landlord / Student, rating, languages, View profile), then **"Interested?"** (`Pages/housing/InterestPanel.jsx`), then "Stay safe".
+- **"Interested?"** — the student taps what they'd like (Seeing the place · Renting it / Taking over the sublet / Moving in as a flatmate · Moving in with a friend, only if 2+ spots are open · Asking questions first), a move-in date and how long (both filled in from the rental profile) and an optional note. "Send to <name>" opens the chat and posts it as the first message; with nothing chosen the button says "Message <name>" and just opens the chat. The server writes the message (`server/lib/housingInterest.js`) so it always reads the same way, and the rental-profile check still runs first.
+- **No reviews on listings.** Only people have reviews (landlord ↔ tenant, buyer ↔ seller). The owner's rating shows in the Contact tab. Tenants review their landlord, not the place.
+- **Right column:** a small sticky summary — price, spots, available from, bills — with **I'm interested** (opens the Contact tab), **Like / Liked**, and the owner's name (also opens Contact). Owners get Edit listing / My listings instead.
+- **Phones:** one column; a bar at the bottom (price + "I'm interested") opens the Contact tab, and hides while that tab is open.
 
 **Marketplace tabs (`MarketTabs`)** — Browse · My items. "Sell an item" lives in the top bar. No "Saved" tab until the server can save items.
 
@@ -105,7 +125,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 - **My profile (`/profilepage`, `mp-`):** card with photo, name, Verified student / landlord tag, member since, email and bio; editing happens in the same card. Reviews about you below. On the right: rental profile status (students), shortcuts with counts (My items, My places, Saved places, My stays, Messages) and "How others see you".
 - **"My" list:** one row per item with thumbnail, title, details and actions; Delete asks "Delete for good?" inline. After saving or deleting, a green message confirms what happened.
 
-**Page header** — eyebrow (optional), H1, one line of explanation in muted text.
+**Page header** — just the H1, ideally one or two words. No subtitle or explanation line under it, and no small helper lines under cards.
 
 **Empty states** — say what's missing and give the next step ("You haven't posted anything yet" + Post a place).
 
@@ -120,7 +140,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 
 **Top bar (logged in)**
 - Left: logo → the user's home (students `/marketplace`, landlords `/housing/mine`).
-- Students: platform switch **Marketplace · Housing · Settle In (Soon)**; the current one is raised in white.
+- Students: platform switch **Marketplace · Housing · Settle In (Soon)** in the exact middle of the bar, bold words with no background; the current one turns raspberry (the one place raspberry is used for navigation, so it is easy to see which platform you are on).
 - Landlords: no switch, a "Housing · for landlords" tag instead.
 - Right: context button (**Sell an item** on the marketplace, **Post a place** on housing, none elsewhere) · Messages icon · account menu.
 - Account menu: My profile · Rental profile (students) · How others see me · _Marketplace:_ My items (students) · _Housing:_ My places · Saved places (students) · My stays (students) · Log out.
@@ -251,6 +271,7 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 - [ ] **Server messages and the confirmation email are English only.**
 - [ ] **Sidro / Anchor:** check the .si/.com domains and trademarks before it's final. "Anchor" is a common name for other products, so the English name especially needs a check.
 - [ ] **Map provider before launch:** the map uses OpenStreetMap's free tiles and geocoder, which are best-effort and can block heavy users. Switch to a paid plan or self-hosted tiles before public launch (two settings, see "Maps").
+- [ ] **More listing details** (floor, heating types, appliances, outdoor space, parking, energy class, itemised costs, room details, house rules, nearby…): the full list with proposed fields and filters is in `HOUSING_FIELDS.md`.
 - [ ] **Maps, next steps:** approximate-area map on each listing page, then a map view in Housing → Browse (rectangle search, price labels, grouping), then "minutes to your faculty".
 - [ ] **Different experience per account type** — no account / student / landlord (next round).
 
@@ -258,6 +279,13 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 
 ## 10. Change log
 
+- **2026-11-09** — Listing page split into Overview · Location · Contact tabs. Location has the approximate-area map (owner sees the exact pin). Contact has the owner card, "Interested?" and Stay safe. The right column is a short summary with I'm interested and Like.
+- **2026-11-09** — Listing page: sheet without shadows and with 4px corners; the main photo fills the sheet edge to edge from the top.
+- **2026-11-09** — Listing page: one white sheet with side shadows, listing reviews removed (only people have reviews), "Interested?" panel on the right that sends a first message with what the student wants (new `POST /listings/:id/contact` body: interests, move_in, stay_length, note; tests in `server/tests/housingInterest.test.js`), phone bar. "Stay safe" box in palette colours.
+- **2026-11-09** — Top bar: Marketplace · Housing · Settle In are bold; the current one is raspberry.
+- **2026-11-09** — Housing browse: no title, "My listings · Liked listings" top right, filters back in a white panel with 6px-corner fields, side-card headings in the body font. Saved → "Liked listings". Top bar: platform switch centred, no pill background, current platform in steel blue.
+- **2026-11-09** — Housing browse: filters lose their boxes (label + underline), title "Housing", no subtitles or helper lines; housing sub-tabs removed (pages are in the account menu, landlords get "Browse places"). Subtitles removed from page headers across the app. Off-palette greens, oranges and yellows in housing replaced with Nordic Stone.
+- **2026-11-09** — Housing browse page redesigned: filters in a left column, listings as wide rows (text + first photo) with what the rent covers and who rents it, right column with "What you're looking for" (Use as filters) and a map that follows the chosen city. The rental profile opens in edit mode with `?edit=1`.
 - **2026-11-09** — Rental profile: 2 × 2 grid, read-only until "Edit profile", Save locks it again, length of stay is a dropdown (Indefinite and Open to negotiate replace Not sure yet / Other). Public profile: about groups in one row, reviews below. The top-bar photo updates as soon as a new photo is saved.
 - **2026-11-09** — Rental profile reordered (photo → basic info → studies → what you're looking for → more about you). Needed now: photo, date of birth, home country, studies; smoking and languages optional. Length of stay is a choice instead of a number. "What you're looking for" is shown to landlords the student contacted. Bio can be edited here. Pets / smoking: Yes / No only. Needs `npx prisma db push` (adds `stay_length`, `stay_note`).
 - **2026-11-03** — Logins last 3 hours (was 1). The logo in both top bars sits exactly in the middle of the bar (the link around it was adding space for letter descenders).

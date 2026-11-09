@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AppNav from '../../components/AppNav.jsx';
-import HousingTabs from './HousingTabs.jsx';
+import HousingLinks from './HousingLinks.jsx';
 import TenantsPanel from './TenantsPanel.jsx';
 import { apiRequest } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
@@ -68,10 +68,9 @@ const MyHousingPage = () => {
         <div className="hs-shell">
             <AppNav />
             <main className="hs-page">
-                <HousingTabs />
-                <header className="hs-head">
+                <header className="hs-head hs-head--bar">
                     <h1>My listings</h1>
-                    <p>Pause a listing while you’re talking to someone, and mark it filled once the lease is signed.</p>
+                    <HousingLinks />
                 </header>
 
                 {landlordPending && (

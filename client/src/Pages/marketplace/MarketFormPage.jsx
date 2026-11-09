@@ -133,7 +133,6 @@ const MarketFormPage = () => {
                 <Link to={editing ? `/marketplace/${id}` : '/marketplace'} className="hs-back">← {editing ? 'Back to the item' : 'Back to the marketplace'}</Link>
                 <header className="hs-head">
                     <h1>{editing ? 'Edit your item' : 'Sell an item'}</h1>
-                    <p>Add a clear photo and an honest description. Students message you straight from the item.</p>
                 </header>
 
                 <div className="hs-form-layout">

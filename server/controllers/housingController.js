@@ -20,6 +20,8 @@ const { toId } = require('../lib/parse');
 const { toHousingDto, toReviewDto } = require('../lib/dto');
 const { findUserWithProfile } = require('../models/profileModels.js');
 const { openChat } = require('../models/messageModels.js');
+const { sendChatMessage, userRoom } = require('../services/messageService');
+const { readInterest, interestMessage } = require('../lib/housingInterest');
 const { listListingReviews, ratingSummary } = require('../models/reviewModels.js');
 const { missingProfileFields } = require('../lib/profileValidation');
 const { readCoordinates, locationFields } = require('../lib/location');
@@ -390,9 +392,18 @@ async function contactOwner(req, res) {
             }
         }
 
+        // What the student is interested in becomes the first message (optional)
+        const interest = readInterest(req.body);
+        if (interest.error) return res.status(400).json({ error: interest.error });
+        const text = interestMessage(interest.value, listing);
+
         const chatId = await openChat({ user1_id: me.id, user2_id: listing.owner_id });
-        req.log.info({ listingId: id, chatId }, 'housing contact opened');
-        res.json({ chat_id: chatId });
+        if (text) {
+            const { message, receiverId } = await sendChatMessage({ chatId, senderId: me.id, content: text });
+            if (req.io) req.io.to(userRoom(receiverId)).emit('new_message', message);
+        }
+        req.log.info({ listingId: id, chatId, sent: Boolean(text), interests: interest.value.interests }, 'housing contact opened');
+        res.json({ chat_id: chatId, sent: Boolean(text) });
     } catch (err) {
         req.log.error({ err, listingId: id }, 'failed to contact housing owner');
         res.status(500).json({ error: 'Could not open the chat. Please try again.' });

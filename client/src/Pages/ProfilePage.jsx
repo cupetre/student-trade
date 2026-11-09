@@ -154,7 +154,6 @@ const ProfilePage = () => {
             <main className="hs-page mp-page">
                 <header className="hs-head">
                     <h1>My profile</h1>
-                    <p>Your name, photo and bio appear on your {landlord ? 'places' : 'items, places'} and in messages.</p>
                 </header>
 
                 {flash && <div className="hs-alert hs-alert--success" role="status">{flash}</div>}

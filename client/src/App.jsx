@@ -83,7 +83,6 @@ const MarketplacePage = () => {
 
                 <header className="hs-head">
                     <h1>Marketplace</h1>
-                    <p>Second-hand furniture, books, tech and bikes from students near you.</p>
                 </header>
 
                 <form className="hs-filters mk-filters" role="search" onSubmit={(e) => e.preventDefault()} aria-label="Search and filters">

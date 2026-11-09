@@ -56,7 +56,6 @@ const MyItemsPage = () => {
                 <MarketTabs />
                 <header className="hs-head">
                     <h1>My items</h1>
-                    <p>Everything you’re selling. Delete an item once it’s sold so nobody messages you about it.</p>
                 </header>
 
                 {flash && <div className="hs-alert hs-alert--success" role="status">{flash}</div>}

@@ -320,11 +320,6 @@ const HousingFormPage = () => {
                 <Link to={editing ? `/housing/${id}` : '/housing'} className="hs-back">← {editing ? 'Back to the listing' : 'Back to housing'}</Link>
                 <header className="hs-head">
                     <h1>{editing ? 'Edit your listing' : 'Post a place'}</h1>
-                    <p>
-                        {user?.role === 'landlord'
-                            ? 'Rent a room or a whole place to students. Prices are per person, so students can compare fairly.'
-                            : 'Moving out, or looking for a flatmate? Post it here and students will message you.'}
-                    </p>
                 </header>
 
                 <ol className="hs-steps" aria-label="Steps">

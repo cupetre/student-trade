@@ -37,6 +37,7 @@ async function findListingOwnerAndStatus(id) {
         where: { id },
         select: {
             id: true, owner_id: true, status: true, title: true, photos: { select: { id: true, position: true } },
+            listing_type: true, // for the wording of the first message
             // to tell whether the address or the pin moved
             street: true, city: true, postal_code: true,
             latitude: true, longitude: true, public_latitude: true, public_longitude: true,
