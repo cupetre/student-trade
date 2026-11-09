@@ -28,9 +28,17 @@ const LIFESTYLE = [
     'studies_at_home', 'works_part_time', 'sporty', 'vegetarian',
 ];
 
-// Housing needs (budget, move-in, city, length of stay) are stored, but only
-// the student sees them until we've tested with real users who should.
-// Flip this to true to show them to homeowners the student has contacted.
-const SHOW_HOUSING_NEEDS = false;
+// How long they want to rent for
+//  short: up to 6 months · long: more than 6 months · year: a 12-month contract
+//  indefinite: for a really long time, no end date in mind · negotiable: open to negotiate
+const STAY_LENGTHS = ['short', 'long', 'year', 'indefinite', 'negotiable'];
+// Names used for a few days in November 2026, read as the new ones
+const OLD_STAY_LENGTHS = { open: 'indefinite', other: 'negotiable' };
 
-module.exports = { COUNTRIES, LANGUAGES, STUDY_LEVELS, STUDENT_TYPES, LIFESTYLE, SHOW_HOUSING_NEEDS };
+// What they're looking for (budget, move-in, city, length of stay) is shown to
+// landlords the student has contacted, next to the rest of the rental profile,
+// so the landlord can tell straight away whether the place fits.
+// Set to false to keep it private to the student again.
+const SHOW_HOUSING_NEEDS = true;
+
+module.exports = { COUNTRIES, LANGUAGES, STUDY_LEVELS, STUDENT_TYPES, LIFESTYLE, STAY_LENGTHS, OLD_STAY_LENGTHS, SHOW_HOUSING_NEEDS };

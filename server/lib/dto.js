@@ -94,8 +94,18 @@ function toReviewDto(review) {
 // Student profile in three layers:
 //  - basics: anyone logged in (where they study)
 //  - details: the student, admins, and people they've talked to or lived with
-//  - housing needs: only the student (and admins) for now, see SHOW_HOUSING_NEEDS
+//  - what they're looking for: the student, admins, and landlords they've contacted (SHOW_HOUSING_NEEDS)
 // birth_date itself only goes back to its owner; everyone else sees the age.
+// Earlier names of two choices (see OLD_STAY_LENGTHS in lib/profileOptions.js)
+const STAY_RENAMED = { open: 'indefinite', other: 'negotiable' };
+
+// Profiles saved before the multiple-choice length had a number of months
+function stayFromMonths(months) {
+    if (!months) return null;
+    if (months === 12) return 'year';
+    return months <= 6 ? 'short' : 'long';
+}
+
 function toStudentProfileDto(profile, { details = false, needs = false, own = false, ageFrom } = {}) {
     if (!profile) return null;
     const dto = {
@@ -122,7 +132,7 @@ function toStudentProfileDto(profile, { details = false, needs = false, own = fa
             budget_max: profile.budget_max,
             move_in_date: profile.move_in_date,
             preferred_city: profile.preferred_city,
-            stay_months: profile.stay_months,
+            stay_length: STAY_RENAMED[profile.stay_length] || profile.stay_length || stayFromMonths(profile.stay_months),
         });
     }
     if (own) dto.birth_date = profile.birth_date;

@@ -266,11 +266,13 @@ model StudentProfile {
   has_pets   Boolean?
   lifestyle  String[]  @default([])
 
-  // housing needs: stored, but private until we decide (user testing) who should see them
+  // what they're looking for: seen by the student, and by landlords they've contacted
   budget_max     Int?
   move_in_date   DateTime? @db.Date
   preferred_city String?   @db.VarChar(100)
-  stay_months    Int?      @db.SmallInt
+  stay_length    String?   @db.VarChar(10)  // short (up to 6 months) | long (6+) | year (12) | indefinite | negotiable
+  stay_note      String?   @db.VarChar(100) // no longer used (was the "other" note); safe to drop
+  stay_months    Int?      @db.SmallInt     // old number of months, replaced by stay_length (read as a fallback)
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt

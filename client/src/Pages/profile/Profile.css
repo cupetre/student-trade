@@ -1,6 +1,49 @@
 /* Student rental profile + public profile. Classes start with "sp-". */
 
-.sp-page { max-width: 860px; }
+.sp-page { max-width: 1160px; }
+.sp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* title on the left, Edit / Save on the right */
+.sp-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; }
+.sp-head > div:first-child { flex: 1 1 420px; }
+
+/* the four cards in a 2 x 2 grid (one column on narrower screens) */
+.sp-grid-form {
+    border: 0; margin: 0; padding: 0; min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: stretch;
+}
+@media (max-width: 900px) {
+    .sp-grid-form { grid-template-columns: 1fr; }
+}
+
+/* Read-only view: fields look like text, unchosen options are hidden */
+.sp-form.is-view input:disabled,
+.sp-form.is-view select:disabled,
+.sp-form.is-view textarea:disabled {
+    background: #FAF7F0;
+    border-color: transparent;
+    color: var(--hs-text);
+    -webkit-text-fill-color: var(--hs-text);
+    opacity: 1;
+    cursor: default;
+    resize: none;
+}
+.sp-form.is-view select:disabled { appearance: none; -webkit-appearance: none; background-image: none; }
+.sp-form.is-view input::placeholder,
+.sp-form.is-view textarea::placeholder { color: var(--hs-muted); -webkit-text-fill-color: var(--hs-muted); }
+.sp-form.is-view .hs-chip--toggle:not(.is-on),
+.sp-form.is-view .sp-segment label:not(.is-on) { display: none; }
+.sp-form.is-view .hs-chip--toggle.is-on { opacity: 1; cursor: default; }
+.sp-form.is-view .sp-segment { border-color: transparent; }
+.sp-form.is-view .sp-segment label.is-on { cursor: default; border-radius: 10px; }
+.sp-form.is-view .hs-chips:not(:has(.is-on))::after,
+.sp-form.is-view .sp-segment:not(:has(.is-on))::after { content: 'Not added'; color: var(--hs-muted); font-size: 0.92rem; padding: 6px 0; }
+.sp-form.is-view .sp-segment:not(:has(.is-on)) { border: 0; background: none; }
+.sp-form.is-view .sp-segment--stack { align-self: flex-start; }
+.sp-undo { margin-left: 10px; }
 
 .sp-progress {
     background: #fff;
@@ -20,11 +63,43 @@
 .sp-form { display: flex; flex-direction: column; gap: 14px; }
 .sp-card { background: #fff; border: 1px solid var(--hs-border); border-radius: var(--hs-radius); padding: 18px; }
 .sp-card h2 { margin: 0 0 14px; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.sp-card--private { background: #FAF7F0; border-style: dashed; }
-.sp-private { font-size: 0.75rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: #F1EEE7; color: var(--hs-muted); }
+.sp-card--optional { background: #FAF7F0; }
+.sp-card .hs-optional { font-size: 0.85rem; font-weight: 500; }
+/* small numbered circle: the order of the page */
+.sp-step {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--hs-brand-soft); color: var(--hs-brand-dark);
+    font-size: 0.85rem; font-weight: 800; flex: none;
+}
+.sp-visibility { margin-left: auto; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--hs-brand-soft); color: var(--hs-brand-dark); }
+
+/* length of stay: one card per choice */
+.sp-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.sp-fieldset legend { padding: 0; margin-bottom: 8px; }
+.sp-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.sp-option {
+    position: relative;
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--hs-border);
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 150ms ease, background 150ms ease;
+}
+.sp-option:hover { border-color: var(--hs-brand); }
+.sp-option input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.sp-option strong { font-size: 0.95rem; }
+.sp-option span { font-size: 0.82rem; color: var(--hs-muted); }
+.sp-option.is-on { border-color: var(--hs-brand); background: var(--hs-brand-soft); box-shadow: inset 0 0 0 1px var(--hs-brand); }
+.sp-option:has(input:focus-visible) { outline: 3px solid #C2305A; outline-offset: 2px; }
+.sp-clear { margin-top: 8px; padding: 0; align-self: flex-start; }
+.sp-other { margin-top: 10px; max-width: 420px; }
 .sp-req { font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: var(--hs-warn-bg); color: var(--hs-warn); margin-left: 6px; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.03em; }
 
-.sp-photo { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.sp-photo { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.sp-photo .hs-label { display: block; margin-bottom: 6px; }
 .sp-photo .hs-hint { margin-top: 8px; max-width: 360px; }
 .sp-upload { position: relative; overflow: hidden; }
 .sp-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
@@ -36,7 +111,8 @@
 .sp-segment label.is-on { background: var(--hs-brand); color: #fff; }
 .sp-segment label:has(input:focus-visible) { outline: 3px solid #C2305A; outline-offset: -3px; }
 
-.sp-actions { display: flex; justify-content: flex-end; }
+.sp-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.sp-actions--bottom { margin-top: 4px; }
 
 .hs-chip:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -73,3 +149,22 @@
     .sp-hero { flex-direction: column; align-items: flex-start; }
     .sp-facts div { grid-template-columns: 110px 1fr; }
 }
+
+.sp-facts-heading { margin: 16px 0 10px; padding-top: 12px; border-top: 1px solid #EEEAE2; color: var(--hs-text); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* phones: long choices (Regular / Exchange student) go one under the other */
+@media (max-width: 560px) {
+    .sp-segment--stack { display: flex; flex-direction: column; align-self: stretch; }
+    .sp-segment--stack label { border-right: none; border-bottom: 1px solid var(--hs-border); }
+    .sp-segment--stack label:last-child { border-bottom: none; }
+}
+
+.sp-yesno { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sp-yesno .hs-link-btn { margin: 0; padding: 0; }
+
+/* public profile: the about card spreads its groups across one row */
+.sp-about h2 { margin-bottom: 6px; }
+.sp-about-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 32px; }
+.sp-about-col { min-width: 0; }
+.sp-about-col .sp-facts-heading { margin-top: 10px; border-top: 0; padding-top: 0; }
+.sp-about .sp-facts div { grid-template-columns: 96px 1fr; }

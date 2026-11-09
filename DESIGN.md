@@ -144,6 +144,20 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 - **Forgot password:** "Forgot your password?" sits next to the Password label on log in → `/forgot-password` (email is carried over) → "Check your email" with a resend after 60 s → the link opens `/reset-password?token=…` → new password twice → "Password changed" → log in with a green note. The answer never says whether an account exists. Links work once, for one hour; only a hash is stored; one email per minute per account, 5 requests per 15 min per IP + email. Using a reset link also confirms the email. The email is in the language of the page (Sidro / Anchor).
 - After log in: students → `/marketplace`, landlords → `/housing/mine`. A login lasts 3 hours (`expiresIn` in `server/controllers/userController.js`); after that the app sends you to log in again. Log out → log in (slides back from the left).
 
+**Rental profile (`/profile/student`, `sp-`)** — what a landlord sees when a student contacts them. Four numbered cards in a **2 × 2 grid** (one column under 900px):
+1. **Photo & basic info:** photo (needed), date of birth (needed; only the age is ever shown), home country (needed), home town, a few words about you. Photo and bio are the account's own (also on My profile and in the top bar).
+2. **Studies:** university, faculty, level (needed); programme, year, regular / exchange.
+3. **What you're looking for** (optional; landlords the student has contacted see it): max rent, move-in date, length of stay (a dropdown: Short lease, up to 6 months · Long lease, more than 6 · Year contract, 12 · Indefinite, for a really long time · Open to negotiate), city.
+4. **More about you** (all optional): languages, smoking, pets (Yes / No, nothing chosen = not saying, "Clear" takes an answer back), how you live.
+- **Read-only until "Edit profile".** Fields look like text and unchosen options are hidden ("Not added" where empty). Edit profile unlocks everything; Save stores it (photo and bio through the account, the rest through the profile) and locks the page again; Cancel puts back what was saved. A new photo is only uploaded on Save. Coming from "complete your profile to contact this landlord" (`?next=`) opens it ready to edit.
+- "Needed" = what must be filled in before messaging a landlord: photo, date of birth, home country, university, faculty, level.
+- Who sees what: everyone logged in sees studies; people the student has talked to or lived with also see age, where they're from, what they're looking for and the optional details (`SHOW_HOUSING_NEEDS` in `server/lib/profileOptions.js` switches "what they're looking for" off again). The search filters in Housing stay separate.
+- Older saved answers are read as the new choices: a number of months (≤6 short, 12 year, otherwise long), "open" → Indefinite, "other" → Open to negotiate.
+
+**Public profile (`/users/:id`)** — header card (photo, name, tags, bio), then one full-width "About" card with its groups side by side in a row (Basics & studies · Looking for · More about), then Reviews as a full-width card.
+
+**Top-bar photo and name stay in sync** — `updateCurrentUser()` / `refreshCurrentUser()` in `lib/useCurrentUser.js` update every place that shows the logged-in user (top bar included) as soon as a photo, name or bio is saved.
+
 **Routes**
 
 | Path | Who | Notes |
@@ -154,7 +168,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 | `/housing`, `/housing/:id`, `/housing/mine`, `/housing/new`, `/housing/:id/edit` | students + landlords | |
 | `/housing/saved`, `/housing/stays` | students | |
 | `/settle-in` | students | Placeholder until built |
-| `/profile/student` (rental profile) | students | |
+| `/profile/student` (rental profile) | students | See "Rental profile" below |
 | `/chatpage`, `/profilepage`, `/users/:id` | students + landlords | |
 | `/login`, `/register`, `/register/landlord` | logged out | Logged-in users go to `/` |
 | `/verify-pending`, `/verify-email` | everyone | Email confirmation |
@@ -223,7 +237,6 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 
 ## 9. Open items
 
-- [ ] **Pet question** in the rental profile: remove "Rather not say", keep only Yes / No. Decide whether it becomes required like "smoker".
 - [ ] **Public browsing** for guests (section 6) — server endpoints + guest views + sign-up prompt.
 - [ ] **Unread messages** — the chat list marks new messages only while the page is open. A real unread count (and a badge on the Messages icon) needs a "read" time on messages on the server.
 - [ ] **Old stylesheet** `client/src/App.css` is no longer loaded by any page; delete it when convenient.
@@ -245,6 +258,8 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 
 ## 10. Change log
 
+- **2026-11-09** — Rental profile: 2 × 2 grid, read-only until "Edit profile", Save locks it again, length of stay is a dropdown (Indefinite and Open to negotiate replace Not sure yet / Other). Public profile: about groups in one row, reviews below. The top-bar photo updates as soon as a new photo is saved.
+- **2026-11-09** — Rental profile reordered (photo → basic info → studies → what you're looking for → more about you). Needed now: photo, date of birth, home country, studies; smoking and languages optional. Length of stay is a choice instead of a number. "What you're looking for" is shown to landlords the student contacted. Bio can be edited here. Pets / smoking: Yes / No only. Needs `npx prisma db push` (adds `stay_length`, `stay_note`).
 - **2026-11-03** — Logins last 3 hours (was 1). The logo in both top bars sits exactly in the middle of the bar (the link around it was adding space for letter descenders).
 - **2026-11-03** — Landing page fits any window: the three columns stay in a row down to 701px and fill the window height; one side margin everywhere. Public top bar stays one row and moves links into a menu on narrower screens. Forgot password: link on log in, `/forgot-password`, `/reset-password`, bilingual email, server endpoints with tests. Needs `npx prisma db push`.
 - **2026-11-02** — Renamed to **Sidro (SL) / Anchor (EN)** with an anchor logo and favicon; tab titles follow the language. Housing listings get map locations: pin picker in the listing form, address lookup, exact pin private to the owner, public point 80–200 m off, backfill script. Needs `npx prisma db push` and `npm install` (Leaflet).

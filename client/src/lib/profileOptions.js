@@ -78,16 +78,28 @@ export const UNIVERSITY_SUGGESTIONS = [
     'DOBA Fakulteta',
 ];
 
-// Names for the fields a profile needs before contacting homeowners
+// How long they want to rent for (server: STAY_LENGTHS in server/lib/profileOptions.js)
+export const STAY_LENGTHS = {
+    short: { label: 'Short lease', hint: 'up to 6 months' },
+    long: { label: 'Long lease', hint: 'more than 6 months' },
+    year: { label: 'Year contract', hint: '12 months' },
+    indefinite: { label: 'Indefinite', hint: 'for a really long time, no end date' },
+    negotiable: { label: 'Open to negotiate', hint: 'we can agree on the length' },
+};
+
+export function stayLabel(p) {
+    const option = p && STAY_LENGTHS[p.stay_length];
+    return option ? `${option.label} (${option.hint})` : '';
+}
+
+// What a profile needs before contacting homeowners, in the order of the form
 export const REQUIRED_LABELS = {
     profile_picture: 'Profile photo',
+    birth_date: 'Date of birth',
+    home_country: 'Home country',
     university: 'University',
     faculty: 'Faculty',
     study_level: 'Level of study',
-    home_country: 'Home country',
-    languages: 'Languages you speak',
-    birth_date: 'Date of birth',
-    smoker: 'Smoker or not',
 };
 
 export function studyLine(p) {

@@ -6,7 +6,7 @@ import ReviewList from '../components/ReviewList.jsx';
 import { RatingSummary } from '../components/Stars.jsx';
 import { apiRequest } from '../lib/api';
 import { resolveMediaUrl } from '../lib/media';
-import { refreshCurrentUser, isLandlord } from '../lib/useCurrentUser';
+import { updateCurrentUser, isLandlord } from '../lib/useCurrentUser';
 import './housing/Housing.css';
 import './profile/Profile.css';
 import './ProfilePage.css';
@@ -116,7 +116,12 @@ const ProfilePage = () => {
             bio: form.bio.trim(),
             profile_picture: result.result?.profile_picture || prev.profile_picture,
         }));
-        refreshCurrentUser(); // the top bar shows the new name and photo
+        // the top bar shows the new name and photo straight away
+        updateCurrentUser({
+            fullname: name,
+            bio: form.bio.trim(),
+            ...(result.result?.profile_picture ? { profile_picture: result.result.profile_picture } : {}),
+        });
         setEditing(false);
         setPhoto(null);
         setFlash('Your profile was saved.');

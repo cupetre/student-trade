@@ -19,7 +19,7 @@ const FULL = {
     study_level: 'bachelor', study_year: '2', student_type: 'exchange',
     home_country: 'mk', home_city: 'Skopje', languages: ['mk', 'en', 'en'],
     birth_date: '2004-05-10', smoker: 'false', has_pets: '', lifestyle: ['quiet', 'tidy'],
-    budget_max: '350', move_in_date: '2026-10-01', preferred_city: 'Koper', stay_months: '10',
+    budget_max: '350', move_in_date: '2026-10-01', preferred_city: 'Koper', stay_length: 'negotiable',
 };
 
 test('a full profile is cleaned up and accepted', () => {
@@ -32,14 +32,28 @@ test('a full profile is cleaned up and accepted', () => {
     assert.equal(data.has_pets, null);
     assert.equal(data.budget_max, 350);
     assert.ok(data.birth_date instanceof Date);
+    assert.equal(data.stay_length, 'negotiable');
+    assert.equal(data.stay_note, null);
+});
+
+test('length of stay is one of five choices', () => {
+    assert.equal(validateStudentProfile({ ...FULL, stay_length: 'indefinite' }, NOW).data.stay_length, 'indefinite');
+    assert.equal(validateStudentProfile({ ...FULL, stay_length: '' }, NOW).data.stay_length, null);
+    // the first names of two choices still work
+    assert.equal(validateStudentProfile({ ...FULL, stay_length: 'open' }, NOW).data.stay_length, 'indefinite');
+    assert.equal(toStudentProfileDto({ stay_length: 'other' }, { needs: true }).stay_length, 'negotiable');
+    assert.ok(validateStudentProfile({ ...FULL, stay_length: '10' }, NOW).errors.stay_length);
+    // old profiles stored a number of months
+    const old = (months) => toStudentProfileDto({ stay_months: months }, { needs: true }).stay_length;
+    assert.deepEqual([old(4), old(6), old(9), old(12), old(null)], ['short', 'short', 'long', 'year', null]);
 });
 
 test('bad values are rejected with readable messages', () => {
     const { errors } = validateStudentProfile({
         study_level: 'kindergarten', study_year: 12, home_country: 'XX', languages: ['klingon'],
-        birth_date: '2015-01-01', smoker: 'maybe', lifestyle: ['party'], budget_max: -5, stay_months: 0,
+        birth_date: '2015-01-01', smoker: 'maybe', lifestyle: ['party'], budget_max: -5, stay_length: 'forever',
     }, NOW);
-    for (const field of ['study_level', 'study_year', 'home_country', 'languages', 'birth_date', 'smoker', 'lifestyle', 'budget_max', 'stay_months']) {
+    for (const field of ['study_level', 'study_year', 'home_country', 'languages', 'birth_date', 'smoker', 'lifestyle', 'budget_max', 'stay_length']) {
         assert.ok(errors[field], `expected an error for ${field}`);
     }
 });
@@ -50,12 +64,13 @@ test('age counts whole years and respects birthdays', () => {
     assert.equal(ageFrom(null, NOW), null);
 });
 
-test('profile is complete only with photo, studies, origin, languages, birth date and smoker answer', () => {
+test('profile is complete with photo, birth date, home country and studies; smoking and languages are optional', () => {
     const { data } = validateStudentProfile(FULL, NOW);
     assert.deepEqual(missingProfileFields({ profile_picture: 'x.jpg' }, data), []);
     assert.deepEqual(missingProfileFields({ profile_picture: null }, data), ['profile_picture']);
-    const missing = missingProfileFields({ profile_picture: 'x.jpg' }, null);
-    assert.ok(missing.includes('university') && missing.includes('smoker') && missing.includes('languages'));
+    assert.deepEqual(missingProfileFields({ profile_picture: 'x.jpg' }, { ...data, smoker: null, languages: [] }), []);
+    assert.deepEqual(missingProfileFields({ profile_picture: 'x.jpg' }, null),
+        ['birth_date', 'home_country', 'university', 'faculty', 'study_level']);
 });
 
 test('privacy layers: basics for everyone, details for contacts, birth date only for the owner', () => {
@@ -82,7 +97,8 @@ test('who may see profile details', async () => {
     const student = { id: 1, role: 'student' };
     assert.deepEqual(await profileAccess({ id: 2, role: 'landlord' }, student, { chatted: no, tenancy: no }), { details: false, needs: false, own: false });
     assert.equal((await profileAccess({ id: 2, role: 'landlord' }, student, { chatted: yes, tenancy: no })).details, true);
-    assert.equal((await profileAccess({ id: 2, role: 'landlord' }, student, { chatted: yes, tenancy: no })).needs, false);
+    // what they're looking for is shown to landlords they've talked to
+    assert.equal((await profileAccess({ id: 2, role: 'landlord' }, student, { chatted: yes, tenancy: no })).needs, true);
     assert.equal((await profileAccess({ id: 3, role: 'student' }, student, { chatted: no, tenancy: yes })).details, true);
     assert.equal((await profileAccess({ id: 9, role: 'admin' }, student, { chatted: no, tenancy: no })).needs, true);
     assert.equal((await profileAccess(student, student, { chatted: no, tenancy: no })).own, true);

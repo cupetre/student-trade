@@ -100,7 +100,7 @@ export const copy = {
                     intro: 'Račun za najemodajalce vam odpre Bivanje: vaše oglase, vaš nabiralnik in študente, ki bivajo pri vas.',
                     can: [
                         ['Objavite sobe, stanovanja in hiše', 'S fotografijami, ceno na osebo, prostimi mesti in datumom vselitve. Vsak oglas pred objavo pregledamo.'],
-                        ['Prejemajte profile študentov za najem', 'Študenti vam pišejo s priloženim profilom: univerza, jeziki, kajenje, hišni ljubljenčki.'],
+                        ['Prejemajte profile študentov za najem', 'Študenti vam pišejo s priloženim profilom: starost, od kod so, kaj študirajo ter kaj iščejo (proračun, vselitev, dolžina najema).'],
                         ['Pišite zainteresiranim študentom', 'Vsa vprašanja v enem nabiralniku, pisno, namesto klicev ob vseh urah.'],
                         ['Upravljajte svoje prostore', 'Oglas začasno ustavite, ga označite kot oddanega in imejte pregled nad tem, kdo kje biva.'],
                     ],
@@ -373,7 +373,7 @@ export const copy = {
                     intro: 'A landlord account gives you the Housing platform: your listings, your inbox and the students who live with you.',
                     can: [
                         ['List rooms, flats and houses', 'With photos, price per person, free spots and move-in date. We check every listing before it goes live.'],
-                        ['Receive student rental profiles', 'Students write to you with their profile attached: university, languages, smoking, pets.'],
+                        ['Receive student rental profiles', 'Students write to you with their profile attached: age, where they’re from, what they study, and what they’re looking for (budget, move-in, length of stay).'],
                         ['Message interested students', 'All questions in one inbox, in writing, instead of calls at all hours.'],
                         ['Manage your places', 'Pause a listing, mark it as filled, and keep track of who lives where.'],
                     ],

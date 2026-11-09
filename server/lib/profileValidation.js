@@ -1,7 +1,7 @@
 // Checks the student profile form and decides when a profile is "complete"
 // (complete = enough for a homeowner to know who is contacting them).
 
-const { COUNTRIES, LANGUAGES, STUDY_LEVELS, STUDENT_TYPES, LIFESTYLE } = require('./profileOptions');
+const { COUNTRIES, LANGUAGES, STUDY_LEVELS, STUDENT_TYPES, LIFESTYLE, STAY_LENGTHS, OLD_STAY_LENGTHS } = require('./profileOptions');
 const { toDate } = require('./housingValidation');
 
 const MIN_AGE = 16;
@@ -95,7 +95,7 @@ function validateStudentProfile(input, now = new Date()) {
     else if (lifestyle.length > 6) errors.lifestyle = 'Pick up to 6';
     else data.lifestyle = [...new Set(lifestyle)];
 
-    // --- housing needs (private for now) ---
+    // --- what they're looking for (optional) ---
     if (isBlank(body.budget_max)) {
         data.budget_max = null;
     } else {
@@ -114,28 +114,28 @@ function validateStudentProfile(input, now = new Date()) {
 
     data.preferred_city = text(body.preferred_city, 100) || null;
 
-    if (isBlank(body.stay_months)) {
-        data.stay_months = null;
-    } else {
-        const months = Number(body.stay_months);
-        if (!Number.isInteger(months) || months < 1 || months > 72) errors.stay_months = 'Length of stay must be between 1 and 72 months';
-        else data.stay_months = months;
-    }
+    const stay = OLD_STAY_LENGTHS[body.stay_length] || body.stay_length;
+    if (isBlank(stay)) data.stay_length = null;
+    else if (!STAY_LENGTHS.includes(stay)) errors.stay_length = 'Choose how long you want to stay';
+    else data.stay_length = stay;
+    data.stay_note = null; // the free-text note is gone: every answer is one of the choices
+    // the old "number of months" field is replaced by stay_length
+    if (data.stay_length) data.stay_months = null;
 
     return { data, errors };
 }
 
-// What a student must fill in before contacting homeowners.
+// What a student must fill in before contacting homeowners, in the order of
+// the form: photo, basic info, studies. Everything else is optional (smoking,
+// languages, pets... most homes are non-smoking anyway).
 // Returns the missing field names (empty = complete).
 const REQUIRED = [
     ['profile_picture', (user) => Boolean(user && user.profile_picture)],
+    ['birth_date', (_, p) => Boolean(p && p.birth_date)],
+    ['home_country', (_, p) => Boolean(p && p.home_country)],
     ['university', (_, p) => Boolean(p && p.university)],
     ['faculty', (_, p) => Boolean(p && p.faculty)],
     ['study_level', (_, p) => Boolean(p && p.study_level)],
-    ['home_country', (_, p) => Boolean(p && p.home_country)],
-    ['languages', (_, p) => Boolean(p && Array.isArray(p.languages) && p.languages.length > 0)],
-    ['birth_date', (_, p) => Boolean(p && p.birth_date)],
-    ['smoker', (_, p) => Boolean(p && typeof p.smoker === 'boolean')],
 ];
 
 function missingProfileFields(user, profile) {

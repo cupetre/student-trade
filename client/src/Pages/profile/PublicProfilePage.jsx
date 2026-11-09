@@ -9,7 +9,7 @@ import { apiRequest } from '../../lib/api';
 import { useCurrentUser } from '../../lib/useCurrentUser';
 import { resolveMediaUrl } from '../../lib/media';
 import { formatDate } from '../../lib/housingOptions';
-import { countryName, LANGUAGES, STUDY_LEVELS, STUDENT_TYPES, LIFESTYLE } from '../../lib/profileOptions';
+import { countryName, LANGUAGES, STUDY_LEVELS, STUDENT_TYPES, LIFESTYLE, stayLabel } from '../../lib/profileOptions';
 import '../housing/Housing.css';
 import './Profile.css';
 
@@ -98,50 +98,70 @@ const PublicProfilePage = () => {
                     )}
                 </section>
 
-                <div className={isStudent ? 'sp-grid' : ''}>
-                    {isStudent && (
-                        <section className="sp-card sp-section">
-                            <h2>About {person.fullname.split(' ')[0]}</h2>
-                            {sp ? (
-                                <dl className="sp-facts">
-                                    <Fact label="Studies">{[STUDY_LEVELS[sp.study_level], sp.study_year ? `${sp.study_year}. year` : null].filter(Boolean).join(', ')}</Fact>
-                                    <Fact label="Faculty">{sp.faculty}</Fact>
-                                    <Fact label="Programme">{sp.study_programme}</Fact>
-                                    <Fact label="Student">{STUDENT_TYPES[sp.student_type]}</Fact>
-                                    {person.details_visible && (
-                                        <>
-                                            <Fact label="From">{[sp.home_city, countryName(sp.home_country)].filter(Boolean).join(', ')}</Fact>
-                                            <Fact label="Age">{sp.age}</Fact>
-                                            <Fact label="Speaks">{(sp.languages || []).map(l => LANGUAGES[l] || l).join(', ')}</Fact>
-                                            <Fact label="Smoking">{yesNo(sp.smoker, 'Smokes', 'Doesn’t smoke')}</Fact>
-                                            <Fact label="Pets">{yesNo(sp.has_pets, 'Has a pet', 'No pets')}</Fact>
-                                            {sp.lifestyle?.length > 0 && (
-                                                <div><dt>Lifestyle</dt><dd className="hs-chips">{sp.lifestyle.map(l => <span key={l} className="hs-chip">{LIFESTYLE[l] || l}</span>)}</dd></div>
-                                            )}
-                                            {sp.budget_max !== undefined && (
-                                                <>
-                                                    <Fact label="Budget">{sp.budget_max ? `up to €${sp.budget_max} / month` : null}</Fact>
-                                                    <Fact label="Move in">{sp.move_in_date ? formatDate(sp.move_in_date) : null}</Fact>
-                                                    <Fact label="City">{sp.preferred_city}</Fact>
-                                                    <Fact label="Stay">{sp.stay_months ? `${sp.stay_months} months` : null}</Fact>
-                                                </>
-                                            )}
-                                        </>
-                                    )}
-                                </dl>
-                            ) : <p className="hs-muted">No details yet.</p>}
-                            {!person.details_visible && (
-                                <p className="sp-locked">More details (where they’re from, age, languages) are shared only with people they’ve talked to.</p>
-                            )}
-                        </section>
-                    )}
-
-                    <section className="sp-section">
-                        <h2>Reviews</h2>
-                        <ReviewList reviews={reviews} myId={me?.id} onDelete={handleDelete}
-                            emptyText={`${person.fullname.split(' ')[0]} has no reviews yet.`} />
+                {/* One row: who they are, what they're looking for, a bit more. Reviews below, full width. */}
+                {isStudent && (
+                    <section className="sp-card sp-section sp-about" aria-labelledby="sp-about-title">
+                        <h2 id="sp-about-title">About {person.fullname.split(' ')[0]}</h2>
+                        {sp ? (
+                            <div className="sp-about-cols">
+                                <div className="sp-about-col">
+                                    <h3 className="sp-facts-heading">Basics & studies</h3>
+                                    <dl className="sp-facts">
+                                        {person.details_visible && (
+                                            <>
+                                                <Fact label="Age">{sp.age}</Fact>
+                                                <Fact label="From">{[sp.home_city, countryName(sp.home_country)].filter(Boolean).join(', ')}</Fact>
+                                            </>
+                                        )}
+                                        <Fact label="Studies">{[STUDY_LEVELS[sp.study_level], sp.study_year ? `${sp.study_year}. year` : null].filter(Boolean).join(', ')}</Fact>
+                                        <Fact label="Faculty">{sp.faculty}</Fact>
+                                        <Fact label="Programme">{sp.study_programme}</Fact>
+                                        <Fact label="Student">{STUDENT_TYPES[sp.student_type]}</Fact>
+                                    </dl>
+                                </div>
+                                {person.details_visible && sp.budget_max !== undefined && (
+                                    <div className="sp-about-col">
+                                        <h3 className="sp-facts-heading">Looking for</h3>
+                                        {(sp.budget_max || sp.move_in_date || sp.preferred_city || sp.stay_length) ? (
+                                            <dl className="sp-facts">
+                                                <Fact label="Budget">{sp.budget_max ? `up to €${sp.budget_max} / month` : null}</Fact>
+                                                <Fact label="Move in">{sp.move_in_date ? formatDate(sp.move_in_date) : null}</Fact>
+                                                <Fact label="City">{sp.preferred_city}</Fact>
+                                                <Fact label="Stay">{stayLabel(sp) || null}</Fact>
+                                            </dl>
+                                        ) : <p className="hs-muted">Not added yet.</p>}
+                                    </div>
+                                )}
+                                {person.details_visible && (
+                                    <div className="sp-about-col">
+                                        <h3 className="sp-facts-heading">More about {person.fullname.split(' ')[0]}</h3>
+                                        {(sp.languages?.length > 0 || sp.smoker != null || sp.has_pets != null || sp.lifestyle?.length > 0) ? (
+                                            <dl className="sp-facts">
+                                                <Fact label="Speaks">{(sp.languages || []).map(l => LANGUAGES[l] || l).join(', ')}</Fact>
+                                                <Fact label="Smoking">{yesNo(sp.smoker, 'Smokes', 'Doesn’t smoke')}</Fact>
+                                                <Fact label="Pets">{yesNo(sp.has_pets, 'Has a pet', 'No pets')}</Fact>
+                                                {sp.lifestyle?.length > 0 && (
+                                                    <div><dt>Lifestyle</dt><dd className="hs-chips">{sp.lifestyle.map(l => <span key={l} className="hs-chip">{LIFESTYLE[l] || l}</span>)}</dd></div>
+                                                )}
+                                            </dl>
+                                        ) : <p className="hs-muted">Not added yet.</p>}
+                                    </div>
+                                )}
+                                {!person.details_visible && (
+                                    <div className="sp-about-col">
+                                        <p className="sp-locked">More details (age, where they’re from, what they’re looking for) are shared only with people they’ve talked to.</p>
+                                    </div>
+                                )}
+                            </div>
+                        ) : <p className="hs-muted">No details yet.</p>}
                     </section>
-                </div>
+                )}
+
+                <section className="sp-card sp-section" aria-labelledby="sp-reviews-title">
+                    <h2 id="sp-reviews-title">Reviews</h2>
+                    <ReviewList reviews={reviews} myId={me?.id} onDelete={handleDelete}
+                        emptyText={`${person.fullname.split(' ')[0]} has no reviews yet.`} />
+                </section>
 
                 {person.housing_listings?.length > 0 && (
                     <section className="sp-section">
