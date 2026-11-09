@@ -103,6 +103,13 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 - **No phone numbers on the rows.** Contact goes through in-app messages, which checks the student's rental profile first (section 1: "phone number stays private").
 - Under 1200px the right column moves above the listings (search and map side by side); under 860px everything is one column and the filters fold behind a "Filters (n)" button; under 600px the photo sits on top of the text.
 
+**Messages (`/chatpage`)**
+- "Messages" title above the panels. The panels are separate white cards (6px corners) with 16px between them: **conversations · open chat · liked listings**. The page fills the window; only the lists and the messages scroll.
+- **Conversations** (420px wide next to the liked column, 440px without it): search box on top in the same light blue as the selected conversation (by name, ignores case and accents: "ziga" finds "Žiga"), then roomy rows (52px photo, name, time, last message, raspberry dot for new).
+- **Liked listings** (students): photo, title, price and city, owner, and **Message** (starts a chat through the housing contact route, so the rental-profile check still runs) or **Open chat** if one already exists. Own column at 1240px and wider; below that a **Chats · Liked** switch in the left card, and the search box searches whichever is shown.
+- After a review, a short dark confirmation appears above the message box and goes away after 4 seconds (or with ×). No more sticky green bar.
+- Phones: one panel at a time; the title hides while a chat is open.
+
 **Listing page (`/housing/:id`)**
 - The whole listing sits on **one white sheet**: thin border, 4px corners, no shadow. The main photo runs the full width of the sheet from its very top; thumbnails, then badge, title and the one-line summary under it.
 - **Three tabs** under the title — **Overview · Location · Contact** — bold words, the open one raspberry with a raspberry underline. The open tab is in the address (`?tab=location`, `?tab=contact`), switching doesn't add history, arrow keys move between tabs.
@@ -111,6 +118,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
   - **Contact:** who posted it (photo, name, Verified landlord / Student, rating, languages, View profile), then **"Interested?"** (`Pages/housing/InterestPanel.jsx`), then "Stay safe".
 - **"Interested?"** — the student taps what they'd like (Seeing the place · Renting it / Taking over the sublet / Moving in as a flatmate · Moving in with a friend, only if 2+ spots are open · Asking questions first), a move-in date and how long (both filled in from the rental profile) and an optional note. "Send to <name>" opens the chat and posts it as the first message; with nothing chosen the button says "Message <name>" and just opens the chat. The server writes the message (`server/lib/housingInterest.js`) so it always reads the same way, and the rental-profile check still runs first.
 - **No reviews on listings.** Only people have reviews (landlord ↔ tenant, buyer ↔ seller). The owner's rating shows in the Contact tab. Tenants review their landlord, not the place.
+- **One review per person about another person**, whatever brought them together (marketplace chat, a stay, or both). Leaving another one updates the first ("Your review was updated"). Enforced in the database (`@@unique([reviewer_id, reviewee_id])` on Review).
 - **Right column:** a small sticky summary — price, spots, available from, bills — with **I'm interested** (opens the Contact tab), **Like / Liked**, and the owner's name (also opens Contact). Owners get Edit listing / My listings instead.
 - **Phones:** one column; a bar at the bottom (price + "I'm interested") opens the Contact tab, and hides while that tab is open.
 
@@ -279,6 +287,8 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 
 ## 10. Change log
 
+- **2026-11-09** — Messages: title outside the panels, three separate cards with gaps, name search, bigger conversation rows, liked listings with Message / Open chat (own column on wide screens, a Liked tab otherwise), review confirmation that closes itself.
+- **2026-11-09** — One review per person about another person (marketplace and housing together; a second one updates the first; database rule + `scripts/merge-duplicate-reviews.js` to clean up before `npx prisma db push`). Rental profile: "More about you" card is white like the others, the progress box only shows while something is missing, header subtitle removed.
 - **2026-11-09** — Listing page split into Overview · Location · Contact tabs. Location has the approximate-area map (owner sees the exact pin). Contact has the owner card, "Interested?" and Stay safe. The right column is a short summary with I'm interested and Like.
 - **2026-11-09** — Listing page: sheet without shadows and with 4px corners; the main photo fills the sheet edge to edge from the top.
 - **2026-11-09** — Listing page: one white sheet with side shadows, listing reviews removed (only people have reviews), "Interested?" panel on the right that sends a first message with what the student wants (new `POST /listings/:id/contact` body: interests, move_in, stay_length, note; tests in `server/tests/housingInterest.test.js`), phone bar. "Stay safe" box in palette colours.

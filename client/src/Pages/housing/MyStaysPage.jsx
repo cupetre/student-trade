@@ -47,7 +47,8 @@ const MyStaysPage = () => {
         const { ok, data } = await apiRequest(`/api/housing/tenancies/${stay.id}/review`, { method: 'POST', body: input });
         if (!ok) return { ok, error: data.error };
         setReviewingId(null);
-        setNotice('Thanks! Your review helps other students.');
+        // One review per person: reviewing the same landlord again updates the first one
+        setNotice(data.updated ? 'Your review was updated.' : 'Thanks! Your review helps other students.');
         load();
         return { ok };
     };

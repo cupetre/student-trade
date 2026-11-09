@@ -116,8 +116,8 @@ model Review {
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now()) @updatedAt
 
-  // marketplace: allowed after a chat, one review per person.
-  // housing: allowed only between a landlord and a confirmed tenant, one per tenancy each way.
+  // One review per person about another person, in any context (leaving another updates it).
+  // marketplace: allowed after a chat. housing: allowed only between a landlord and a confirmed tenant.
   context            String          @default("marketplace") @db.VarChar(20)
   tenancy_id         Int?
   tenancy            Tenancy?        @relation(fields: [tenancy_id], references: [id], onDelete: SetNull)
@@ -126,8 +126,8 @@ model Review {
   listing_title      String?         @db.VarChar(120) // kept even if the listing is deleted later
 
   @@unique([tenancy_id, reviewer_id])
+  @@unique([reviewer_id, reviewee_id]) // one review per person about another person
   @@index([reviewee_id])
-  @@index([reviewer_id, reviewee_id])
   @@index([housing_listing_id])
 }
 

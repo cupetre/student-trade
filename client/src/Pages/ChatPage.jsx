@@ -9,6 +9,8 @@ import { getValidToken } from '../lib/auth';
 import { resolveMediaUrl } from '../lib/media';
 import { useCurrentUser, isLandlord } from '../lib/useCurrentUser';
 import { createLogger } from '../lib/logger';
+import { REQUIRED_LABELS } from '../lib/profileOptions';
+import { formatEuro } from '../lib/housingOptions';
 import './housing/Housing.css';
 import './ChatPage.css';
 
@@ -45,6 +47,27 @@ function dayLabel(value) {
 // answer to our own send and over the live connection in another tab)
 const addMessage = (list, message) => (list.some(m => m.id === message.id) ? list : [...list, message]);
 
+// Search ignores case and accents: "ziga" finds "Žiga"
+const fold = (value) => String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+// True while the window is at least this wide (the liked listings get their own column)
+function useWide(query) {
+    const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+    useEffect(() => {
+        const list = window.matchMedia(query);
+        const onChange = () => setWide(list.matches);
+        list.addEventListener('change', onChange);
+        return () => list.removeEventListener('change', onChange);
+    }, [query]);
+    return wide;
+}
+
+const SearchIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="ch-icon"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>
+);
+const CloseIcon = () => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="ch-icon"><path d="M6 6l12 12M18 6 6 18" /></svg>
+);
 const SendIcon = () => (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="ch-icon"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" /></svg>
 );
@@ -136,7 +159,14 @@ const ChatPage = () => {
     const [sending, setSending] = useState(false);
     const [sendError, setSendError] = useState('');
     const [reviewOpen, setReviewOpen] = useState(false);
-    const [notice, setNotice] = useState('');
+    const [notice, setNotice] = useState(''); // short confirmation, e.g. after a review; disappears by itself
+
+    const [search, setSearch] = useState('');
+    const [pane, setPane] = useState('chats'); // narrower screens: "Chats" or "Liked" in the left card
+    const wide = useWide('(min-width: 1240px)');
+    const [liked, setLiked] = useState({ items: [], loading: true, error: '' });
+    const [likedBusy, setLikedBusy] = useState(null); // listing id while its chat is being opened
+    const [likedProblem, setLikedProblem] = useState(null); // { id, text, missing } when a chat couldn't be opened
 
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
@@ -148,16 +178,36 @@ const ChatPage = () => {
     const selected = chats.find(c => c.chat_id === selectedId) || null;
 
     // Conversation list
+    const loadChats = useCallback(async () => {
+        const { ok, data } = await apiRequest('/api/messages/get_history');
+        if (!ok) { setListState({ loading: false, error: data.error }); return null; }
+        const list = Array.isArray(data) ? data : [];
+        setChats(list);
+        setListState({ loading: false, error: '' });
+        return list;
+    }, []);
+    useEffect(() => { loadChats(); }, [listVersion, loadChats]);
+
+    const landlord = isLandlord(user);
+
+    // Places the student liked, so they can message the owner from here (landlords don't like places)
     useEffect(() => {
+        if (!user) return undefined;
+        if (landlord) { setLiked({ items: [], loading: false, error: '' }); return undefined; }
         let cancelled = false;
-        apiRequest('/api/messages/get_history').then(({ ok, data }) => {
+        apiRequest('/api/housing/listings/saved').then(({ ok, data }) => {
             if (cancelled) return;
-            if (!ok) { setListState({ loading: false, error: data.error }); return; }
-            setChats(Array.isArray(data) ? data : []);
-            setListState({ loading: false, error: '' });
+            setLiked({ items: ok && Array.isArray(data) ? data : [], loading: false, error: ok ? '' : data.error });
         });
         return () => { cancelled = true; };
-    }, [listVersion]);
+    }, [user, landlord]);
+
+    // The confirmation after a review goes away by itself
+    useEffect(() => {
+        if (!notice) return undefined;
+        const timer = setTimeout(() => setNotice(''), 4000);
+        return () => clearTimeout(timer);
+    }, [notice]);
 
     // Messages of the open conversation
     useEffect(() => {
@@ -214,6 +264,30 @@ const ChatPage = () => {
     const openChat = (chatId) => setParams({ chatId: String(chatId) });
     const backToList = () => setParams({});
 
+    // "Message" on a liked listing: open the chat with its owner, starting one if needed.
+    // Goes through housing so the rental-profile check runs, like on the listing page.
+    const messageOwner = async (listing) => {
+        if (!listing.owner || likedBusy) return;
+        setLikedProblem(null);
+        const existing = chats.find(c => c.owner_of_post_id === listing.owner.id);
+        if (existing) { openChat(existing.chat_id); return; }
+        setLikedBusy(listing.id);
+        const { ok, data } = await apiRequest(`/api/housing/listings/${listing.id}/contact`, { method: 'POST', body: {} });
+        if (!ok) {
+            setLikedBusy(null);
+            setLikedProblem({
+                id: listing.id,
+                text: data.code === 'PROFILE_INCOMPLETE' ? 'Finish your rental profile first.' : (data.error || 'Couldn’t open the chat.'),
+                missing: data.code === 'PROFILE_INCOMPLETE' ? (data.missing || []) : null,
+            });
+            return;
+        }
+        await loadChats(); // the new conversation appears in the list before it opens
+        setLikedBusy(null);
+        setPane('chats');
+        openChat(data.chat_id);
+    };
+
     const send = async (e) => {
         e?.preventDefault();
         const content = draft.trim();
@@ -257,8 +331,14 @@ const ChatPage = () => {
         return out;
     }, [thread.messages]);
 
-    const landlord = isLandlord(user);
-    const noChats = !listState.loading && !listState.error && chats.length === 0;
+    const query = fold(search.trim());
+    const visibleChats = query ? chats.filter(c => fold(c.owner_of_post_fullname).includes(query)) : chats;
+    const visibleLiked = query && !wide
+        ? liked.items.filter(l => [l.title, l.city, l.owner?.fullname].some(v => fold(v).includes(query)))
+        : liked.items;
+    const chatWith = (ownerId) => chats.find(c => c.owner_of_post_id === ownerId);
+    // With no chats AND nothing liked there's nothing to show yet
+    const noChats = !listState.loading && !listState.error && chats.length === 0 && (landlord || (!liked.loading && liked.items.length === 0));
     const person = selected && { id: selected.owner_of_post_id, name: selected.owner_of_post_fullname || 'Anchor user', photo: selected.owner_of_post_photo };
     const firstName = person?.name.split(' ')[0];
 
@@ -287,49 +367,138 @@ const ChatPage = () => {
         );
     }
 
+    // Liked listings: the right-hand column on wide screens, the "Liked" tab otherwise
+    const likedList = (
+        <div className="ch-liked">
+            {liked.loading && <p className="ch-list-note">Loading…</p>}
+            {liked.error && <div className="hs-alert hs-alert--error ch-list-note" role="alert">{liked.error}</div>}
+            {!liked.loading && !liked.error && liked.items.length === 0 && (
+                <div className="ch-liked-empty">
+                    <p>Places you like show up here, so you can message the owner straight away.</p>
+                    <Link to="/housing" className="hs-link">Browse housing</Link>
+                </div>
+            )}
+            {!liked.loading && liked.items.length > 0 && visibleLiked.length === 0 && (
+                <p className="ch-list-note">No liked places match “{search.trim()}”.</p>
+            )}
+            <ul>
+                {visibleLiked.map(listing => {
+                    const photo = resolveMediaUrl(listing.photos?.[0]?.url);
+                    const existing = listing.owner && chatWith(listing.owner.id);
+                    const problem = likedProblem?.id === listing.id ? likedProblem : null;
+                    return (
+                        <li key={listing.id} className="ch-like">
+                            <Link to={`/housing/${listing.id}`} className="ch-like-photo" tabIndex={-1} aria-hidden="true">
+                                {photo ? <img src={photo} alt="" loading="lazy" /> : <span />}
+                            </Link>
+                            <div className="ch-like-text">
+                                <Link to={`/housing/${listing.id}`} className="ch-like-title">{listing.title}</Link>
+                                <span className="ch-like-meta">{formatEuro(listing.rent_per_person)} / month · {listing.city}</span>
+                                {listing.owner && <span className="ch-like-owner">{listing.owner.fullname}</span>}
+                            </div>
+                            <button
+                                type="button"
+                                className={`hs-btn hs-btn--small ${existing ? 'hs-btn--ghost' : ''} ch-like-btn`}
+                                onClick={() => messageOwner(listing)}
+                                disabled={likedBusy === listing.id || !listing.owner}
+                            >
+                                {likedBusy === listing.id ? 'Opening…' : existing ? 'Open chat' : 'Message'}
+                            </button>
+                            {problem && (
+                                <p className="ch-like-problem" role="alert">
+                                    {problem.text}
+                                    {problem.missing?.length > 0 && <> Missing: {problem.missing.map(f => REQUIRED_LABELS[f] || f).join(', ')}.</>}
+                                    {problem.missing && <> <Link to="/profile/student?next=%2Fchatpage">Complete it</Link></>}
+                                </p>
+                            )}
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    );
+
+    const showLikedColumn = wide && !landlord;
+    const showLikedTab = !wide && !landlord;
+
     return (
         <div className="hs-shell">
             <AppNav />
-            <main className="ch-page">
-                <div className={`ch-frame ${selectedId ? 'is-open' : ''}`}>
-                    {/* ---- conversation list ---- */}
-                    <aside className="ch-list" aria-label="Conversations">
-                        <h1 className="ch-list-title">Messages</h1>
-                        {listState.loading && <p className="ch-list-note">Loading…</p>}
-                        {listState.error && <div className="hs-alert hs-alert--error ch-list-note" role="alert">{listState.error}</div>}
-                        <ul>
-                            {chats.map(chat => {
-                                const last = chat.last_message;
-                                const isUnread = unread.has(chat.chat_id);
-                                return (
-                                    <li key={chat.chat_id}>
-                                        <button type="button"
-                                            className={`ch-item ${chat.chat_id === selectedId ? 'is-active' : ''} ${isUnread ? 'is-unread' : ''}`}
-                                            aria-current={chat.chat_id === selectedId ? 'true' : undefined}
-                                            onClick={() => openChat(chat.chat_id)}>
-                                            <Avatar src={resolveMediaUrl(chat.owner_of_post_photo)} name={chat.owner_of_post_fullname} size={44} />
-                                            <span className="ch-item-text">
-                                                <span className="ch-item-top">
-                                                    <span className="ch-item-name">{chat.owner_of_post_fullname || 'Anchor user'}</span>
-                                                    <span className="ch-item-time">{listTime(last?.sent_at || chat.last_activity || chat.chat_created_at)}</span>
-                                                </span>
-                                                <span className="ch-item-preview">
-                                                    {last ? `${last.sender_id === myId ? 'You: ' : ''}${last.content}` : 'No messages yet'}
-                                                </span>
-                                            </span>
-                                            {isUnread && <span className="ch-dot"><span className="ch-sr">New message</span></span>}
-                                        </button>
-                                    </li>
-                                );
-                            })}
-                        </ul>
+            <main className={`ch-page ${selectedId ? 'is-open' : ''}`}>
+                <h1 className="ch-title">Messages</h1>
+
+                <div className={`ch-frame ${selectedId ? 'is-open' : ''} ${showLikedColumn ? 'has-liked' : ''}`}>
+                    {/* ---- conversations (and, on narrower screens, liked places) ---- */}
+                    <aside className="ch-card ch-list" aria-label="Conversations">
+                        <div className="ch-search">
+                            <SearchIcon />
+                            <label htmlFor="ch-search" className="ch-sr">{pane === 'liked' && showLikedTab ? 'Search liked places' : 'Search people by name'}</label>
+                            <input
+                                id="ch-search"
+                                type="search"
+                                placeholder={pane === 'liked' && showLikedTab ? 'Search liked places' : 'Search by name'}
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                autoComplete="off"
+                            />
+                        </div>
+
+                        {showLikedTab && (
+                            <div className="ch-switch" role="tablist" aria-label="Show">
+                                <button type="button" role="tab" aria-selected={pane === 'chats'} className={pane === 'chats' ? 'is-active' : ''} onClick={() => setPane('chats')}>
+                                    Chats
+                                </button>
+                                <button type="button" role="tab" aria-selected={pane === 'liked'} className={pane === 'liked' ? 'is-active' : ''} onClick={() => setPane('liked')}>
+                                    Liked{liked.items.length > 0 ? ` (${liked.items.length})` : ''}
+                                </button>
+                            </div>
+                        )}
+
+                        {showLikedTab && pane === 'liked' ? likedList : (
+                            <>
+                                {listState.loading && <p className="ch-list-note">Loading…</p>}
+                                {listState.error && <div className="hs-alert hs-alert--error ch-list-note" role="alert">{listState.error}</div>}
+                                {!listState.loading && chats.length === 0 && !listState.error && (
+                                    <p className="ch-list-note">No conversations yet. Message the owner of a place you liked to start one.</p>
+                                )}
+                                {query && chats.length > 0 && visibleChats.length === 0 && (
+                                    <p className="ch-list-note">Nobody called “{search.trim()}”.</p>
+                                )}
+                                <ul className="ch-chats">
+                                    {visibleChats.map(chat => {
+                                        const last = chat.last_message;
+                                        const isUnread = unread.has(chat.chat_id);
+                                        return (
+                                            <li key={chat.chat_id}>
+                                                <button type="button"
+                                                    className={`ch-item ${chat.chat_id === selectedId ? 'is-active' : ''} ${isUnread ? 'is-unread' : ''}`}
+                                                    aria-current={chat.chat_id === selectedId ? 'true' : undefined}
+                                                    onClick={() => openChat(chat.chat_id)}>
+                                                    <Avatar src={resolveMediaUrl(chat.owner_of_post_photo)} name={chat.owner_of_post_fullname} size={52} />
+                                                    <span className="ch-item-text">
+                                                        <span className="ch-item-top">
+                                                            <span className="ch-item-name">{chat.owner_of_post_fullname || 'Anchor user'}</span>
+                                                            <span className="ch-item-time">{listTime(last?.sent_at || chat.last_activity || chat.chat_created_at)}</span>
+                                                        </span>
+                                                        <span className="ch-item-preview">
+                                                            {last ? `${last.sender_id === myId ? 'You: ' : ''}${last.content}` : 'No messages yet'}
+                                                        </span>
+                                                    </span>
+                                                    {isUnread && <span className="ch-dot"><span className="ch-sr">New message</span></span>}
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </>
+                        )}
                     </aside>
 
                     {/* ---- open conversation ---- */}
-                    <section className="ch-thread" aria-label={person ? `Conversation with ${person.name}` : 'Conversation'}>
+                    <section className="ch-card ch-thread" aria-label={person ? `Conversation with ${person.name}` : 'Conversation'}>
                         {!selectedId && (
                             <div className="ch-placeholder">
-                                <p>Pick a conversation on the left.</p>
+                                <p>Pick a conversation{showLikedColumn && liked.items.length ? ', or message the owner of a place you liked' : ''}.</p>
                             </div>
                         )}
 
@@ -344,7 +513,7 @@ const ChatPage = () => {
                             <>
                                 <header className="ch-thread-head">
                                     <button type="button" className="ch-back" onClick={backToList} aria-label="All messages"><BackIcon /></button>
-                                    <Avatar src={resolveMediaUrl(person.photo)} name={person.name} size={40} />
+                                    <Avatar src={resolveMediaUrl(person.photo)} name={person.name} size={44} />
                                     <div className="ch-thread-who">
                                         <strong>{person.name}</strong>
                                         {person.id && <Link to={`/users/${person.id}`}>View profile</Link>}
@@ -355,8 +524,6 @@ const ChatPage = () => {
                                         </button>
                                     )}
                                 </header>
-
-                                {notice && <div className="hs-alert hs-alert--success ch-notice" role="status">{notice}</div>}
 
                                 <div className="ch-messages" ref={scrollRef} aria-live="polite">
                                     {thread.loading && <p className="ch-center hs-muted">Loading…</p>}
@@ -384,6 +551,13 @@ const ChatPage = () => {
                                     ))}
                                 </div>
 
+                                {notice && (
+                                    <div className="ch-toast" role="status">
+                                        <span>{notice}</span>
+                                        <button type="button" onClick={() => setNotice('')} aria-label="Close"><CloseIcon /></button>
+                                    </div>
+                                )}
+
                                 <form className="ch-composer" onSubmit={send}>
                                     {sendError && <p className="hs-field-error ch-send-error" role="alert">{sendError}</p>}
                                     <div className="ch-composer-row">
@@ -401,6 +575,17 @@ const ChatPage = () => {
                             </>
                         )}
                     </section>
+
+                    {/* ---- liked places (wide screens) ---- */}
+                    {showLikedColumn && (
+                        <aside className="ch-card ch-liked-col" aria-labelledby="ch-liked-title">
+                            <h2 id="ch-liked-title" className="ch-card-title">
+                                Liked listings
+                                {liked.items.length > 0 && <span>{liked.items.length}</span>}
+                            </h2>
+                            {likedList}
+                        </aside>
+                    )}
                 </div>
             </main>
 

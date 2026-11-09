@@ -248,14 +248,18 @@ const StudentProfilePage = () => {
                 <header className="hs-head sp-head">
                     <div>
                         <h1>Your rental profile</h1>
-                        <p>Landlords see this when you contact them, so they know who you are before replying. Your exact date of birth is never shown, only your age.</p>
+                        {missing.length === 0 && user?.id && (
+                            <Link to={`/users/${user.id}`} className="hs-link sp-head-link">See how others see it</Link>
+                        )}
                     </div>
                     {actions('top')}
                 </header>
 
-                <section className={`sp-progress ${missing.length ? '' : 'is-done'}`} aria-label="Profile progress">
+                {/* Only while something is missing: a finished profile needs no progress bar */}
+                {missing.length > 0 && (
+                <section className="sp-progress" aria-label="Profile progress">
                     <div className="sp-progress-top">
-                        <strong>{missing.length ? `${done} of ${TOTAL_REQUIRED} needed things done` : 'Profile complete'}</strong>
+                        <strong>{`${done} of ${TOTAL_REQUIRED} needed things done`}</strong>
                         {user?.id && <Link to={`/users/${user.id}`} className="hs-link">See how others see it</Link>}
                     </div>
                     <div className="sp-bar"><span style={{ width: `${(done / TOTAL_REQUIRED) * 100}%` }} /></div>
@@ -267,6 +271,7 @@ const StudentProfilePage = () => {
                     )}
                     {next && missing.length > 0 && <p className="sp-missing">When it’s complete we’ll take you back to the place you were looking at.</p>}
                 </section>
+                )}
 
                 {formError && <div className="hs-alert hs-alert--error" role="alert">{formError}</div>}
                 {notice && <div className="hs-alert hs-alert--success" role="status">{notice}</div>}

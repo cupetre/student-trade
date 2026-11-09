@@ -63,7 +63,7 @@
 .sp-form { display: flex; flex-direction: column; gap: 14px; }
 .sp-card { background: #fff; border: 1px solid var(--hs-border); border-radius: var(--hs-radius); padding: 18px; }
 .sp-card h2 { margin: 0 0 14px; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.sp-card--optional { background: #FAF7F0; }
+.sp-card--optional { background: #fff; } /* same as the other three cards */
 .sp-card .hs-optional { font-size: 0.85rem; font-weight: 500; }
 /* small numbered circle: the order of the page */
 .sp-step {
@@ -168,3 +168,4 @@
 .sp-about-col { min-width: 0; }
 .sp-about-col .sp-facts-heading { margin-top: 10px; border-top: 0; padding-top: 0; }
 .sp-about .sp-facts div { grid-template-columns: 96px 1fr; }
+.sp-head-link { display: inline-block; margin-top: 6px; }

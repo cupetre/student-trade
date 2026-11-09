@@ -8,7 +8,7 @@ const {
 } = require('../models/tenancyModels.js');
 const { findListingOwnerAndStatus, findUserForHousing } = require('../models/housingModels.js');
 const { haveChatted } = require('../models/profileModels.js');
-const { upsertTenancyReview } = require('../models/reviewModels.js');
+const { saveTenancyReview } = require('../models/reviewModels.js');
 const { readReviewInput } = require('./rrController');
 const { personDto, toReviewDto } = require('../lib/dto');
 const { nextTenancyState, reviewTarget } = require('../lib/tenancyRules');
@@ -174,9 +174,9 @@ async function reviewTenancy(req, res) {
         const target = reviewTarget(tenancy, req.user.id);
         if (target.error) return res.status(target.status).json({ error: target.error });
 
-        const review = await upsertTenancyReview({ tenancy, reviewerId: req.user.id, revieweeId: target.revieweeId, ...input });
-        req.log.info({ tenancyId: id, reviewer: req.user.id }, 'housing review saved');
-        res.json({ message: 'Review saved', review: toReviewDto(review) });
+        const { review, updated } = await saveTenancyReview({ tenancy, reviewerId: req.user.id, revieweeId: target.revieweeId, ...input });
+        req.log.info({ tenancyId: id, reviewer: req.user.id, updated }, 'housing review saved');
+        res.json({ message: updated ? 'Your review was updated' : 'Review saved', updated, review: toReviewDto(review) });
     } catch (err) {
         req.log.error({ err, tenancyId: id }, 'failed to save housing review');
         res.status(500).json({ error: 'Could not save the review' });

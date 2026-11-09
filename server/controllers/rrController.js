@@ -1,6 +1,6 @@
 const { addReport } = require('../models/rrModels.js');
 const {
-    findMarketplaceReview, createReview, updateReview, findReview, deleteReview: deleteReviewRow,
+    findReviewBetween, createReview, updateReview, findReview, deleteReview: deleteReviewRow,
     listReviewsAbout, ratingSummary,
 } = require('../models/reviewModels.js');
 const { haveChatted, findUserWithProfile } = require('../models/profileModels.js');
@@ -40,6 +40,7 @@ async function submitReport(req, res) {
 }
 
 // Marketplace review: only between people who have chatted, one per person
+// (across marketplace and housing, see findReviewBetween)
 // (sending it again updates the earlier one instead of adding another).
 async function submitReview(req, res) {
     const reviewerId = req.user.id;
@@ -55,9 +56,9 @@ async function submitReview(req, res) {
             return res.status(403).json({ error: 'You can only review people you have traded or talked with.' });
         }
 
-        const existing = await findMarketplaceReview(reviewerId, revieweeId);
+        const existing = await findReviewBetween(reviewerId, revieweeId);
         const review = existing
-            ? await updateReview(existing.id, input)
+            ? await updateReview(existing.id, input) // keeps its housing link if it has one
             : await createReview({ reviewer_id: reviewerId, reviewee_id: revieweeId, context: 'marketplace', ...input });
 
         req.log.info({ reviewer: reviewerId, reviewee: revieweeId, updated: Boolean(existing) }, 'review saved');
