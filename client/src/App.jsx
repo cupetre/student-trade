@@ -1,21 +1,40 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import AppNav from './components/AppNav.jsx';
+import SceneBackdrop from './components/SceneBackdrop.jsx';
 import MarketTabs from './Pages/marketplace/MarketTabs.jsx';
 import MarketCard from './Pages/marketplace/MarketCard.jsx';
-import { SORTS } from './Pages/marketplace/marketOptions';
+import MarketItemModal from './Pages/marketplace/MarketItemModal.jsx';
+import { SORTS, CATEGORIES, CONDITIONS } from './Pages/marketplace/marketOptions';
 import { apiRequest } from './lib/api';
 import './Pages/housing/Housing.css';
 import './Pages/marketplace/Market.css';
 
-// Marketplace › Browse (/marketplace). Built like Housing › Browse: tabs, a page
-// header, filters that live in the address (?q=lamp&max=20&sort=price_asc, so a
-// search can be shared and the back button works) and a grid of cards.
+const FILTER_KEYS = ['q', 'category', 'condition', 'max', 'sort'];
+
+// The page numbers to show: always the first and last, and two either side of
+// the current one, with gaps as "…" (1 … 4 5 6 7 8 … 20)
+function pageList(page, pages) {
+    const out = [];
+    for (let n = 1; n <= pages; n += 1) {
+        if (n === 1 || n === pages || Math.abs(n - page) <= 2) out.push(n);
+        else if (out[out.length - 1] !== '…') out.push('…');
+    }
+    return out;
+}
+
+// Marketplace › Browse (/marketplace, and /marketplace/:id with the item open on top).
+// 30 items a page: 3 per row, 10 rows. Filters and the page live in the address
+// (?q=lamp&category=books&page=2), so a search can be shared and Back works.
 const MarketplacePage = () => {
+    const rest = useParams()['*'] || ''; // "12" on /marketplace/12
+    const openId = /^\d+$/.test(rest) ? Number(rest) : null;
+    const navigate = useNavigate();
     const [params, setParams] = useSearchParams();
-    const [items, setItems] = useState([]);
+    const [result, setResult] = useState({ items: [], total: 0, page: 1, pages: 1 });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const topRef = useRef(null);
 
     // The search and price boxes keep their own value while you type and update
     // the address only after typing stops (typing straight into the address
@@ -23,25 +42,44 @@ const MarketplacePage = () => {
     const [searchInput, setSearchInput] = useState(params.get('q') || '');
     const [maxInput, setMaxInput] = useState(params.get('max') || '');
 
+    // What the server is asked for: the filters plus the page, nothing else
+    const query = (() => {
+        const q = new URLSearchParams();
+        [...FILTER_KEYS, 'page'].forEach(key => { if (params.get(key)) q.set(key, params.get(key)); });
+        return q.toString();
+    })();
+
     useEffect(() => {
         let cancelled = false;
-        apiRequest('/api/listings/show_listings').then(({ ok, data }) => {
+        setLoading(true);
+        apiRequest(`/api/listings/show_listings?${query}`).then(({ ok, data }) => {
             if (cancelled) return;
             setLoading(false);
-            if (ok) setItems(Array.isArray(data) ? data : []);
-            else setError(data.error);
+            if (!ok) { setError(data.error); return; }
+            // An older server sends a plain list; treat it as one page
+            const items = Array.isArray(data) ? data : (data.items || []);
+            setResult({
+                items,
+                total: Array.isArray(data) ? items.length : (data.total ?? items.length),
+                page: data.page || 1,
+                pages: data.pages || 1,
+                page_size: data.page_size || 30,
+            });
+            setError('');
         });
         return () => { cancelled = true; };
-    }, []);
+    }, [query]);
 
     // Starts from the address as it is now, not as it was when this render
-    // happened, so a delayed update never undoes a newer one
+    // happened, so a delayed update never undoes a newer one. Any filter change
+    // goes back to page 1.
     function setFilters(changes, replace = false) {
         const next = new URLSearchParams(window.location.search);
         Object.entries(changes).forEach(([key, value]) => {
-            if (value === '' || value === null) next.delete(key);
+            if (value === '' || value === null || value === undefined) next.delete(key);
             else next.set(key, value);
         });
+        if (!('page' in changes)) next.delete('page');
         setParams(next, { replace });
     }
 
@@ -53,37 +91,33 @@ const MarketplacePage = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchInput, maxInput]);
 
-    const query = (params.get('q') || '').toLowerCase();
-    const max = params.get('max') || '';  // what the list is filtered by right now
-    const sort = params.get('sort') || 'newest';
+    const goToPage = (page) => {
+        setFilters({ page: page > 1 ? String(page) : '' });
+        topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
 
-    const shown = useMemo(() => {
-        let list = items;
-        if (query) list = list.filter(i => `${i.title} ${i.description || ''}`.toLowerCase().includes(query));
-        if (max !== '') list = list.filter(i => Number(i.price) <= Number(max));
-        const sorted = [...list];
-        if (sort === 'price_asc') sorted.sort((a, b) => Number(a.price) - Number(b.price));
-        else if (sort === 'price_desc') sorted.sort((a, b) => Number(b.price) - Number(a.price));
-        else sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
-        return sorted;
-    }, [items, query, max, sort]);
-
-    const hasFilters = Boolean(query || max);
+    const hasFilters = FILTER_KEYS.some(key => key !== 'sort' && params.get(key));
     const clearFilters = () => {
         setSearchInput('');
         setMaxInput('');
         setParams({});
     };
 
-    return (
-        <div className="hs-shell">
-            <AppNav />
-            <main className="hs-page">
-                <MarketTabs />
+    // Opening an item keeps the filters and page in the address, so closing it
+    // lands on exactly the same view
+    const search = params.toString() ? `?${params.toString()}` : '';
+    const closeItem = () => navigate(`/marketplace${search}`);
 
-                <header className="hs-head">
-                    <h1>Marketplace</h1>
-                </header>
+    const from = (result.page - 1) * (result.page_size || 30) + 1;
+    const to = from + result.items.length - 1;
+
+    return (
+        <div className="hs-shell mk-shell">
+            <AppNav />
+            <SceneBackdrop />
+            <main className="hs-page mk-page" ref={topRef}>
+                <h1 className="hs-visually-hidden">Marketplace</h1>
+                <MarketTabs />
 
                 <form className="hs-filters mk-filters" role="search" onSubmit={(e) => e.preventDefault()} aria-label="Search and filters">
                     <div className="hs-filter mk-filter-search">
@@ -95,6 +129,20 @@ const MarketplacePage = () => {
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                         />
+                    </div>
+                    <div className="hs-filter">
+                        <label htmlFor="mk-category">Category</label>
+                        <select id="mk-category" value={params.get('category') || ''} onChange={(e) => setFilters({ category: e.target.value })}>
+                            <option value="">All</option>
+                            {Object.entries(CATEGORIES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                        </select>
+                    </div>
+                    <div className="hs-filter">
+                        <label htmlFor="mk-condition">Condition</label>
+                        <select id="mk-condition" value={params.get('condition') || ''} onChange={(e) => setFilters({ condition: e.target.value })}>
+                            <option value="">Any</option>
+                            {Object.entries(CONDITIONS).map(([value, c]) => <option key={value} value={value}>{c.label}</option>)}
+                        </select>
                     </div>
                     <div className="hs-filter hs-filter--small">
                         <label htmlFor="mk-max">Max price (€)</label>
@@ -112,14 +160,20 @@ const MarketplacePage = () => {
 
                 <div className="hs-results-bar">
                     <p aria-live="polite">
-                        {loading ? 'Loading…' : `${shown.length} ${shown.length === 1 ? 'item' : 'items'}`}
+                        {loading
+                            ? 'Loading…'
+                            : result.total === 0
+                                ? 'No items'
+                                : result.pages > 1
+                                    ? `${from}–${to} of ${result.total} items`
+                                    : `${result.total} ${result.total === 1 ? 'item' : 'items'}`}
                         {hasFilters && !loading && (
                             <button type="button" className="hs-link-btn" onClick={clearFilters}>Clear filters</button>
                         )}
                     </p>
                     <label className="hs-sort">
                         Sort
-                        <select value={sort} onChange={(e) => setFilters({ sort: e.target.value === 'newest' ? '' : e.target.value })}>
+                        <select value={params.get('sort') || 'newest'} onChange={(e) => setFilters({ sort: e.target.value === 'newest' ? '' : e.target.value })}>
                             {Object.entries(SORTS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                         </select>
                     </label>
@@ -127,12 +181,12 @@ const MarketplacePage = () => {
 
                 {error && <div className="hs-alert hs-alert--error" role="alert">{error}</div>}
 
-                {!loading && !error && shown.length === 0 && (
-                    <div className="hs-empty">
+                {!loading && !error && result.items.length === 0 && (
+                    <div className="hs-empty mk-empty">
                         {hasFilters ? (
                             <>
                                 <h2>Nothing matches yet</h2>
-                                <p>Try another word or a higher price. New items are posted every day.</p>
+                                <p>Try another word, category or a higher price. New items are posted every day.</p>
                                 <button type="button" className="hs-btn hs-btn--ghost" onClick={clearFilters}>Clear filters</button>
                             </>
                         ) : (
@@ -145,10 +199,42 @@ const MarketplacePage = () => {
                     </div>
                 )}
 
-                <div className="hs-grid mk-grid">
-                    {shown.map(item => <MarketCard key={item.id} item={item} />)}
+                <div className={`mk-grid ${loading ? 'is-loading' : ''}`}>
+                    {result.items.map(item => <MarketCard key={item.id} item={item} search={search} />)}
                 </div>
+
+                {result.pages > 1 && (
+                    <nav className="mk-pager" aria-label="Pages">
+                        <button type="button" className="hs-btn hs-btn--ghost hs-btn--small" disabled={result.page <= 1} onClick={() => goToPage(result.page - 1)}>
+                            Previous
+                        </button>
+                        <ol>
+                            {pageList(result.page, result.pages).map((n, i) => (
+                                <li key={`${n}-${i}`}>
+                                    {n === '…'
+                                        ? <span className="mk-pager-gap" aria-hidden="true">…</span>
+                                        : (
+                                            <button
+                                                type="button"
+                                                className={n === result.page ? 'is-current' : ''}
+                                                aria-current={n === result.page ? 'page' : undefined}
+                                                aria-label={`Page ${n}`}
+                                                onClick={() => goToPage(n)}
+                                            >
+                                                {n}
+                                            </button>
+                                        )}
+                                </li>
+                            ))}
+                        </ol>
+                        <button type="button" className="hs-btn hs-btn--ghost hs-btn--small" disabled={result.page >= result.pages} onClick={() => goToPage(result.page + 1)}>
+                            Next
+                        </button>
+                    </nav>
+                )}
             </main>
+
+            {openId && <MarketItemModal id={openId} onClose={closeItem} />}
         </div>
     );
 };

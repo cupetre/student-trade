@@ -31,10 +31,14 @@ class Boundary extends React.Component {
     }
 }
 
-// Navigating to another page clears the error (the key changes per location)
+// Navigating to another page clears the error (the key changes per location).
+// /marketplace/12 counts as the same page as /marketplace: the item opens in a
+// window on top, and the list behind it must not be rebuilt.
+const pageKey = (pathname) => pathname.replace(/^\/marketplace\/\d+\/?$/, '/marketplace');
+
 const ErrorBoundary = ({ children }) => {
     const location = useLocation();
-    return <Boundary key={location.pathname}>{children}</Boundary>;
+    return <Boundary key={pageKey(location.pathname)}>{children}</Boundary>;
 };
 
 const styles = {

@@ -57,6 +57,7 @@ model User {
   tenanciesAsStudent  Tenancy[]   @relation("TenancyStudent")
 }
 
+// A marketplace item for sale (lists in lib/marketOptions.js)
 model ListingItem {
   id          Int      @id @default(autoincrement())
   owner_id    Int
@@ -65,9 +66,27 @@ model ListingItem {
   description String?
   price       Decimal  @db.Decimal(10, 2)
   photo       String?  @db.VarChar(500)
-  date        DateTime @default(now())
+  date        DateTime @default(now()) // when it was posted
+
+  category           String  @default("other") @db.VarChar(30)    // furniture | books | electronics | kitchen | home | clothing | bikes | sports | music | other
+  condition          String? @db.VarChar(20)                      // new | like_new | good | fair | worn
+  contact_preference String  @default("message") @db.VarChar(20)  // message | message_then_call | message_then_meet
+
+  // Where to pick it up. The exact pin only goes back to the seller; buyers see
+  // the public point (80-200 m off) as a circle, like housing (lib/location.js).
+  city             String? @db.VarChar(100)
+  pickup_area      String? @db.VarChar(120) // e.g. "Študentski dom Koper" or "near FAMNIT"
+  latitude         Float?
+  longitude        Float?
+  public_latitude  Float?
+  public_longitude Float?
+
+  updated_at DateTime @default(now()) @updatedAt
 
   reports Report[]
+
+  @@index([category])
+  @@index([date])
 }
 
 model Chat {

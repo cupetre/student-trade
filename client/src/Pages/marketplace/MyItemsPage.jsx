@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AppNav from '../../components/AppNav.jsx';
+import SceneBackdrop from '../../components/SceneBackdrop.jsx';
 import MarketTabs from './MarketTabs.jsx';
 import { NoPhoto } from './MarketCard.jsx';
 import { apiRequest } from '../../lib/api';
@@ -50,9 +51,9 @@ const MyItemsPage = () => {
     };
 
     return (
-        <div className="hs-shell">
-            <AppNav />
-            <main className="hs-page">
+        <div className="hs-shell mk-shell">
+            <AppNav /><SceneBackdrop />
+            <main className="hs-page mk-page">
                 <MarketTabs />
                 <header className="hs-head">
                     <h1>My items</h1>

@@ -9,10 +9,12 @@
 }
 
 .si-page {
-    max-width: 860px;
+    max-width: var(--page-max); /* same width as every other page, see index.css */
     margin: 0 auto;
-    padding: 56px 20px 80px;
+    padding: 20px var(--page-pad) 80px;
 }
+/* the text keeps a comfortable reading width inside the full page */
+.si-page > * { max-width: 760px; }
 
 .si-eyebrow {
     margin: 0 0 10px;

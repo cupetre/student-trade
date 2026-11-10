@@ -68,6 +68,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 - **Headings:** Bricolage Grotesque (Google Fonts, weights 600 and 800), tight letter-spacing (−0.02em). Page titles 28–46px, `clamp()` for responsive sizes.
 - **Body:** system font stack (`system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif`), 15–18px, line-height ~1.5.
 - **Eyebrows / kickers:** 13–14px, bold, uppercase, letter-spacing 0.08em, steel blue.
+- **Page width:** every logged-in page uses the same container: `max-width: var(--page-max)` (1480px) with `var(--page-pad)` (20px) side padding, both set once in `client/src/index.css`. Use `.hs-page` (or those two variables) for any new page; never give a page its own max-width. Narrow content (text, forms) limits itself inside the page, so the page edges never move when switching pages.
 - **Corners:** buttons and inputs 10–12px; cards 14–24px; tags and pills fully round.
 - **Touch targets:** at least 44px for anything clickable (icon buttons included).
 - **Focus:** 3px raspberry outline, 2px offset, on every interactive element.
@@ -102,6 +103,18 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 - **Right: "What you're looking for"** from the rental profile (city, budget, move-in, stay; Edit → `/profile/student?edit=1`; "Use as filters" copies city, budget and move-in into the filters; students only; no helper text under it) and **the map** below it (no note under it) (`components/HousingBrowseMap.jsx`, lazy-loaded): price tags at the approximate points, jumps to the city chosen in the filters (else fits the listings, else Slovenia), hovering a row lights its tag, clicking a tag opens the listing.
 - **No phone numbers on the rows.** Contact goes through in-app messages, which checks the student's rental profile first (section 1: "phone number stays private").
 - Under 1200px the right column moves above the listings (search and map side by side); under 860px everything is one column and the filters fold behind a "Filters (n)" button; under 600px the photo sits on top of the text.
+
+**Marketplace browse (`/marketplace`)**
+- A very faint version of the log-in scene sits behind all marketplace pages (`components/SceneBackdrop.jsx`), fading to the page colour at the top.
+- Filters in one row: search, category, condition, max price; sort above the grid. Everything is in the address (`?q=&category=&condition=&max=&sort=&page=`).
+- **Grid: 3 items per row, 10 rows, 30 items a page** (`PAGE_SIZE` in `server/lib/marketOptions.js`). Item 31 is on page 2. Page numbers under the grid (first, last, and two either side of the current one). 2 per row under 900px, 1 under 560px.
+- Card: photo (4:3) with a condition tag, price · city with an outline pin, title (2 lines), category, seller and when it was posted.
+
+**Marketplace item window (`/marketplace/:id`)** — opens over the browse page (same filters and page behind it; Escape, × or a click outside closes it and returns to that view). Left: photo flush with the top, **title with the city and pin on the far right of the same row**, price, description, facts (condition with what it means, category, pick-up, posted), and a map with a 300 m circle around the pick-up area (the seller sees their exact pin). Right: **message box** (sends a first message "About your “Title”: …") with **Open chat with <name>** under it, plus how the seller wants to be contacted. Bottom: **the seller** (photo, name, "Koper · FAMNIT" from university city + faculty short name, age, rating, View profile) and **their reviews**, then Report this item. The seller's own item shows Edit / Delete instead.
+
+**Sell form** adds: category, "How much has it been used?" (New · Like new · Good · Fair · Worn), pick-up city and area, an optional pin on a map (buyers only see a circle), and how buyers should contact you (Message me here · Message first, then a call · Message first, then meet). The phone number is never shown.
+
+**Footer** (`components/AppFooter.jsx`) — under every logged-in page, added once in `main.jsx`. Ink band, page width: brand line, Platforms, Your account, Stay safe; landlords only see Housing links. It sits at the bottom of the window even on short pages.
 
 **Messages (`/chatpage`)**
 - "Messages" title above the panels. The panels are separate white cards (6px corners) with 16px between them: **conversations · open chat · liked listings**. The page fills the window; only the lists and the messages scroll.
@@ -287,6 +300,8 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 
 ## 10. Change log
 
+- **2026-11-10** — Marketplace: items get category, condition, pick-up city/area + approximate map, contact preference (new ListingItem columns; needs `npx prisma db push`). Browse is 3 × 10 with page numbers, served page by page by the server. Items open in a window over the list with a message box, Open chat, seller card and seller reviews (`POST /api/listings/item/:id/contact`). Faint scene background behind marketplace pages. Footer on every logged-in page.
+- **2026-11-10** — One page width everywhere (1480px, 20px side padding, in `index.css`): housing, marketplace, messages, profiles and Settle In no longer jump between widths. Listing form preview column 360px.
 - **2026-11-09** — Messages: title outside the panels, three separate cards with gaps, name search, bigger conversation rows, liked listings with Message / Open chat (own column on wide screens, a Liked tab otherwise), review confirmation that closes itself.
 - **2026-11-09** — One review per person about another person (marketplace and housing together; a second one updates the first; database rule + `scripts/merge-duplicate-reviews.js` to clean up before `npx prisma db push`). Rental profile: "More about you" card is white like the others, the progress box only shows while something is missing, header subtitle removed.
 - **2026-11-09** — Listing page split into Overview · Location · Contact tabs. Location has the approximate-area map (owner sees the exact pin). Contact has the owner card, "Interested?" and Stay safe. The right column is a short summary with I'm interested and Like.

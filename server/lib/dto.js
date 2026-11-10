@@ -3,12 +3,40 @@
 // the pages were written against the old flat SQL field names, so we map here
 // in one place instead of in every controller.
 
-function toListingDto(listing) {
+// Marketplace item. Like housing, the exact pick-up pin (exact_location) only
+// goes back to the seller; everyone else gets `location`, the point 80-200 m off.
+// (options is an object so that list.map(toListingDto) can't pass the index as a viewer)
+function toListingDto(listing, options) {
     if (!listing) return listing;
+    const viewerId = options && typeof options === 'object' ? options.viewerId : undefined;
+    const { owner, latitude, longitude, public_latitude, public_longitude, ...rest } = listing;
+    const isOwner = viewerId !== undefined && viewerId === listing.owner_id;
     return {
-        ...listing,
-        owner_name: listing.owner?.fullname ?? null,
-        owner_profile_picture: listing.owner?.profile_picture ?? null,
+        ...rest,
+        price: rest.price === undefined || rest.price === null ? rest.price : Number(rest.price),
+        location: public_latitude != null && public_longitude != null
+            ? { latitude: public_latitude, longitude: public_longitude, approximate: true }
+            : null,
+        ...(isOwner ? { exact_location: latitude != null && longitude != null ? { latitude, longitude } : null } : {}),
+        owner_name: owner?.fullname ?? null,
+        owner_profile_picture: owner?.profile_picture ?? null,
+    };
+}
+
+// The seller as the item window shows them: name, photo, where they study and
+// their age (never the birth date). `ageFrom` turns a birth date into an age.
+function toSellerDto(owner, { ageFrom, rating } = {}) {
+    if (!owner) return null;
+    const profile = owner.studentProfile || null;
+    return {
+        id: owner.id,
+        fullname: owner.fullname,
+        profile_picture: owner.profile_picture,
+        is_student: owner.role === 'student',
+        university: profile?.university || null,
+        faculty: profile?.faculty || null,
+        age: profile?.birth_date && ageFrom ? ageFrom(profile.birth_date) : null,
+        rating: rating || null,
     };
 }
 
@@ -139,4 +167,4 @@ function toStudentProfileDto(profile, { details = false, needs = false, own = fa
     return dto;
 }
 
-module.exports = { toListingDto, toChatSummary, toHousingDto, toReviewDto, toStudentProfileDto, personDto };
+module.exports = { toListingDto, toSellerDto, toChatSummary, toHousingDto, toReviewDto, toStudentProfileDto, personDto };

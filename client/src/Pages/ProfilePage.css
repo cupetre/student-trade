@@ -1,7 +1,6 @@
 /* My profile (/profilepage), palette "Nordic Stone". Builds on the housing
    classes (hs-) and the profile classes (sp-); its own classes start with "mp-". */
 
-.mp-page { max-width: 1040px; }
 
 .mp-grid {
     display: grid;

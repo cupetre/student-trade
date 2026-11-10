@@ -21,9 +21,9 @@
 }
 
 .ch-page {
-    max-width: 1480px;
+    max-width: var(--page-max); /* same on every page, see index.css */
     margin: 0 auto;
-    padding: 20px 20px 24px;
+    padding: 20px var(--page-pad) 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;

@@ -1,6 +1,5 @@
 /* Student rental profile + public profile. Classes start with "sp-". */
 
-.sp-page { max-width: 1160px; }
 .sp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* title on the left, Edit / Save on the right */

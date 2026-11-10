@@ -17,7 +17,7 @@ import HousingDetailPage from './Pages/housing/HousingDetailPage.jsx';
 import HousingFormPage from './Pages/housing/HousingFormPage.jsx';
 import MyHousingPage from './Pages/housing/MyHousingPage.jsx';
 import MyStaysPage from './Pages/housing/MyStaysPage.jsx';
-import MarketDetailPage from './Pages/marketplace/MarketDetailPage.jsx';
+import AppFooter from './components/AppFooter.jsx';
 import MarketFormPage from './Pages/marketplace/MarketFormPage.jsx';
 import MyItemsPage from './Pages/marketplace/MyItemsPage.jsx';
 import StudentProfilePage from './Pages/profile/StudentProfilePage.jsx';
@@ -50,6 +50,8 @@ const root = ReactDOM.createRoot(document.getElementById('root'), {
 // Where each page sits in the visitor's journey; PageSlide uses it to pick the slide direction
 const STEP = { landing: 0, login: 1, register: 2, landlordRegister: 3, confirm: 4, app: 10 };
 const slide = (step, page) => <PageSlide step={step}>{page}</PageSlide>;
+// Logged-in pages also get the footer, once, here
+const app = (page) => <PageSlide step={STEP.app}>{page}<AppFooter /></PageSlide>;
 
 root.render(
   <BrowserRouter>
@@ -60,29 +62,31 @@ root.render(
       <Route path="/" element={<HomeSwitch landing={slide(STEP.landing, <LandingPage />)} />} />
 
       {/* Student platforms: landlords are sent to their housing listings instead */}
-      <Route path="/marketplace" element={<RequireAuth><StudentOnly>{slide(STEP.app, <App />)}</StudentOnly></RequireAuth>} />
-      <Route path="/marketplace/new" element={<RequireAuth><StudentOnly>{slide(STEP.app, <MarketFormPage key="new" />)}</StudentOnly></RequireAuth>} />
-      <Route path="/marketplace/mine" element={<RequireAuth><StudentOnly>{slide(STEP.app, <MyItemsPage />)}</StudentOnly></RequireAuth>} />
-      <Route path="/marketplace/:id" element={<RequireAuth><StudentOnly>{slide(STEP.app, <MarketDetailPage />)}</StudentOnly></RequireAuth>} />
-      <Route path="/marketplace/:id/edit" element={<RequireAuth><StudentOnly>{slide(STEP.app, <MarketFormPage key="edit" />)}</StudentOnly></RequireAuth>} />
-      <Route path="/settle-in" element={<RequireAuth><StudentOnly>{slide(STEP.app, <SettleInPage />)}</StudentOnly></RequireAuth>} />
+      {/* /marketplace/12 is the browse page with item 12 open on top. One catch-all route
+          (not "/:id?", which React Router splits into two routes) so opening an
+          item doesn't rebuild the page behind it. new, mine and :id/edit match first. */}
+      <Route path="/marketplace/*" element={<RequireAuth><StudentOnly>{app(<App />)}</StudentOnly></RequireAuth>} />
+      <Route path="/marketplace/new" element={<RequireAuth><StudentOnly>{app(<MarketFormPage key="new" />)}</StudentOnly></RequireAuth>} />
+      <Route path="/marketplace/mine" element={<RequireAuth><StudentOnly>{app(<MyItemsPage />)}</StudentOnly></RequireAuth>} />
+      <Route path="/marketplace/:id/edit" element={<RequireAuth><StudentOnly>{app(<MarketFormPage key="edit" />)}</StudentOnly></RequireAuth>} />
+      <Route path="/settle-in" element={<RequireAuth><StudentOnly>{app(<SettleInPage />)}</StudentOnly></RequireAuth>} />
 
       {/* The rest of the app: only for logged-in users, everyone else goes to /login */}
-      <Route path="/profilepage" element={<RequireAuth>{slide(STEP.app, <Profile />)}</RequireAuth>} />
-      <Route path="/chatpage" element={<RequireAuth>{slide(STEP.app, <ChatPage />)}</RequireAuth>} />
+      <Route path="/profilepage" element={<RequireAuth>{app(<Profile />)}</RequireAuth>} />
+      <Route path="/chatpage" element={<RequireAuth>{app(<ChatPage />)}</RequireAuth>} />
 
       {/* Housing */}
-      <Route path="/housing" element={<RequireAuth>{slide(STEP.app, <HousingListPage mode="browse" key="browse" />)}</RequireAuth>} />
-      <Route path="/housing/saved" element={<RequireAuth><StudentOnly>{slide(STEP.app, <HousingListPage mode="saved" key="saved" />)}</StudentOnly></RequireAuth>} />
-      <Route path="/housing/mine" element={<RequireAuth>{slide(STEP.app, <MyHousingPage />)}</RequireAuth>} />
-      <Route path="/housing/stays" element={<RequireAuth><StudentOnly>{slide(STEP.app, <MyStaysPage />)}</StudentOnly></RequireAuth>} />
-      <Route path="/housing/new" element={<RequireAuth>{slide(STEP.app, <HousingFormPage key="new" />)}</RequireAuth>} />
-      <Route path="/housing/:id" element={<RequireAuth>{slide(STEP.app, <HousingDetailPage />)}</RequireAuth>} />
-      <Route path="/housing/:id/edit" element={<RequireAuth>{slide(STEP.app, <HousingFormPage key="edit" />)}</RequireAuth>} />
+      <Route path="/housing" element={<RequireAuth>{app(<HousingListPage mode="browse" key="browse" />)}</RequireAuth>} />
+      <Route path="/housing/saved" element={<RequireAuth><StudentOnly>{app(<HousingListPage mode="saved" key="saved" />)}</StudentOnly></RequireAuth>} />
+      <Route path="/housing/mine" element={<RequireAuth>{app(<MyHousingPage />)}</RequireAuth>} />
+      <Route path="/housing/stays" element={<RequireAuth><StudentOnly>{app(<MyStaysPage />)}</StudentOnly></RequireAuth>} />
+      <Route path="/housing/new" element={<RequireAuth>{app(<HousingFormPage key="new" />)}</RequireAuth>} />
+      <Route path="/housing/:id" element={<RequireAuth>{app(<HousingDetailPage />)}</RequireAuth>} />
+      <Route path="/housing/:id/edit" element={<RequireAuth>{app(<HousingFormPage key="edit" />)}</RequireAuth>} />
 
       {/* Profiles */}
-      <Route path="/profile/student" element={<RequireAuth><StudentOnly>{slide(STEP.app, <StudentProfilePage />)}</StudentOnly></RequireAuth>} />
-      <Route path="/users/:id" element={<RequireAuth>{slide(STEP.app, <PublicProfilePage />)}</RequireAuth>} />
+      <Route path="/profile/student" element={<RequireAuth><StudentOnly>{app(<StudentProfilePage />)}</StudentOnly></RequireAuth>} />
+      <Route path="/users/:id" element={<RequireAuth>{app(<PublicProfilePage />)}</RequireAuth>} />
 
       {/* Login and register: logged-in users are sent to the app instead */}
       <Route path="/login" element={<PublicOnly>{slide(STEP.login, <Login />)}</PublicOnly>} />

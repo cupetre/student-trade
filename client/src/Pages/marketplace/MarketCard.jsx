@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../../components/Avatar.jsx';
 import { resolveMediaUrl } from '../../lib/media';
-import { formatEuro, postedAgo } from './marketOptions';
+import { formatEuro, postedAgo, CATEGORIES, CONDITIONS } from './marketOptions';
 
 export const NoPhoto = () => (
     <div className="hs-card-noimg" aria-hidden="true">
@@ -10,38 +10,52 @@ export const NoPhoto = () => (
     </div>
 );
 
-// One marketplace item as a card, in the same style as HousingCard.
+// The outline map pin used across the marketplace (no colour, follows the text)
+export const PinIcon = ({ className = 'mk-pin' }) => (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 21s-6.5-5.8-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.2 12 21 12 21Z" /><circle cx="12" cy="10" r="2.3" />
+    </svg>
+);
+
+const priceText = (price) => (price !== '' && price !== undefined && price !== null
+    ? (Number(price) === 0 ? 'Free' : formatEuro(price))
+    : '€–');
+
+// One marketplace item in the browse grid. Opens the item window on top of the
+// page (/marketplace/:id), keeping the filters (`search`) so closing returns here.
 // `preview` renders it without links (next to the sell form).
-const MarketCard = ({ item, preview = false, photoUrl }) => {
+const MarketCard = ({ item, preview = false, photoUrl, search = '' }) => {
     const photo = photoUrl || resolveMediaUrl(item.photo);
-    const href = `/marketplace/${item.id}`;
+    const href = `/marketplace/${item.id}${search}`;
+    const condition = CONDITIONS[item.condition]?.label;
+    const place = item.city || null;
 
-    const media = photo ? <img src={photo} alt="" loading="lazy" /> : <NoPhoto />;
-
-    const body = (
+    const content = (
         <>
-            <div className="hs-card-price">{item.price !== '' && item.price !== undefined && item.price !== null ? formatEuro(item.price) : '€–'}</div>
-            <h3 className="hs-card-title">{item.title || 'Your item title'}</h3>
-            <p className="hs-card-meta mk-card-seller">
-                <Avatar src={resolveMediaUrl(item.owner_profile_picture)} name={item.owner_name || 'You'} size={22} />
-                <span>{item.owner_name || 'You'}{item.date ? ` · ${postedAgo(item.date)}` : ''}</span>
-            </p>
+            <div className="mk-card-media">
+                {photo ? <img src={photo} alt="" loading="lazy" /> : <NoPhoto />}
+                {condition && <span className="mk-card-condition">{condition}</span>}
+            </div>
+            <div className="mk-card-body">
+                <div className="mk-card-top">
+                    <span className="mk-card-price">{priceText(item.price)}</span>
+                    {place && <span className="mk-card-place"><PinIcon />{place}</span>}
+                </div>
+                <h3 className="mk-card-title">{item.title || 'Your item title'}</h3>
+                {CATEGORIES[item.category] && <p className="mk-card-category">{CATEGORIES[item.category]}</p>}
+                <p className="mk-card-seller">
+                    <Avatar src={resolveMediaUrl(item.owner_profile_picture)} name={item.owner_name || 'You'} size={22} />
+                    <span>{item.owner_name || 'You'}{item.date ? ` · ${postedAgo(item.date)}` : ''}</span>
+                </p>
+            </div>
         </>
     );
 
-    if (preview) {
-        return (
-            <article className="hs-card hs-card--preview mk-card">
-                <div className="hs-card-media">{media}</div>
-                <div className="hs-card-body">{body}</div>
-            </article>
-        );
-    }
+    if (preview) return <article className="mk-card mk-card--preview">{content}</article>;
 
     return (
-        <article className="hs-card mk-card">
-            <Link to={href} className="hs-card-media" tabIndex={-1} aria-hidden="true">{media}</Link>
-            <Link to={href} className="hs-card-body">{body}</Link>
+        <article className="mk-card">
+            <Link to={href} className="mk-card-link" aria-label={`${item.title}, ${priceText(item.price)}`}>{content}</Link>
         </article>
     );
 };
