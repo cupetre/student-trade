@@ -52,6 +52,8 @@ const STEP = { landing: 0, login: 1, register: 2, landlordRegister: 3, confirm: 
 const slide = (step, page) => <PageSlide step={step}>{page}</PageSlide>;
 // Logged-in pages also get the footer, once, here
 const app = (page) => <PageSlide step={STEP.app}>{page}<AppFooter /></PageSlide>;
+// Messages fills the window and doesn't scroll as a page, so it has no footer
+const appNoFooter = (page) => <PageSlide step={STEP.app}>{page}</PageSlide>;
 
 root.render(
   <BrowserRouter>
@@ -73,7 +75,7 @@ root.render(
 
       {/* The rest of the app: only for logged-in users, everyone else goes to /login */}
       <Route path="/profilepage" element={<RequireAuth>{app(<Profile />)}</RequireAuth>} />
-      <Route path="/chatpage" element={<RequireAuth>{app(<ChatPage />)}</RequireAuth>} />
+      <Route path="/chatpage" element={<RequireAuth>{appNoFooter(<ChatPage />)}</RequireAuth>} />
 
       {/* Housing */}
       <Route path="/housing" element={<RequireAuth>{app(<HousingListPage mode="browse" key="browse" />)}</RequireAuth>} />

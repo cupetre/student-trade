@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import AppNav from '../../components/AppNav.jsx';
+import SceneBackdrop from '../../components/SceneBackdrop.jsx';
 import Avatar from '../../components/Avatar.jsx';
 import { RatingSummary } from '../../components/Stars.jsx';
 import InterestPanel from './InterestPanel.jsx';
@@ -98,7 +99,7 @@ const HousingDetailPage = () => {
     if (loading || error || !listing) {
         return (
             <div className="hs-shell">
-                <AppNav />
+                <AppNav /><SceneBackdrop />
                 <main className="hs-page">
                     {loading
                         ? <p className="hs-muted">Loading…</p>
@@ -145,7 +146,7 @@ const HousingDetailPage = () => {
 
     return (
         <div className="hs-shell">
-            <AppNav />
+            <AppNav /><SceneBackdrop />
             <main className="hs-page hs-detail">
                 <Link to="/housing" className="hs-back">← All places</Link>
 

@@ -15,7 +15,7 @@ const CONDITIONS = ['new', 'like_new', 'good', 'fair', 'worn'];
 // How the seller wants the first contact to go
 const CONTACT_PREFERENCES = ['message', 'message_then_call', 'message_then_meet'];
 
-const PAGE_SIZE = 30; // 3 per row, 10 rows
+const PAGE_SIZE = 50; // 5 per row, 10 rows
 const MAX_TITLE = 255;
 const MAX_DESCRIPTION = 5000;
 const MAX_CITY = 100;
@@ -59,17 +59,26 @@ function readItem(body) {
     };
 }
 
-// Browse filters from the address bar: ?q=lamp&category=books&max=20&sort=price_asc&page=2
+// "books,bikes" -> ['books', 'bikes'], keeping only known values
+function readList(value, allowed) {
+    if (typeof value !== 'string' || !value) return [];
+    return [...new Set(value.split(',').map(v => v.trim()).filter(v => allowed.includes(v)))];
+}
+
+// Browse filters from the address bar:
+// ?q=lamp&category=books,bikes&condition=new,like_new&min=5&max=20&sort=price_asc&page=2
 function readBrowseQuery(query) {
     const q = query || {};
     const page = Math.max(1, Math.min(1000, parseInt(q.page, 10) || 1));
     const search = typeof q.q === 'string' ? q.q.trim().slice(0, 100) : '';
-    const category = CATEGORIES.includes(q.category) ? q.category : null;
-    const condition = CONDITIONS.includes(q.condition) ? q.condition : null;
-    const max = toPrice(q.max);
+    const categories = readList(q.category, CATEGORIES);
+    const conditions = readList(q.condition, CONDITIONS);
+    let min = toPrice(q.min);
+    let max = toPrice(q.max);
+    if (min !== null && max !== null && min > max) [min, max] = [max, min]; // typed the wrong way round
     const city = typeof q.city === 'string' ? q.city.trim().slice(0, MAX_CITY) : '';
-    const sort = ['newest', 'price_asc', 'price_desc'].includes(q.sort) ? q.sort : 'newest';
-    return { page, search, category, condition, max, city, sort };
+    const sort = ['newest', 'oldest', 'price_asc', 'price_desc'].includes(q.sort) ? q.sort : 'newest';
+    return { page, search, categories, conditions, min, max, city, sort };
 }
 
 // The first message when a buyer writes from the item: says which item it's about

@@ -18,9 +18,10 @@ export function postedAgo(value) {
 }
 
 export const SORTS = {
-    newest: 'Newest',
-    price_asc: 'Cheapest first',
-    price_desc: 'Most expensive first',
+    newest: 'Newest first',
+    oldest: 'Oldest first',
+    price_asc: 'Price: low to high',
+    price_desc: 'Price: high to low',
 };
 
 export const REPORT_REASONS = ['Scam', 'Inappropriate', 'Spam', 'Misleading', 'Other'];
@@ -55,7 +56,7 @@ export const CONTACT_PREFERENCES = {
     message_then_meet: { label: 'Message first, then meet', hint: 'Agree on a time here and meet at the pick-up spot' },
 };
 
-export const PAGE_SIZE = 30; // 3 per row, 10 rows
+export const PAGE_SIZE = 50; // 5 per row, 10 rows
 
 // The city a university is in, for "Koper · FAMNIT" on the seller card
 const UNIVERSITY_CITIES = {

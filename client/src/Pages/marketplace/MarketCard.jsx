@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../../components/Avatar.jsx';
 import { resolveMediaUrl } from '../../lib/media';
-import { formatEuro, postedAgo, CATEGORIES, CONDITIONS } from './marketOptions';
+import { formatEuro, postedAgo } from './marketOptions';
 
 export const NoPhoto = () => (
     <div className="hs-card-noimg" aria-hidden="true">
@@ -21,33 +21,27 @@ const priceText = (price) => (price !== '' && price !== undefined && price !== n
     ? (Number(price) === 0 ? 'Free' : formatEuro(price))
     : '€–');
 
-// One marketplace item in the browse grid. Opens the item window on top of the
-// page (/marketplace/:id), keeping the filters (`search`) so closing returns here.
-// `preview` renders it without links (next to the sell form).
+// One marketplace item in the browse grid, in the same order as the item window:
+// title and price on one row, the photo, then the seller. Opens the item window
+// on top of the page (/marketplace/:id), keeping the filters (`search`) so
+// closing returns here. `preview` renders it without a link (next to the sell form).
 const MarketCard = ({ item, preview = false, photoUrl, search = '' }) => {
     const photo = photoUrl || resolveMediaUrl(item.photo);
     const href = `/marketplace/${item.id}${search}`;
-    const condition = CONDITIONS[item.condition]?.label;
-    const place = item.city || null;
 
     const content = (
         <>
+            <div className="mk-card-top">
+                <h3 className="mk-card-title">{item.title || 'Your item title'}</h3>
+                <span className="mk-card-price">{priceText(item.price)}</span>
+            </div>
             <div className="mk-card-media">
                 {photo ? <img src={photo} alt="" loading="lazy" /> : <NoPhoto />}
-                {condition && <span className="mk-card-condition">{condition}</span>}
             </div>
-            <div className="mk-card-body">
-                <div className="mk-card-top">
-                    <span className="mk-card-price">{priceText(item.price)}</span>
-                    {place && <span className="mk-card-place"><PinIcon />{place}</span>}
-                </div>
-                <h3 className="mk-card-title">{item.title || 'Your item title'}</h3>
-                {CATEGORIES[item.category] && <p className="mk-card-category">{CATEGORIES[item.category]}</p>}
-                <p className="mk-card-seller">
-                    <Avatar src={resolveMediaUrl(item.owner_profile_picture)} name={item.owner_name || 'You'} size={22} />
-                    <span>{item.owner_name || 'You'}{item.date ? ` · ${postedAgo(item.date)}` : ''}</span>
-                </p>
-            </div>
+            <p className="mk-card-seller">
+                <Avatar src={resolveMediaUrl(item.owner_profile_picture)} name={item.owner_name || 'You'} size={20} />
+                <span>{item.owner_name || 'You'}{item.date ? ` · ${postedAgo(item.date)}` : ''}</span>
+            </p>
         </>
     );
 

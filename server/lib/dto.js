@@ -51,7 +51,28 @@ function toChatSummary(chat, myId) {
         chat_created_at: chat.date,
         last_message: chat.messages?.[0] ?? null,
         last_activity: chat.messages?.[0]?.sent_at ?? chat.date,
+        topics: (chat.topics || []).map(toChatTopicDto).filter(Boolean),
     };
+}
+
+// One thing a chat is about, as the chat page's side panel shows it
+function toChatTopicDto(topic) {
+    if (topic.market_item) {
+        const item = topic.market_item;
+        return {
+            kind: 'market', id: item.id, title: item.title, price: Number(item.price),
+            photo: item.photo || null, city: item.city || null, owner_id: item.owner_id, since: topic.created_at,
+        };
+    }
+    if (topic.housing_listing) {
+        const listing = topic.housing_listing;
+        return {
+            kind: 'housing', id: listing.id, title: listing.title, price: Number(listing.rent_per_person),
+            photo: listing.photos?.[0]?.url || null, city: listing.city || null, status: listing.status,
+            owner_id: listing.owner_id, since: topic.created_at,
+        };
+    }
+    return null; // the item or listing is gone
 }
 
 function numberOrNull(value) {
@@ -167,4 +188,4 @@ function toStudentProfileDto(profile, { details = false, needs = false, own = fa
     return dto;
 }
 
-module.exports = { toListingDto, toSellerDto, toChatSummary, toHousingDto, toReviewDto, toStudentProfileDto, personDto };
+module.exports = { toListingDto, toSellerDto, toChatSummary, toChatTopicDto, toHousingDto, toReviewDto, toStudentProfileDto, personDto };

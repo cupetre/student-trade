@@ -1,4 +1,4 @@
-/* Quiet scene behind the marketplace (same images as the log-in background, much fainter) */
+/* Quiet scene behind the marketplace and housing pages (same images as the log-in background, much fainter) */
 .scene-backdrop {
     position: fixed;
     inset: 0;
@@ -28,3 +28,6 @@
 @media (max-width: 720px) {
     .scene-backdrop img:nth-child(2) { display: none; }
 }
+
+/* The page itself sits above the scene (marketplace and housing pages) */
+.scene-backdrop ~ main { position: relative; z-index: 1; }

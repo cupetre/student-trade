@@ -23,9 +23,10 @@ const longDate = (value) => new Date(value).toLocaleDateString('en-GB', { day: '
 
 /*
   One marketplace item, opened over the browse page (/marketplace/:id).
-  Left: photo, title + place, price, description, the facts, the pick-up map.
-  Right: the message box (sends a first message that names the item) and
-  "Open chat" under it. At the end: the seller and their reviews.
+  Two columns, 70 / 30. Left: title + city, the photo, price, description,
+  the facts, then the seller and their reviews. Right: the message box (sends a
+  first message that names the item) with "Open chat" under it, and a small
+  map of the pick-up area.
   Escape, the × or a click outside closes it.
 */
 const MarketItemModal = ({ id, onClose }) => {
@@ -158,15 +159,21 @@ const MarketItemModal = ({ id, onClose }) => {
                     <div className="mk-modal-grid">
                         {/* ---------- the item ---------- */}
                         <div className="mk-modal-main">
+                            <div className="mk-modal-titlerow">
+                                <h2 id="mk-modal-title">{item.title}</h2>
+                            </div>
                             <div className="mk-modal-photo">
                                 {photo ? <img src={photo} alt={item.title} /> : <NoPhoto />}
                             </div>
 
-                            <div className="mk-modal-titlerow">
-                                <h2 id="mk-modal-title">{item.title}</h2>
-                                {item.city && <span className="mk-modal-place"><PinIcon />{item.city}</span>}
+                            <div className="mk-modal-pricerow">
+                                <p className="mk-modal-price">{Number(item.price) === 0 ? 'Free' : formatEuro(item.price)}</p>
+                                {item.date && (
+                                    <time className="mk-modal-posted" dateTime={item.date} title={longDate(item.date)}>
+                                        Posted {postedAgo(item.date).toLowerCase()}
+                                    </time>
+                                )}
                             </div>
-                            <p className="mk-modal-price">{Number(item.price) === 0 ? 'Free' : formatEuro(item.price)}</p>
 
                             {item.description
                                 ? <p className="mk-modal-description">{item.description}</p>
@@ -185,25 +192,8 @@ const MarketItemModal = ({ id, onClose }) => {
                                     <dt>Pick-up</dt>
                                     <dd>{place || 'Ask the seller'}</dd>
                                 </div>
-                                <div>
-                                    <dt>Posted</dt>
-                                    <dd>{postedAgo(item.date)}<small>{longDate(item.date)}</small></dd>
-                                </div>
                             </dl>
 
-                            {hasMap && (
-                                <section className="mk-modal-section" aria-label="Where to pick it up">
-                                    <h3>Where to pick it up</h3>
-                                    <Suspense fallback={<div className="hs-listing-map mk-modal-map hs-map-loading">Loading map…</div>}>
-                                        <div className="mk-modal-map">
-                                            <ListingMap location={item.location} exactLocation={isOwner ? item.exact_location : null} />
-                                        </div>
-                                    </Suspense>
-                                    <p className="hs-hint">
-                                        {isOwner ? 'You see your exact pin. Buyers see the shaded area.' : 'The circle shows the area. The exact spot is agreed in messages.'}
-                                    </p>
-                                </section>
-                            )}
                         </div>
 
                         {/* ---------- contact ---------- */}
@@ -265,34 +255,21 @@ const MarketItemModal = ({ id, onClose }) => {
                                     <p className="hs-hint">Your number stays private. Meet in a public place and check the item before you pay.</p>
                                 </form>
                             )}
-                        </aside>
 
-                        {/* ---------- the seller ---------- */}
-                        <section className="mk-seller" aria-labelledby="mk-seller-title">
-                            <h3 id="mk-seller-title" className="mk-seller-heading">Seller</h3>
-                            {seller && (
-                                <div className="mk-seller-card">
-                                    <Avatar src={resolveMediaUrl(seller.profile_picture)} name={seller.fullname} size={72} />
-                                    <div className="mk-seller-text">
-                                        <Link to={`/users/${seller.id}`} className="mk-seller-name">{seller.fullname}</Link>
-                                        <p className="mk-seller-study">
-                                            {studyLine || (seller.is_student ? 'Verified student' : '')}
-                                            {seller.age ? `${studyLine || seller.is_student ? ' · ' : ''}${seller.age} years old` : ''}
-                                        </p>
-                                        <RatingSummary rating={seller.rating} size={14} />
-                                    </div>
-                                    <Link to={`/users/${seller.id}`} className="hs-btn hs-btn--ghost hs-btn--small mk-seller-link">View profile</Link>
-                                </div>
+                            {hasMap && (
+                                <section className="mk-modal-section mk-map-card" aria-label="Where to pick it up">
+                                    <h3>Pick-up area</h3>
+                                    {place && <p className="mk-map-place"><PinIcon />{place}</p>}
+                                    <Suspense fallback={<div className="hs-listing-map mk-modal-map hs-map-loading">Loading map…</div>}>
+                                        <div className="mk-modal-map">
+                                            <ListingMap location={item.location} exactLocation={isOwner ? item.exact_location : null} />
+                                        </div>
+                                    </Suspense>
+                                    <p className="hs-hint">
+                                        {isOwner ? 'You see your exact pin. Buyers see the shaded area.' : 'The circle shows the area. The exact spot is agreed in messages.'}
+                                    </p>
+                                </section>
                             )}
-
-                            <div className="mk-seller-reviews">
-                                <h4>What people say about {firstName}</h4>
-                                <ReviewList
-                                    reviews={item.seller_reviews || []}
-                                    emptyText={`No reviews yet. People can review ${firstName} after they’ve talked or traded.`}
-                                    myId={user?.id}
-                                />
-                            </div>
 
                             {!isOwner && (
                                 <div className="mk-report">
@@ -330,7 +307,37 @@ const MarketItemModal = ({ id, onClose }) => {
                                     )}
                                 </div>
                             )}
+                        </aside>
+
+                        {/* ---------- the seller ---------- */}
+                        <section className="mk-seller" aria-labelledby="mk-seller-title">
+                            <h3 id="mk-seller-title" className="mk-seller-heading">Seller</h3>
+                            {seller && (
+                                <div className="mk-seller-card">
+                                    <Avatar src={resolveMediaUrl(seller.profile_picture)} name={seller.fullname} size={72} />
+                                    <div className="mk-seller-text">
+                                        <Link to={`/users/${seller.id}`} className="mk-seller-name">{seller.fullname}</Link>
+                                        <p className="mk-seller-study">
+                                            {studyLine || (seller.is_student ? 'Verified student' : '')}
+                                            {seller.age ? `${studyLine || seller.is_student ? ' · ' : ''}${seller.age} years old` : ''}
+                                        </p>
+                                        <RatingSummary rating={seller.rating} size={14} />
+                                    </div>
+                                    <Link to={`/users/${seller.id}`} className="hs-btn hs-btn--ghost hs-btn--small mk-seller-link">View profile</Link>
+                                </div>
+                            )}
+
+                            <div className="mk-seller-reviews">
+                                <h4>What people say about {firstName}</h4>
+                                <ReviewList
+                                    reviews={item.seller_reviews || []}
+                                    emptyText={`No reviews yet. People can review ${firstName} after they’ve talked or traded.`}
+                                    myId={user?.id}
+                                />
+                            </div>
+
                         </section>
+
                     </div>
                 )}
             </div>

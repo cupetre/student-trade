@@ -105,14 +105,22 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 - Under 1200px the right column moves above the listings (search and map side by side); under 860px everything is one column and the filters fold behind a "Filters (n)" button; under 600px the photo sits on top of the text.
 
 **Marketplace browse (`/marketplace`)**
-- A very faint version of the log-in scene sits behind all marketplace pages (`components/SceneBackdrop.jsx`), fading to the page colour at the top.
-- Filters in one row: search, category, condition, max price; sort above the grid. Everything is in the address (`?q=&category=&condition=&max=&sort=&page=`).
-- **Grid: 3 items per row, 10 rows, 30 items a page** (`PAGE_SIZE` in `server/lib/marketOptions.js`). Item 31 is on page 2. Page numbers under the grid (first, last, and two either side of the current one). 2 per row under 900px, 1 under 560px.
-- Card: photo (4:3) with a condition tag, price · city with an outline pin, title (2 lines), category, seller and when it was posted.
+- Font: **Public Sans** on every marketplace page and the item window (the top bar and footer keep the app font). Loaded in `Market.css`.
+- A very faint version of the log-in scene sits behind all marketplace **and housing** pages (`components/SceneBackdrop.jsx`, placed right after `<AppNav />`), fading to the page colour at the top. The page's `<main>` sits above it automatically.
+- No Browse / My items tabs: My items is in the account menu.
+- **Left sidebar** (white card, sticky): Categories and Condition as tick boxes (several at once), **Budget** with a big "Up to €" box and a small optional "From €". It's a draft: tick → **Apply filters** → the list filters (the button is disabled until something changed); Reset clears it. Under 900px it folds behind a "Filters (n)" button.
+- **Search** sits on top of the items (big box, live after typing stops), then the count and Sort.
+- Everything is in the address: `?q=&category=books,bikes&condition=new,like_new&min=&max=&sort=&page=`.
+- **Grid: 5 items per row, 10 rows, 50 items a page** (`PAGE_SIZE` in `server/lib/marketOptions.js`). 4 per row under 1360px, 3 under 1120px, 2 on phones.
+- **Card, in the same order as the item window:** title (one line) on the left with the price on the right, the square photo, then the seller and when it was posted. No category on the card.
 
-**Marketplace item window (`/marketplace/:id`)** — opens over the browse page (same filters and page behind it; Escape, × or a click outside closes it and returns to that view). Left: photo flush with the top, **title with the city and pin on the far right of the same row**, price, description, facts (condition with what it means, category, pick-up, posted), and a map with a 300 m circle around the pick-up area (the seller sees their exact pin). Right: **message box** (sends a first message "About your “Title”: …") with **Open chat with <name>** under it, plus how the seller wants to be contacted. Bottom: **the seller** (photo, name, "Koper · FAMNIT" from university city + faculty short name, age, rating, View profile) and **their reviews**, then Report this item. The seller's own item shows Edit / Delete instead.
+**Marketplace item window (`/marketplace/:id`)** — opens over the browse page (same filters and page behind it; Escape, × or a click outside closes it). **1360px wide, 40px of space around it, beige (`#FAF7F0`) with a soft shadow. Two columns, 70 / 30**, 8px inside the window's edge.
+- **Left:** title with the city and outline pin on the far right of the same row → the photo (kept compact, inset from the edge, whole photo shown) → price → description → facts in one row (condition, category, pick-up, posted) → below it **the seller** (photo, name, "Koper · FAMNIT", age, rating, View profile), their reviews, Report this item.
+- **Right:** the **message box** (how the seller prefers to be contacted, the message, Send message, Open chat with <name> under it), then a **small map** of the pick-up area (300 m circle; the seller sees their exact pin).
+- Phones: one column — the item, then the message box and map, then the seller.
+- The seller's own item shows Edit / Delete instead of the message box.
 
-**Sell form** adds: category, "How much has it been used?" (New · Like new · Good · Fair · Worn), pick-up city and area, an optional pin on a map (buyers only see a circle), and how buyers should contact you (Message me here · Message first, then a call · Message first, then meet). The phone number is never shown.
+**Sell form** uses **DM Sans** (Google Fonts, loaded in `Market.css`) with lighter titles: page title and section titles 600, labels 500. Adds: category, "How much has it been used?" (New · Like new · Good · Fair · Worn), pick-up city and area, an optional pin on a map (buyers only see a circle), and how buyers should contact you (Message me here · Message first, then a call · Message first, then meet). The phone number is never shown.
 
 **Footer** (`components/AppFooter.jsx`) — under every logged-in page, added once in `main.jsx`. Ink band, page width: brand line, Platforms, Your account, Stay safe; landlords only see Housing links. It sits at the bottom of the window even on short pages.
 
@@ -300,6 +308,11 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 
 ## 10. Change log
 
+- **2026-11-10** — Messages has no footer and never scrolls as a page (top bar + page = window height); only the chat list, the messages and the side cards scroll. Marketplace cards: the photo runs edge to edge across the card, same height as before.
+- **2026-11-10** — Marketplace sidebar order: Budget (one plain "Up to (€)" box, empty = no limit; the From box is gone), Sort by (newest, oldest, price low→high, high→low), Categories, Condition; all applied with Apply filters. Card photos get a 1px stone border. Item window: no city in the title row; title, price and description start on the photo's left edge; "Posted …" sits next to the price; facts are Condition · Category · Pick-up; Report this item is at the bottom of the right column. Messages: every contact through an item or a place is recorded (new ChatTopic table, `npx prisma db push`); the open chat shows "About this chat" cards above Liked listings on wide screens, and an "About: …" bar under the chat header on narrower ones.
+- **2026-11-10** — Marketplace: Public Sans; left sidebar (categories, condition, budget; apply to filter) with search on top; 5 × 10 grid, cards ordered title | price, photo, seller; Browse / My items tabs removed; item window 1360px, beige, 70 / 30 with the message box and map on the right. Server: several categories / conditions and a min–max price at once, 50 a page.
+- **2026-11-10** — The faint scene background now also sits behind every housing page (browse, liked, my listings, my stays, a listing, post / edit a place).
+- **2026-11-10** — Sell / edit item: DM Sans instead of the system font, lighter section titles and labels.
 - **2026-11-10** — Marketplace: items get category, condition, pick-up city/area + approximate map, contact preference (new ListingItem columns; needs `npx prisma db push`). Browse is 3 × 10 with page numbers, served page by page by the server. Items open in a window over the list with a message box, Open chat, seller card and seller reviews (`POST /api/listings/item/:id/contact`). Faint scene background behind marketplace pages. Footer on every logged-in page.
 - **2026-11-10** — One page width everywhere (1480px, 20px side padding, in `index.css`): housing, marketplace, messages, profiles and Settle In no longer jump between widths. Listing form preview column 360px.
 - **2026-11-09** — Messages: title outside the panels, three separate cards with gaps, name search, bigger conversation rows, liked listings with Message / Open chat (own column on wide screens, a Liked tab otherwise), review confirmation that closes itself.

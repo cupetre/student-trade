@@ -8,7 +8,7 @@ const {
     removeListing,
 } = require('../models/listingModels.js');
 const { listReviewsAbout, ratingSummary } = require('../models/reviewModels.js');
-const { openChat } = require('../models/messageModels.js');
+const { openChat, addChatTopic } = require('../models/messageModels.js');
 const { sendChatMessage, userRoom } = require('../services/messageService');
 const { toId } = require('../lib/parse');
 const { toListingDto, toSellerDto, toReviewDto } = require('../lib/dto');
@@ -85,20 +85,26 @@ function buildBrowse(filters, viewerId) {
             { description: { contains: filters.search, mode: 'insensitive' } },
         ];
     }
-    if (filters.category) where.category = filters.category;
-    if (filters.condition) where.condition = filters.condition;
-    if (filters.max !== null) where.price = { lte: filters.max };
+    if (filters.categories.length) where.category = { in: filters.categories };
+    if (filters.conditions.length) where.condition = { in: filters.conditions };
+    if (filters.min !== null || filters.max !== null) {
+        where.price = {};
+        if (filters.min !== null) where.price.gte = filters.min;
+        if (filters.max !== null) where.price.lte = filters.max;
+    }
     if (filters.city) where.city = { equals: filters.city, mode: 'insensitive' };
     const orderBy = filters.sort === 'price_asc'
         ? [{ price: 'asc' }, { date: 'desc' }]
         : filters.sort === 'price_desc'
             ? [{ price: 'desc' }, { date: 'desc' }]
-            : [{ date: 'desc' }, { id: 'desc' }];
+            : filters.sort === 'oldest'
+                ? [{ date: 'asc' }, { id: 'asc' }]
+                : [{ date: 'desc' }, { id: 'desc' }];
     return { where, orderBy, skip: (filters.page - 1) * PAGE_SIZE, take: PAGE_SIZE };
 }
 
-// GET /api/listings/show_listings?q=&category=&condition=&max=&city=&sort=&page=
-// -> { items, total, page, pages } with 30 items a page (3 per row, 10 rows)
+// GET /api/listings/show_listings?q=&category=a,b&condition=a,b&min=&max=&city=&sort=&page=
+// -> { items, total, page, pages } with 50 items a page (5 per row, 10 rows)
 async function showListings(req, res) {
     const filters = readBrowseQuery(req.query);
     try {
@@ -165,6 +171,7 @@ async function contactSeller(req, res) {
         if (item.owner_id === req.user.id) return res.status(400).json({ error: 'This is your own item' });
 
         const chatId = await openChat({ user1_id: req.user.id, user2_id: item.owner_id });
+        await addChatTopic({ chat_id: chatId, market_item_id: item.id, started_by: req.user.id });
         const content = itemMessage(item, text);
         if (content) {
             const { message, receiverId } = await sendChatMessage({ chatId, senderId: req.user.id, content });

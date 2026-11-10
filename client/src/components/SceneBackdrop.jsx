@@ -5,7 +5,7 @@ import settleImg from '../assets/landing/settle.svg';
 import './SceneBackdrop.css';
 
 // The three landing scenes (room, desk, map) blended into one very quiet
-// background, like on log in, here behind the marketplace. Purely decoration.
+// background, like on log in, here behind the marketplace and housing pages. Purely decoration.
 const SceneBackdrop = () => (
     <div className="scene-backdrop" aria-hidden="true">
         <img src={housingImg} alt="" />

@@ -83,7 +83,8 @@ model ListingItem {
 
   updated_at DateTime @default(now()) @updatedAt
 
-  reports Report[]
+  reports    Report[]
+  chatTopics ChatTopic[]
 
   @@index([category])
   @@index([date])
@@ -98,6 +99,26 @@ model Chat {
   date     DateTime @default(now())
 
   messages Message[]
+  topics   ChatTopic[]
+}
+
+// What a chat is about: the marketplace item or housing listing someone wrote
+// from ("Message the seller", "Interested?"). One chat between two people can be
+// about several things over time; the chat page shows them next to the messages.
+model ChatTopic {
+  id                 Int             @id @default(autoincrement())
+  chat_id            Int
+  chat               Chat            @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  market_item_id     Int?
+  market_item        ListingItem?    @relation(fields: [market_item_id], references: [id], onDelete: Cascade)
+  housing_listing_id Int?
+  housing_listing    HousingListing? @relation(fields: [housing_listing_id], references: [id], onDelete: Cascade)
+  started_by         Int             // who wrote from the item / listing
+  created_at         DateTime        @default(now())
+
+  @@unique([chat_id, market_item_id])
+  @@unique([chat_id, housing_listing_id])
+  @@index([chat_id])
 }
 
 model Message {
@@ -226,10 +247,11 @@ model HousingListing {
   created_at  DateTime  @default(now())
   updated_at  DateTime  @default(now()) @updatedAt
 
-  photos    HousingPhoto[]
-  savedBy   SavedListing[]
-  tenancies Tenancy[]
-  reviews   Review[]
+  photos     HousingPhoto[]
+  savedBy    SavedListing[]
+  tenancies  Tenancy[]
+  reviews    Review[]
+  chatTopics ChatTopic[]
 
   @@index([status, city])
   @@index([owner_id])

@@ -19,7 +19,7 @@ const {
 const { toId } = require('../lib/parse');
 const { toHousingDto, toReviewDto } = require('../lib/dto');
 const { findUserWithProfile } = require('../models/profileModels.js');
-const { openChat } = require('../models/messageModels.js');
+const { openChat, addChatTopic } = require('../models/messageModels.js');
 const { sendChatMessage, userRoom } = require('../services/messageService');
 const { readInterest, interestMessage } = require('../lib/housingInterest');
 const { listListingReviews, ratingSummary } = require('../models/reviewModels.js');
@@ -398,6 +398,7 @@ async function contactOwner(req, res) {
         const text = interestMessage(interest.value, listing);
 
         const chatId = await openChat({ user1_id: me.id, user2_id: listing.owner_id });
+        await addChatTopic({ chat_id: chatId, housing_listing_id: listing.id, started_by: me.id });
         if (text) {
             const { message, receiverId } = await sendChatMessage({ chatId, senderId: me.id, content: text });
             if (req.io) req.io.to(userRoom(receiverId)).emit('new_message', message);

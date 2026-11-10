@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import AppNav from '../../components/AppNav.jsx';
+import SceneBackdrop from '../../components/SceneBackdrop.jsx';
 import HousingRowCard from '../../components/HousingRowCard.jsx';
 import HousingLinks from './HousingLinks.jsx';
 import { apiRequest } from '../../lib/api';
@@ -171,7 +172,7 @@ const HousingListPage = ({ mode = 'browse' }) => {
 
     return (
         <div className="hs-shell">
-            <AppNav />
+            <AppNav /><SceneBackdrop />
             <main className="hs-page hs-page--browse">
                 <div className="hs-topbar">
                     <h1 className="hs-visually-hidden">{saved ? 'Liked listings' : 'Housing'}</h1>

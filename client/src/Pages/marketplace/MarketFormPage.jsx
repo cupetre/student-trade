@@ -137,13 +137,13 @@ const MarketFormPage = () => {
     };
 
     if (loading) {
-        return <div className="hs-shell mk-shell"><AppNav /><SceneBackdrop /><main className="hs-page mk-page"><p className="hs-muted">Loading…</p></main></div>;
+        return <div className="hs-shell mk-shell"><AppNav /><SceneBackdrop /><main className="hs-page mk-page mk-form-page"><p className="hs-muted">Loading…</p></main></div>;
     }
     if (editing && (loadError || (user && ownerId && ownerId !== user.id))) {
         return (
             <div className="hs-shell mk-shell">
                 <AppNav /><SceneBackdrop />
-                <main className="hs-page mk-page">
+                <main className="hs-page mk-page mk-form-page">
                     <div className="hs-empty">
                         <h1>{loadError ? 'Item not found' : 'This isn’t your item'}</h1>
                         <p>{loadError || 'You can only edit items you posted yourself.'}</p>
@@ -160,7 +160,7 @@ const MarketFormPage = () => {
     return (
         <div className="hs-shell mk-shell">
             <AppNav /><SceneBackdrop />
-            <main className="hs-page mk-page">
+            <main className="hs-page mk-page mk-form-page">
                 <Link to={editing ? `/marketplace/${id}` : '/marketplace'} className="hs-back">← {editing ? 'Back to the item' : 'Back to the marketplace'}</Link>
                 <header className="hs-head">
                     <h1>{editing ? 'Edit your item' : 'Sell an item'}</h1>

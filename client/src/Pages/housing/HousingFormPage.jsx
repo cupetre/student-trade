@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppNav from '../../components/AppNav.jsx';
+import SceneBackdrop from '../../components/SceneBackdrop.jsx';
 import HousingCard from '../../components/HousingCard.jsx';
 import { apiRequest } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
@@ -265,13 +266,13 @@ const HousingFormPage = () => {
     // ---------- states before the form ----------
 
     if (userLoading || loading) {
-        return <div className="hs-shell"><AppNav /><main className="hs-page"><p className="hs-muted">Loading…</p></main></div>;
+        return <div className="hs-shell"><AppNav /><SceneBackdrop /><main className="hs-page"><p className="hs-muted">Loading…</p></main></div>;
     }
 
     if (landlordPending) {
         return (
             <div className="hs-shell">
-                <AppNav />
+                <AppNav /><SceneBackdrop />
                 <main className="hs-page">
                     <div className="hs-empty">
                         <h1>Your landlord account is being reviewed</h1>
@@ -286,7 +287,7 @@ const HousingFormPage = () => {
     if (editing && formError && !form.title) {
         return (
             <div className="hs-shell">
-                <AppNav />
+                <AppNav /><SceneBackdrop />
                 <main className="hs-page">
                     <div className="hs-empty">
                         <h1>Can’t edit this listing</h1>
@@ -315,7 +316,7 @@ const HousingFormPage = () => {
 
     return (
         <div className="hs-shell">
-            <AppNav />
+            <AppNav /><SceneBackdrop />
             <main className="hs-page">
                 <Link to={editing ? `/housing/${id}` : '/housing'} className="hs-back">← {editing ? 'Back to the listing' : 'Back to housing'}</Link>
                 <header className="hs-head">

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AppNav from '../../components/AppNav.jsx';
+import SceneBackdrop from '../../components/SceneBackdrop.jsx';
 import HousingLinks from './HousingLinks.jsx';
 import TenantsPanel from './TenantsPanel.jsx';
 import { apiRequest } from '../../lib/api';
@@ -66,7 +67,7 @@ const MyHousingPage = () => {
 
     return (
         <div className="hs-shell">
-            <AppNav />
+            <AppNav /><SceneBackdrop />
             <main className="hs-page">
                 <header className="hs-head hs-head--bar">
                     <h1>My listings</h1>

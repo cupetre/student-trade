@@ -418,8 +418,38 @@ const ChatPage = () => {
         </div>
     );
 
+    // What the open chat is about: the items and places people contacted each other through
+    const topics = selected?.topics || [];
+    const topicCards = topics.length > 0 && (
+        <ul className="ch-topics">
+            {topics.map(topic => {
+                const href = topic.kind === 'market' ? `/marketplace/${topic.id}` : `/housing/${topic.id}`;
+                const photo = resolveMediaUrl(topic.photo);
+                const price = topic.kind === 'market'
+                    ? (Number(topic.price) === 0 ? 'Free' : formatEuro(topic.price))
+                    : `${formatEuro(topic.price)} / month`;
+                return (
+                    <li key={`${topic.kind}-${topic.id}`}>
+                        <Link to={href} className="ch-topic">
+                            <span className="ch-topic-photo">{photo ? <img src={photo} alt="" loading="lazy" /> : <span />}</span>
+                            <span className="ch-topic-text">
+                                <span className="ch-topic-kind">
+                                    {topic.kind === 'market' ? 'Marketplace' : 'Housing'}
+                                    {topic.owner_id === myId ? ' · yours' : ''}
+                                </span>
+                                <span className="ch-topic-title">{topic.title}</span>
+                                <span className="ch-topic-meta">{price}{topic.city ? ` · ${topic.city}` : ''}</span>
+                            </span>
+                        </Link>
+                    </li>
+                );
+            })}
+        </ul>
+    );
+
     const showLikedColumn = wide && !landlord;
     const showLikedTab = !wide && !landlord;
+    const showSideColumn = wide && (!landlord || topics.length > 0);
 
     return (
         <div className="hs-shell">
@@ -427,7 +457,7 @@ const ChatPage = () => {
             <main className={`ch-page ${selectedId ? 'is-open' : ''}`}>
                 <h1 className="ch-title">Messages</h1>
 
-                <div className={`ch-frame ${selectedId ? 'is-open' : ''} ${showLikedColumn ? 'has-liked' : ''}`}>
+                <div className={`ch-frame ${selectedId ? 'is-open' : ''} ${showSideColumn ? 'has-liked' : ''}`}>
                     {/* ---- conversations (and, on narrower screens, liked places) ---- */}
                     <aside className="ch-card ch-list" aria-label="Conversations">
                         <div className="ch-search">
@@ -525,6 +555,15 @@ const ChatPage = () => {
                                     )}
                                 </header>
 
+                                {/* narrower screens: no side column, so a slim "About" bar under the header */}
+                                {!wide && topics.length > 0 && (
+                                    <div className="ch-about-bar">
+                                        <span>About</span>
+                                        <Link to={topics[0].kind === 'market' ? `/marketplace/${topics[0].id}` : `/housing/${topics[0].id}`}>{topics[0].title}</Link>
+                                        {topics.length > 1 && <small>+{topics.length - 1} more</small>}
+                                    </div>
+                                )}
+
                                 <div className="ch-messages" ref={scrollRef} aria-live="polite">
                                     {thread.loading && <p className="ch-center hs-muted">Loading…</p>}
                                     {thread.error && <div className="hs-alert hs-alert--error" role="alert">{thread.error}</div>}
@@ -576,15 +615,25 @@ const ChatPage = () => {
                         )}
                     </section>
 
-                    {/* ---- liked places (wide screens) ---- */}
-                    {showLikedColumn && (
-                        <aside className="ch-card ch-liked-col" aria-labelledby="ch-liked-title">
-                            <h2 id="ch-liked-title" className="ch-card-title">
-                                Liked listings
-                                {liked.items.length > 0 && <span>{liked.items.length}</span>}
-                            </h2>
-                            {likedList}
-                        </aside>
+                    {/* ---- wide screens: what this chat is about, then liked places ---- */}
+                    {showSideColumn && (
+                        <div className="ch-side">
+                            {topicCards && (
+                                <section className="ch-card ch-about" aria-labelledby="ch-about-title">
+                                    <h2 id="ch-about-title" className="ch-card-title">About this chat</h2>
+                                    {topicCards}
+                                </section>
+                            )}
+                            {showLikedColumn && (
+                                <aside className="ch-card ch-liked-col" aria-labelledby="ch-liked-title">
+                                    <h2 id="ch-liked-title" className="ch-card-title">
+                                        Liked listings
+                                        {liked.items.length > 0 && <span>{liked.items.length}</span>}
+                                    </h2>
+                                    {likedList}
+                                </aside>
+                            )}
+                        </div>
                     )}
                 </div>
             </main>

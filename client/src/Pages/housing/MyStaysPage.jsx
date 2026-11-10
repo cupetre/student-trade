@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppNav from '../../components/AppNav.jsx';
+import SceneBackdrop from '../../components/SceneBackdrop.jsx';
 import Avatar from '../../components/Avatar.jsx';
 import ReviewForm from '../../components/ReviewForm.jsx';
 import { Stars } from '../../components/Stars.jsx';
@@ -55,7 +56,7 @@ const MyStaysPage = () => {
 
     return (
         <div className="hs-shell">
-            <AppNav />
+            <AppNav /><SceneBackdrop />
             <main className="hs-page">
                 <header className="hs-head">
                     <h1>My stays</h1>
