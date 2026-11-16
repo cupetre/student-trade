@@ -1,0 +1,81 @@
+/* The "join to continue" window for visitors without an account. Classes start with "sup-". */
+.sup-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(27, 42, 65, 0.55);
+}
+.sup {
+    width: min(440px, 100%);
+    padding: 28px 28px 20px;
+    border-radius: var(--radius-lg);
+    background: var(--c-cream);
+    color: var(--c-ink);
+    box-shadow: 0 24px 60px rgba(27, 42, 65, 0.35);
+    text-align: left;
+}
+.sup h2 { margin: 0 0 8px; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.01em; }
+.sup-reason { margin: 0 0 8px; font-weight: 600; }
+.sup-why { margin: 0 0 20px; color: var(--c-muted); line-height: 1.5; }
+.sup-actions { display: flex; gap: 10px; }
+.sup-btn {
+    flex: 1;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    border: 1px solid var(--c-stone);
+    border-radius: var(--radius);
+    background: var(--c-paper);
+    color: var(--c-ink);
+    font-weight: 700;
+    text-decoration: none;
+}
+.sup-btn:hover { border-color: var(--c-blue); color: var(--c-blue-dark); }
+.sup-btn--main { border-color: var(--c-attention); background: var(--c-attention); color: #fff; }
+.sup-btn--main:hover { border-color: var(--c-attention-dark); background: var(--c-attention-dark); color: #fff; }
+.sup-btn:focus-visible, .sup-later:focus-visible { outline: 3px solid var(--c-ink); outline-offset: 2px; }
+.sup-later {
+    display: block;
+    margin: 14px auto 0;
+    padding: 6px 10px;
+    border: 0;
+    background: none;
+    color: var(--c-muted);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+.sup-later:hover { color: var(--c-ink); }
+
+/* ---------- the line on top of pages a guest can browse ---------- */
+.guest-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin: 0 0 14px;
+    padding: 10px 14px;
+    border: 1px solid var(--c-stone);
+    border-left: 4px solid var(--c-attention);
+    border-radius: var(--radius);
+    background: var(--c-paper);
+    color: var(--c-ink);
+}
+.guest-strip p { margin: 0; font-size: 0.95rem; }
+.guest-strip-actions { display: flex; align-items: center; gap: 14px; flex: none; }
+.guest-strip-actions a { color: var(--c-blue-dark); font-weight: 700; }
+.guest-strip-actions .guest-strip-main {
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    background: var(--c-attention);
+    color: #fff;
+    text-decoration: none;
+}
+.guest-strip-actions .guest-strip-main:hover { background: var(--c-attention-dark); }

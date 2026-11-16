@@ -39,7 +39,7 @@ async function chatHistory({ user1_id }) {
                 orderBy: { created_at: 'desc' },
                 take: 5,
                 include: {
-                    market_item: { select: { id: true, title: true, price: true, photo: true, city: true, owner_id: true } },
+                    market_item: { select: { id: true, title: true, price: true, photo: true, city: true, owner_id: true, status: true } },
                     housing_listing: {
                         select: {
                             id: true, title: true, rent_per_person: true, city: true, status: true, owner_id: true,
@@ -72,9 +72,35 @@ async function findChatById(id) {
 
 async function createMessage({ chat_id, sender_id, receiver_id, content }) {
     return prisma.message.create({
-        data: { chat_id, sender_id, receiver_id , content }
+        // read_at: null on purpose, a new message is unread (the column's default is for old rows only)
+        data: { chat_id, sender_id, receiver_id , content, read_at: null }
     });
 };
+
+// Unread messages for one person, per chat: { chatId: count }
+async function unreadByChat(user_id) {
+    const rows = await prisma.message.groupBy({
+        by: ['chat_id'],
+        where: { receiver_id: user_id, read_at: null },
+        _count: { _all: true },
+    });
+    const counts = {};
+    for (const row of rows) counts[row.chat_id] = row._count._all;
+    return counts;
+}
+
+async function countUnread(user_id) {
+    return prisma.message.count({ where: { receiver_id: user_id, read_at: null } });
+}
+
+// The person opened the chat: everything sent to them in it is now read
+async function markChatRead({ chat_id, user_id }) {
+    const result = await prisma.message.updateMany({
+        where: { chat_id, receiver_id: user_id, read_at: null },
+        data: { read_at: new Date() },
+    });
+    return result.count;
+}
 
 
 async function readMessage({ chat_id }) { 
@@ -91,4 +117,7 @@ module.exports = {
     createMessage,
     readMessage,
     addChatTopic,
+    unreadByChat,
+    countUnread,
+    markChatRead,
 };

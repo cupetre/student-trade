@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Logo from './Logo.jsx';
 import { useCurrentUser, isLandlord } from '../lib/useCurrentUser';
+import { isLoggedIn } from '../lib/auth';
+import { useT } from '../lib/i18n';
 import './AppFooter.css';
 
 /*
@@ -11,6 +13,8 @@ import './AppFooter.css';
 */
 const AppFooter = () => {
     const { user } = useCurrentUser();
+    const t = useT();
+    const guest = !isLoggedIn();
     const landlord = isLandlord(user);
     const year = new Date().getFullYear();
 
@@ -18,37 +22,47 @@ const AppFooter = () => {
         <footer className="app-footer">
             <div className="app-footer-inner">
                 <div className="app-footer-brand">
-                    <Link to="/" className="app-footer-logo" aria-label="Anchor home"><Logo size={30} /></Link>
-                    <p>Housing, a marketplace and help with settling in, for students in Slovenia.</p>
-                    <p className="app-footer-made">Made by students in Koper, Slovenia.</p>
+                    <Link to="/" className="app-footer-logo" aria-label={t('Home')}><Logo size={30} /></Link>
+                    <p>{t('Housing, a marketplace and help with settling in, for students in Slovenia.')}</p>
+                    <p className="app-footer-made">{t('Made by students in Koper, Slovenia.')}</p>
                 </div>
 
-                <nav className="app-footer-col" aria-label="Platforms">
-                    <h2>Platforms</h2>
-                    <Link to="/housing">Housing</Link>
-                    {!landlord && <Link to="/marketplace">Marketplace</Link>}
-                    {!landlord && <Link to="/settle-in">Settle In <span className="app-footer-soon">Soon</span></Link>}
+                <nav className="app-footer-col" aria-label={t('Platforms')}>
+                    <h2>{t('Platforms')}</h2>
+                    <Link to="/housing">{t('Housing')}</Link>
+                    {!landlord && <Link to="/marketplace">{t('Marketplace')}</Link>}
+                    {!landlord && !guest && <Link to="/settle-in">{t('Settle In')} <span className="app-footer-soon">{t('Soon')}</span></Link>}
                 </nav>
 
-                <nav className="app-footer-col" aria-label="Your account">
-                    <h2>Your account</h2>
-                    <Link to="/profilepage">My profile</Link>
-                    {!landlord && <Link to="/profile/student">Rental profile</Link>}
-                    <Link to="/chatpage">Messages</Link>
-                    <Link to="/housing/mine">My listings</Link>
-                    {!landlord && <Link to="/housing/saved">Liked listings</Link>}
-                    {!landlord && <Link to="/marketplace/mine">My items</Link>}
-                </nav>
+                {guest ? (
+                    <nav className="app-footer-col" aria-label={t('Your account')}>
+                        <h2>{t('Your account')}</h2>
+                        <Link to="/register">{t('Sign up')}</Link>
+                        <Link to="/login">{t('Log in')}</Link>
+                        <Link to="/register/landlord">{t('For landlords')}</Link>
+                    </nav>
+                ) : (
+                    <nav className="app-footer-col" aria-label={t('Your account')}>
+                        <h2>{t('Your account')}</h2>
+                        <Link to="/profilepage">{t('My profile')}</Link>
+                        {!landlord && <Link to="/profile/student">{t('Rental profile')}</Link>}
+                        <Link to="/chatpage">{t('Messages')}</Link>
+                        <Link to="/housing/mine">{t('My listings')}</Link>
+                        {!landlord && <Link to="/housing/saved">{t('Liked listings')}</Link>}
+                        {!landlord && <Link to="/marketplace/mine">{t('My items')}</Link>}
+                        {!landlord && <Link to="/marketplace/liked">{t('Liked items')}</Link>}
+                    </nav>
+                )}
 
                 <div className="app-footer-col">
-                    <h2>Stay safe</h2>
-                    <p>Never pay before you’ve seen a place or an item. Keep the conversation in Anchor messages until you’ve met.</p>
+                    <h2>{t('Stay safe')}</h2>
+                    <p>{t('Never pay before you’ve seen a place or an item. Keep the conversation in Anchor messages until you’ve met.')}</p>
                 </div>
             </div>
             <div className="app-footer-bottom">
                 <div className="app-footer-inner app-footer-inner--bottom">
                     <span>© {year} Anchor · Sidro</span>
-                    <span>Verified students and checked landlords only.</span>
+                    <span>{t('Verified students and checked landlords only.')}</span>
                 </div>
             </div>
         </footer>

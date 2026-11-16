@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { TILE_URL, TILE_ATTRIBUTION, SLOVENIA_VIEW, SLOVENIA_BOUNDS, cityCentre } from '../lib/mapConfig';
 import { formatEuro } from '../lib/housingOptions';
+import { useT } from '../lib/i18n';
 import './LocationPicker.css';
 
 // Code-made moves jump instead of animating: Leaflet crashes if the page
@@ -27,6 +28,7 @@ function priceIcon(listing, active) {
   - Hovering a card lights up its tag; clicking a tag opens the listing.
 */
 const HousingBrowseMap = ({ listings, city, activeId, onOpen }) => {
+    const t = useT();
     const mapEl = useRef(null);
     const mapRef = useRef(null);
     const layerRef = useRef(null);
@@ -103,7 +105,7 @@ const HousingBrowseMap = ({ listings, city, activeId, onOpen }) => {
 
     return (
         <div className="hs-map">
-            <div ref={mapEl} className="hs-map-canvas" role="region" aria-label="Map of the places on this page" />
+            <div ref={mapEl} className="hs-map-canvas" role="region" aria-label={t('Map of the places on this page')} />
         </div>
     );
 };

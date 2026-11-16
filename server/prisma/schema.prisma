@@ -52,6 +52,7 @@ model User {
   reviewsReceived  Review[]      @relation("ReviewReviewee")
   housingListings  HousingListing[]
   savedListings    SavedListing[]
+  savedItems       SavedItem[]
   studentProfile   StudentProfile?
   tenanciesAsLandlord Tenancy[]   @relation("TenancyLandlord")
   tenanciesAsStudent  Tenancy[]   @relation("TenancyStudent")
@@ -81,13 +82,31 @@ model ListingItem {
   public_latitude  Float?
   public_longitude Float?
 
+  // available | sold. Sold items leave the browse page but stay visible to the
+  // seller, to people who liked them and in the chats that were about them.
+  status  String    @default("available") @db.VarChar(20)
+  sold_at DateTime?
+
   updated_at DateTime @default(now()) @updatedAt
 
   reports    Report[]
   chatTopics ChatTopic[]
+  savedBy    SavedItem[]
 
   @@index([category])
   @@index([date])
+  @@index([status])
+}
+
+// A marketplace item someone liked (same idea as SavedListing for housing)
+model SavedItem {
+  user_id    Int
+  item_id    Int
+  user       User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  item       ListingItem @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  created_at DateTime    @default(now())
+
+  @@id([user_id, item_id])
 }
 
 model Chat {
@@ -131,6 +150,12 @@ model Message {
   receiver    User     @relation("MessageReceiver", fields: [receiver_id], references: [id], onDelete: Cascade)
   content     String
   sent_at     DateTime @default(now())
+  // When the receiver opened it; empty = unread. New messages are always saved
+  // with read_at empty (see createMessage). The default only exists so that
+  // messages from before this column count as read when the column is added.
+  read_at     DateTime? @default(now())
+
+  @@index([receiver_id, read_at])
 }
 
 model Report {

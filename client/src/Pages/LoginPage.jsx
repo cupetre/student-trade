@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { postJson } from '../lib/api';
 import { useLanguage } from '../lib/language';
+import { takeReturn } from '../lib/returnTo';
 import AuthShell from '../components/AuthShell.jsx';
 import { authCopy } from './authCopy';
 
@@ -67,7 +68,9 @@ const Login = () => {
             localStorage.setItem('token', data.token);
             // Back to the page they originally tried to open (e.g. a chat link), else their home.
             // replace: the back button shouldn't bring you back to the login form
-            navigate(from || '/', { replace: true });
+            // (or to the listing they were looking at when we asked them to sign up)
+            const remembered = takeReturn();
+            navigate(from || remembered || '/', { replace: true });
             return;
         }
 

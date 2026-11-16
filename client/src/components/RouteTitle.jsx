@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { BRAND, brandFor } from '../lib/brand';
+import { brandFor } from '../lib/brand';
 import { useLanguage } from '../lib/language';
+import { translate } from '../lib/i18n';
 
 // Browser tab titles for every page, in one place: "Prijava · Sidro" / "Log in · Anchor".
-// Public pages follow the SL/EN switch; logged-in pages are English (Anchor).
+// Every page follows the SL/EN switch (app titles are translated through lib/sl.js).
 const PUBLIC_TITLES = [
     ['/login', { sl: 'Prijava', en: 'Log in' }],
     ['/register/landlord', { sl: 'Registracija za najemodajalce', en: 'Landlord sign up' }],
@@ -18,6 +19,7 @@ const PUBLIC_TITLES = [
 const APP_TITLES = [
     ['/marketplace/new', 'Sell an item'],
     ['/marketplace/mine', 'My items'],
+    ['/marketplace/liked', 'Liked items'],
     ['/marketplace', 'Marketplace'],
     ['/housing', 'Housing'],
     ['/settle-in', 'Settle In'],
@@ -38,7 +40,8 @@ const RouteTitle = () => {
             return;
         }
         const match = APP_TITLES.find(([prefix]) => pathname.startsWith(prefix));
-        document.title = match ? `${match[1]} · ${BRAND}` : BRAND;
+        const brand = brandFor(lang);
+        document.title = match ? `${translate(lang, match[1])} · ${brand}` : brand;
     }, [pathname, lang]);
     return null;
 };

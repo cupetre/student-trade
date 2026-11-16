@@ -121,7 +121,9 @@ async function register(req, res, role) {
     // user can press "resend" on the next screen, so this isn't a failed sign-up.
     let emailSent = true;
     try {
-        await sendVerificationEmail({ email, fullname, token, role });
+        // the sign-up page says which language it was shown in
+        const lang = req.body && req.body.language === 'sl' ? 'sl' : 'en';
+        await sendVerificationEmail({ email, fullname, token, role, lang });
     } catch (err) {
         emailSent = false;
         req.log.error({ err, email }, 'failed to send verification email');
@@ -252,7 +254,8 @@ async function resendVerification(req, res) {
 
         const { token, tokenHash, expiresAt, sentAt } = createVerificationToken();
         await setVerificationToken({ id: user.id, tokenHash, expiresAt, sentAt });
-        await sendVerificationEmail({ email: user.email, fullname: user.fullname, token, role: user.role });
+        const lang = req.body && req.body.language === 'sl' ? 'sl' : 'en';
+        await sendVerificationEmail({ email: user.email, fullname: user.fullname, token, role: user.role, lang });
 
         req.log.info({ userId: user.id }, 'verification email resent');
         res.json(GENERIC);

@@ -3,14 +3,14 @@
 /* Top bar for logged-in pages. Palette "Nordic Stone", same as the landing page. */
 
 .appnav {
-    --an-ink: #1B2A41;
-    --an-blue: #3C6E91;
-    --an-blue-dark: #2F5875;
-    --an-light: #D5E3EC;
-    --an-cream: #FAF7F0;
-    --an-beige: #DDD4C5;
-    --an-muted: #5D6470;
-    --an-attention: #C2305A;
+    --an-ink: var(--c-ink);
+    --an-blue: var(--c-blue);
+    --an-blue-dark: var(--c-blue-dark);
+    --an-light: var(--c-blue-light);
+    --an-cream: var(--c-cream);
+    --an-beige: var(--c-stone);
+    --an-muted: var(--c-muted);
+    --an-attention: var(--c-attention);
 
     position: sticky;
     top: 0;
@@ -48,7 +48,7 @@
     color: var(--an-ink);
     font-size: 20px;
     text-decoration: none;
-    border-radius: 10px;
+    border-radius: var(--radius);
 }
 .appnav .appnav-logo:hover { color: var(--an-ink); }
 
@@ -62,7 +62,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 14px;
-    border-radius: 8px;
+    border-radius: var(--radius);
     color: var(--an-muted);
     font-weight: 700;
     font-size: 15px;
@@ -116,7 +116,7 @@
     margin-right: 6px;
     padding: 9px 16px;
     border: 0;
-    border-radius: 10px;
+    border-radius: var(--radius);
     background: var(--an-blue);
     color: #ffffff;
     font: inherit;
@@ -131,13 +131,32 @@
 .appnav-iconlink {
     width: 44px;
     height: 44px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     color: var(--an-ink);
 }
+.appnav-iconlink { position: relative; }
 .appnav-iconlink:hover { background: var(--an-cream); color: var(--an-ink); }
+/* unread messages: raspberry count on the corner of the icon */
+.appnav-unread {
+    position: absolute;
+    top: 3px;
+    right: 1px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    border: 2px solid #fff;
+    background: var(--an-attention);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 14px;
+    text-align: center;
+}
 .appnav-iconlink.active { background: var(--an-light); }
 
 .appnav-account { position: relative; }
@@ -165,7 +184,7 @@
     width: 260px;
     background: #ffffff;
     border: 1px solid var(--an-beige);
-    border-radius: 14px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 18px 40px rgba(27, 42, 65, 0.16);
     padding: 6px;
     z-index: 50;
@@ -192,7 +211,7 @@
     box-sizing: border-box;
     padding: 9px 12px;
     border: 0;
-    border-radius: 9px;
+    border-radius: var(--radius);
     background: none;
     color: var(--an-ink);
     font: inherit;
@@ -204,6 +223,30 @@
 .appnav-menu a:hover,
 .appnav-menu button:hover { background: var(--an-cream); color: var(--an-ink); }
 .appnav-menu-foot { margin-top: 4px; padding-top: 4px; border-top: 1px solid #EEE9E0; }
+
+/* SL | EN: in the account menu, and in the bar for visitors without an account */
+.appnav-lang { display: inline-flex; border: 1px solid var(--an-beige); border-radius: var(--radius); overflow: hidden; }
+.appnav-lang button {
+    min-width: 40px;
+    padding: 6px 10px;
+    border: 0;
+    background: #fff;
+    color: var(--an-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.appnav-lang button + button { border-left: 1px solid var(--an-beige); }
+.appnav-lang button.is-active { background: var(--an-ink); color: #fff; }
+.appnav-lang button:focus-visible { outline: 3px solid var(--an-attention); outline-offset: -3px; }
+.appnav-menu-lang { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; padding: 8px 12px 4px; border-top: 1px solid #EEE9E0; font-size: 14px; color: var(--an-muted); }
+
+/* visitors without an account: Log in (quiet) and Sign up (raspberry) */
+.appnav-guestlink { padding: 9px 12px; color: var(--an-ink); font-weight: 700; text-decoration: none; margin-left: 6px; }
+.appnav-guestlink:hover { color: var(--an-blue-dark); text-decoration: underline; }
+.appnav-btn.appnav-btn--signup { margin-right: 0; background: var(--an-attention); }
+.appnav-btn.appnav-btn--signup:hover { background: var(--c-attention-dark); }
 
 /* phones: the switch gets its own full-width row under the logo */
 @media (max-width: 720px) {

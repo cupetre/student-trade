@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../lib/api';
 import { REQUIRED_LABELS, STAY_LENGTHS } from '../../lib/profileOptions';
 import { toDateInput } from '../../lib/housingOptions';
+import { useT } from '../../lib/i18n';
 
 // What a student can say they're interested in. The server has the same list
 // (server/lib/housingInterest.js) and writes the first message from it.
@@ -33,7 +34,8 @@ const MAX_NOTE = 1000;
 */
 const InterestPanel = ({ listing }) => {
     const navigate = useNavigate();
-    const ownerName = listing.owner?.fullname?.split(' ')[0] || 'the owner';
+    const t = useT();
+    const ownerName = listing.owner?.fullname?.split(' ')[0] || t('the owner');
     const today = todayInput();
 
     const [interests, setInterests] = useState([]);
@@ -75,15 +77,15 @@ const InterestPanel = ({ listing }) => {
         setSending(false);
         if (ok) { navigate(`/chatpage?chatId=${data.chat_id}`); return; }
         if (data.code === 'PROFILE_INCOMPLETE') { setProfileGate(data.missing || []); return; }
-        setError(data.error || 'Could not send. Please try again.');
+        setError(data.error || t('Could not send. Please try again.'));
     };
 
     return (
         <form className="hs-interest" onSubmit={send} aria-labelledby="hs-interest-title">
-            <h2 id="hs-interest-title" className="hs-interest-title">Interested?</h2>
+            <h2 id="hs-interest-title" className="hs-interest-title">{t('Interested?')}</h2>
 
             <fieldset className="hs-interest-group">
-                <legend>I’d like</legend>
+                <legend>{t('I’d like')}</legend>
                 <div className="hs-chips">
                     {interestOptions(listing).map(option => (
                         <button
@@ -93,7 +95,7 @@ const InterestPanel = ({ listing }) => {
                             aria-pressed={interests.includes(option.key)}
                             onClick={() => toggle(option.key)}
                         >
-                            {option.label}
+                            {t(option.label)}
                         </button>
                     ))}
                 </div>
@@ -101,25 +103,25 @@ const InterestPanel = ({ listing }) => {
 
             <div className="hs-interest-row">
                 <div className="hs-field">
-                    <label htmlFor="hs-move-in">Move in</label>
+                    <label htmlFor="hs-move-in">{t('Move in')}</label>
                     <input id="hs-move-in" type="date" min={today} value={moveIn} onChange={(e) => setMoveIn(e.target.value)} />
                 </div>
                 <div className="hs-field">
-                    <label htmlFor="hs-stay">How long</label>
+                    <label htmlFor="hs-stay">{t('How long')}</label>
                     <select id="hs-stay" value={stay} onChange={(e) => setStay(e.target.value)}>
-                        <option value="">Not sure</option>
-                        {Object.entries(STAY_LENGTHS).map(([value, option]) => <option key={value} value={value}>{option.label}</option>)}
+                        <option value="">{t('Not sure')}</option>
+                        {Object.entries(STAY_LENGTHS).map(([value, option]) => <option key={value} value={value}>{t(option.label)}</option>)}
                     </select>
                 </div>
             </div>
 
             <div className="hs-field">
-                <label htmlFor="hs-note">Note</label>
+                <label htmlFor="hs-note">{t('Note')}</label>
                 <textarea
                     id="hs-note"
                     rows={3}
                     maxLength={MAX_NOTE}
-                    placeholder={`Anything ${ownerName} should know?`}
+                    placeholder={t('Anything {name} should know?', { name: ownerName })}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                 />
@@ -128,15 +130,15 @@ const InterestPanel = ({ listing }) => {
             {error && <div className="hs-alert hs-alert--error" role="alert">{error}</div>}
             {profileGate && (
                 <div className="hs-alert hs-alert--info" role="status">
-                    <strong>Finish your rental profile first.</strong>
-                    {profileGate.length > 0 && <> Missing: {profileGate.map(f => REQUIRED_LABELS[f] || f).join(', ')}.</>}
-                    {' '}<Link to={`/profile/student?next=${encodeURIComponent(`/housing/${listing.id}`)}`}>Complete it now</Link>
+                    <strong>{t('Finish your rental profile first.')}</strong>
+                    {profileGate.length > 0 && <> {t('Missing: {fields}.', { fields: profileGate.map(f => t(REQUIRED_LABELS[f] || f)).join(', ') })}</>}
+                    {' '}<Link to={`/profile/student?next=${encodeURIComponent(`/housing/${listing.id}`)}`}>{t('Complete it now')}</Link>
                 </div>
             )}
 
             <div className="hs-interest-send">
                 <button type="submit" className="hs-btn" disabled={sending}>
-                    {sending ? 'Sending…' : hasContent ? `Send to ${ownerName}` : `Message ${ownerName}`}
+                    {sending ? t('Sending…') : hasContent ? t('Send to {name}', { name: ownerName }) : t('Message {name}', { name: ownerName })}
                 </button>
             </div>
         </form>

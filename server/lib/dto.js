@@ -9,10 +9,12 @@
 function toListingDto(listing, options) {
     if (!listing) return listing;
     const viewerId = options && typeof options === 'object' ? options.viewerId : undefined;
-    const { owner, latitude, longitude, public_latitude, public_longitude, ...rest } = listing;
+    const { owner, savedBy, latitude, longitude, public_latitude, public_longitude, ...rest } = listing;
     const isOwner = viewerId !== undefined && viewerId === listing.owner_id;
     return {
         ...rest,
+        status: rest.status || 'available',
+        is_saved: Array.isArray(savedBy) && savedBy.length > 0, // did the viewer like it
         price: rest.price === undefined || rest.price === null ? rest.price : Number(rest.price),
         location: public_latitude != null && public_longitude != null
             ? { latitude: public_latitude, longitude: public_longitude, approximate: true }
@@ -20,6 +22,60 @@ function toListingDto(listing, options) {
         ...(isOwner ? { exact_location: latitude != null && longitude != null ? { latitude, longitude } : null } : {}),
         owner_name: owner?.fullname ?? null,
         owner_profile_picture: owner?.profile_picture ?? null,
+    };
+}
+
+// ---------- visitors without an account ----------
+// They can browse, but see nothing about people and nothing that pins a place
+// down: no names or profiles, no description, no street. Both functions pick the
+// fields they send (instead of removing some), so a new column is private until
+// someone adds it here on purpose.
+
+function toGuestItemDto(listing) {
+    if (!listing) return listing;
+    return {
+        id: listing.id,
+        title: listing.title,
+        price: listing.price === undefined || listing.price === null ? listing.price : Number(listing.price),
+        photo: listing.photo || null,
+        category: listing.category,
+        condition: listing.condition || null,
+        city: listing.city || null,
+        date: listing.date,
+        status: listing.status || 'available',
+        guest: true,
+    };
+}
+
+const GUEST_HOUSING_FIELDS = [
+    'id', 'listing_type', 'property_type', 'title', 'utilities_included', 'spots_total', 'spots_open',
+    'total_rooms', 'bathrooms', 'area_m2', 'furnishing', 'city', 'neighbourhood', 'available_from',
+    'available_until', 'min_stay_months', 'address_registration_allowed', 'subsidy_eligible',
+    'smoking_allowed', 'pets_allowed', 'amenities', 'status', 'created_at',
+];
+
+function toGuestHousingDto(listing) {
+    if (!listing) return listing;
+    const dto = {};
+    for (const field of GUEST_HOUSING_FIELDS) dto[field] = listing[field];
+    const owner = listing.owner;
+    return {
+        ...dto,
+        rent_per_person: Number(listing.rent_per_person),
+        deposit: numberOrNull(listing.deposit),
+        utilities_estimate: numberOrNull(listing.utilities_estimate),
+        photos: (listing.photos || []).map(photo => ({ id: photo.id, url: photo.url, position: photo.position })),
+        // the area on the map (already moved 80-200 m), never the pin
+        location: listing.public_latitude != null && listing.public_longitude != null
+            ? { latitude: listing.public_latitude, longitude: listing.public_longitude, approximate: true }
+            : null,
+        // only whether the owner is checked, not who they are
+        owner: owner ? {
+            verified_landlord: owner.role === 'landlord' && owner.landlord_status === 'approved',
+            is_student: owner.role === 'student',
+        } : null,
+        is_saved: false,
+        guest: true,
     };
 }
 
@@ -41,7 +97,7 @@ function toSellerDto(owner, { ageFrom, rating } = {}) {
 }
 
 // A chat has two members. For the chat list we only want "the other person".
-function toChatSummary(chat, myId) {
+function toChatSummary(chat, myId, unread = 0) {
     const other = chat.user1_id === myId ? chat.user2 : chat.user1;
     return {
         chat_id: chat.id,
@@ -51,6 +107,7 @@ function toChatSummary(chat, myId) {
         chat_created_at: chat.date,
         last_message: chat.messages?.[0] ?? null,
         last_activity: chat.messages?.[0]?.sent_at ?? chat.date,
+        unread, // messages to me in this chat that I haven't opened
         topics: (chat.topics || []).map(toChatTopicDto).filter(Boolean),
     };
 }
@@ -62,6 +119,7 @@ function toChatTopicDto(topic) {
         return {
             kind: 'market', id: item.id, title: item.title, price: Number(item.price),
             photo: item.photo || null, city: item.city || null, owner_id: item.owner_id, since: topic.created_at,
+            status: item.status || 'available',
         };
     }
     if (topic.housing_listing) {
@@ -188,4 +246,4 @@ function toStudentProfileDto(profile, { details = false, needs = false, own = fa
     return dto;
 }
 
-module.exports = { toListingDto, toSellerDto, toChatSummary, toChatTopicDto, toHousingDto, toReviewDto, toStudentProfileDto, personDto };
+module.exports = { toGuestItemDto, toGuestHousingDto, toListingDto, toSellerDto, toChatSummary, toChatTopicDto, toHousingDto, toReviewDto, toStudentProfileDto, personDto };

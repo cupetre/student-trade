@@ -4,14 +4,14 @@
    Every class starts with "auth-" because Vite loads all CSS globally. */
 
 .auth-page {
-    --auth-ink: #1B2A41;
-    --auth-blue: #3C6E91;
-    --auth-blue-dark: #2F5875;
-    --auth-light: #D5E3EC;
-    --auth-cream: #FAF7F0;
-    --auth-beige: #DDD4C5;
-    --auth-muted: #5D6470;
-    --auth-attention: #C2305A;
+    --auth-ink: var(--c-ink);
+    --auth-blue: var(--c-blue);
+    --auth-blue-dark: var(--c-blue-dark);
+    --auth-light: var(--c-blue-light);
+    --auth-cream: var(--c-cream);
+    --auth-beige: var(--c-stone);
+    --auth-muted: var(--c-muted);
+    --auth-attention: var(--c-attention);
     --auth-error: #B42318;
     --auth-error-bg: #FDECEA;
     --auth-success: #1B6E3C;

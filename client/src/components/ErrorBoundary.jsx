@@ -1,5 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
+import { translate } from '../lib/i18n';
+import { getLanguage } from '../lib/language';
 
 // If a page crashes while rendering, show a friendly message instead of a
 // blank white screen. The error itself is logged to the console (see main.jsx).
@@ -15,15 +17,17 @@ class Boundary extends React.Component {
 
     render() {
         if (!this.state.error) return this.props.children;
+        // a class can't use the useT hook, so it reads the language directly
+        const t = (text) => translate(getLanguage(), text);
         return (
             <div style={styles.wrap} role="alert">
                 <div style={styles.card}>
-                    <h1 style={styles.title}>Something went wrong on this page</h1>
-                    <p style={styles.text}>Try again, or go back to the start. If it keeps happening, tell us what you clicked.</p>
+                    <h1 style={styles.title}>{t('Something went wrong on this page')}</h1>
+                    <p style={styles.text}>{t('Try again, or go back to the start. If it keeps happening, tell us what you clicked.')}</p>
                     {import.meta.env.DEV && <pre style={styles.pre}>{String(this.state.error?.message || this.state.error)}</pre>}
                     <div style={styles.actions}>
-                        <button type="button" style={styles.primary} onClick={() => window.location.reload()}>Reload</button>
-                        <a href="/" style={styles.secondary}>Go to the start</a>
+                        <button type="button" style={styles.primary} onClick={() => window.location.reload()}>{t('Reload')}</button>
+                        <a href="/" style={styles.secondary}>{t('Go to the start')}</a>
                     </div>
                 </div>
             </div>

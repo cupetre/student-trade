@@ -13,8 +13,9 @@
     margin: 0 auto;
     padding: 20px var(--page-pad) 80px;
 }
-/* the text keeps a comfortable reading width inside the full page */
-.si-page > * { max-width: 760px; }
+/* one column in the middle of the page, at a comfortable reading width */
+.si-page > * { max-width: 760px; margin-left: auto; margin-right: auto; }
+.si-eyebrow, .si-page h1, .si-lede { text-align: center; }
 
 .si-eyebrow {
     margin: 0 0 10px;
@@ -68,12 +69,12 @@
     padding: 3px 9px;
 }
 
-.si-actions { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; }
+.si-actions { margin-top: 32px; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 .si-btn {
     display: inline-flex;
     align-items: center;
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: var(--radius);
     background: #3C6E91;
     color: #ffffff;
     font-weight: 700;

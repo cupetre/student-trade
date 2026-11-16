@@ -2,13 +2,13 @@
    Palette "Nordic Stone", same as AppNav. */
 
 .pn {
-    --pn-ink: #1B2A41;
-    --pn-blue: #3C6E91;
-    --pn-cream: #FAF7F0;
-    --pn-beige: #DDD4C5;
-    --pn-muted: #5D6470;
-    --pn-attention: #C2305A;
-    --pn-attention-dark: #A82650;
+    --pn-ink: var(--c-ink);
+    --pn-blue: var(--c-blue);
+    --pn-cream: var(--c-cream);
+    --pn-beige: var(--c-stone);
+    --pn-muted: var(--c-muted);
+    --pn-attention: var(--c-attention);
+    --pn-attention-dark: var(--c-attention-dark);
 
     position: sticky;
     top: 0;

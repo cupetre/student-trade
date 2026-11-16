@@ -17,7 +17,7 @@ const {
     LISTING_TYPES, STUDENT_LISTING_TYPES, PROPERTY_TYPES, FURNISHING, STATUSES, OWNER_STATUS_CHANGES, MAX_HOUSING_PHOTOS,
 } = require('../lib/housingOptions');
 const { toId } = require('../lib/parse');
-const { toHousingDto, toReviewDto } = require('../lib/dto');
+const { toHousingDto, toGuestHousingDto, toReviewDto } = require('../lib/dto');
 const { findUserWithProfile } = require('../models/profileModels.js');
 const { openChat, addChatTopic } = require('../models/messageModels.js');
 const { sendChatMessage, userRoom } = require('../services/messageService');
@@ -190,6 +190,36 @@ async function browseListings(req, res) {
     } catch (err) {
         req.log.error({ err }, 'failed to search housing');
         res.status(500).json({ error: 'Could not load housing listings' });
+    }
+}
+
+// ---------- visitors without an account (see /api/public) ----------
+
+// GET /api/public/housing?...: the same filters as browse, without owners, descriptions or streets
+async function browseListingsPublic(req, res) {
+    const { where, orderBy, page } = buildSearch(req.query || {});
+    try {
+        const { items, total } = await searchListings({
+            where, orderBy, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE, viewerId: -1,
+        });
+        res.json({ items: items.map(toGuestHousingDto), total, page, pages: Math.max(1, Math.ceil(total / PAGE_SIZE)) });
+    } catch (err) {
+        req.log.error({ err }, 'failed to search public housing');
+        res.status(500).json({ error: 'Could not load housing listings' });
+    }
+}
+
+// GET /api/public/housing/:id: one live listing, trimmed the same way
+async function getListingPublic(req, res) {
+    const id = toId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid listing' });
+    try {
+        const listing = await findListing(id, -1);
+        if (!listing || listing.status !== 'active') return res.status(404).json({ error: 'Listing not found' });
+        res.json(toGuestHousingDto(listing));
+    } catch (err) {
+        req.log.error({ err, listingId: id }, 'failed to load public housing listing');
+        res.status(500).json({ error: 'Could not load the listing' });
     }
 }
 
@@ -464,6 +494,8 @@ module.exports = {
     deleteListing,
     save,
     unsave,
+    browseListingsPublic,
+    getListingPublic,
     // exported for tests
     postingProblem,
     buildSearch,

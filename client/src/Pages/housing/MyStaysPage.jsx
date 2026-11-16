@@ -8,6 +8,7 @@ import { Stars } from '../../components/Stars.jsx';
 import { apiRequest } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
 import { formatDate, TENANCY_STATUS } from '../../lib/housingOptions';
+import { useT } from '../../lib/i18n';
 import './Housing.css';
 
 const STUDENT_STATUS = {
@@ -19,6 +20,7 @@ const STUDENT_STATUS = {
 // Places a landlord said the student lives / lived at. Confirming one
 // unlocks reviews in both directions.
 const MyStaysPage = () => {
+    const t = useT();
     const [stays, setStays] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -40,7 +42,7 @@ const MyStaysPage = () => {
         const { ok, data } = await apiRequest(`/api/housing/tenancies/${stay.id}`, { method: 'PATCH', body: { action } });
         setBusyId(null);
         if (!ok) { setError(data.error); return; }
-        setNotice(action === 'confirm' ? 'Confirmed. You can now review your landlord.' : '');
+        setNotice(action === 'confirm' ? t('Confirmed. You can now review your landlord.') : '');
         load();
     };
 
@@ -49,7 +51,7 @@ const MyStaysPage = () => {
         if (!ok) return { ok, error: data.error };
         setReviewingId(null);
         // One review per person: reviewing the same landlord again updates the first one
-        setNotice(data.updated ? 'Your review was updated.' : 'Thanks! Your review helps other students.');
+        setNotice(data.updated ? t('Your review was updated.') : t('Thanks! Your review helps other students.'));
         load();
         return { ok };
     };
@@ -59,18 +61,18 @@ const MyStaysPage = () => {
             <AppNav /><SceneBackdrop />
             <main className="hs-page">
                 <header className="hs-head">
-                    <h1>My stays</h1>
+                    <h1>{t('My stays')}</h1>
                 </header>
 
                 {notice && <div className="hs-alert hs-alert--success" role="status">{notice}</div>}
                 {error && <div className="hs-alert hs-alert--error" role="alert">{error}</div>}
-                {loading && <p className="hs-muted">Loading…</p>}
+                {loading && <p className="hs-muted">{t('Loading…')}</p>}
 
                 {!loading && !error && stays.length === 0 && (
                     <div className="hs-empty">
-                        <h2>No stays yet</h2>
-                        <p>Once you move in, ask your landlord to add you as a tenant on Anchor. Then you can leave a review.</p>
-                        <Link to="/housing" className="hs-btn">Browse places</Link>
+                        <h2>{t('No stays yet')}</h2>
+                        <p>{t('Once you move in, ask your landlord to add you as a tenant on Anchor. Then you can leave a review.')}</p>
+                        <Link to="/housing" className="hs-btn">{t('Browse places')}</Link>
                     </div>
                 )}
 
@@ -86,12 +88,12 @@ const MyStaysPage = () => {
                                 </div>
                                 <div className="hs-mine-info">
                                     <div className="hs-mine-top">
-                                        <span className={`hs-status hs-status--${status.tone}`}>{status.label}</span>
-                                        {stay.my_review && <span className="hs-tenant-myreview"><Stars value={stay.my_review.rating} size={13} /> your review</span>}
+                                        <span className={`hs-status hs-status--${status.tone}`}>{t(status.label)}</span>
+                                        {stay.my_review && <span className="hs-tenant-myreview"><Stars value={stay.my_review.rating} size={13} /> {t('your review')}</span>}
                                     </div>
                                     {stay.listing
                                         ? <Link to={`/housing/${stay.listing.id}`} className="hs-mine-title">{stay.listing.title}</Link>
-                                        : <span className="hs-mine-title">{stay.listing_title} <small className="hs-muted">(listing removed)</small></span>}
+                                        : <span className="hs-mine-title">{stay.listing_title} <small className="hs-muted">{t('(listing removed)')}</small></span>}
                                     {stay.landlord && (
                                         <Link to={`/users/${stay.landlord.id}`} className="hs-stay-landlord">
                                             <Avatar src={resolveMediaUrl(stay.landlord.profile_picture)} name={stay.landlord.fullname} size={22} />
@@ -99,32 +101,32 @@ const MyStaysPage = () => {
                                         </Link>
                                     )}
                                     <p className="hs-muted">
-                                        Added {formatDate(stay.created_at)}
-                                        {stay.ended_at ? ` · moved out ${formatDate(stay.ended_at)}` : ''}
+                                        {t('Added {date}', { date: formatDate(stay.created_at, t) })}
+                                        {stay.ended_at ? ` · ${t('moved out {date}', { date: formatDate(stay.ended_at, t) })}` : ''}
                                     </p>
                                 </div>
                                 <div className="hs-mine-actions">
                                     {stay.status === 'pending' && (
                                         <>
-                                            <button type="button" className="hs-btn hs-btn--small" disabled={busy} onClick={() => change(stay, 'confirm')}>Yes, I live here</button>
-                                            <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" disabled={busy} onClick={() => change(stay, 'decline')}>Not me</button>
+                                            <button type="button" className="hs-btn hs-btn--small" disabled={busy} onClick={() => change(stay, 'confirm')}>{t('Yes, I live here')}</button>
+                                            <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" disabled={busy} onClick={() => change(stay, 'decline')}>{t('Not me')}</button>
                                         </>
                                     )}
                                     {stay.can_review && (
                                         <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" onClick={() => setReviewingId(reviewingId === stay.id ? null : stay.id)}>
-                                            {stay.my_review ? 'Edit review' : 'Write a review'}
+                                            {stay.my_review ? t('Edit review') : t('Write a review')}
                                         </button>
                                     )}
                                     {stay.status === 'confirmed' && (
-                                        <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" disabled={busy} onClick={() => change(stay, 'end')}>I moved out</button>
+                                        <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" disabled={busy} onClick={() => change(stay, 'end')}>{t('I moved out')}</button>
                                     )}
                                 </div>
                                 {reviewingId === stay.id && (
                                     <div className="hs-stay-review">
                                         <ReviewForm
                                             initial={stay.my_review}
-                                            prompt="How was the place and the landlord?"
-                                            placeholder="Was it like the photos? Did repairs get done? Was the deposit returned fairly?"
+                                            prompt={t('How was the place and the landlord?')}
+                                            placeholder={t('Was it like the photos? Did repairs get done? Was the deposit returned fairly?')}
                                             onCancel={() => setReviewingId(null)}
                                             onSubmit={(input) => review(stay, input)}
                                         />

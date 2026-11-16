@@ -20,6 +20,7 @@ import MyStaysPage from './Pages/housing/MyStaysPage.jsx';
 import AppFooter from './components/AppFooter.jsx';
 import MarketFormPage from './Pages/marketplace/MarketFormPage.jsx';
 import MyItemsPage from './Pages/marketplace/MyItemsPage.jsx';
+import LikedItemsPage from './Pages/marketplace/LikedItemsPage.jsx';
 import StudentProfilePage from './Pages/profile/StudentProfilePage.jsx';
 import PublicProfilePage from './Pages/profile/PublicProfilePage.jsx';
 import SettleInPage from './Pages/SettleInPage.jsx';
@@ -67,7 +68,9 @@ root.render(
       {/* /marketplace/12 is the browse page with item 12 open on top. One catch-all route
           (not "/:id?", which React Router splits into two routes) so opening an
           item doesn't rebuild the page behind it. new, mine and :id/edit match first. */}
-      <Route path="/marketplace/*" element={<RequireAuth><StudentOnly>{app(<App />)}</StudentOnly></RequireAuth>} />
+      {/* Browsing the marketplace and housing works without an account (trimmed lists, see lib/dto.js on the server) */}
+      <Route path="/marketplace/*" element={<StudentOnly>{app(<App />)}</StudentOnly>} />
+      <Route path="/marketplace/liked" element={<RequireAuth><StudentOnly>{app(<LikedItemsPage />)}</StudentOnly></RequireAuth>} />
       <Route path="/marketplace/new" element={<RequireAuth><StudentOnly>{app(<MarketFormPage key="new" />)}</StudentOnly></RequireAuth>} />
       <Route path="/marketplace/mine" element={<RequireAuth><StudentOnly>{app(<MyItemsPage />)}</StudentOnly></RequireAuth>} />
       <Route path="/marketplace/:id/edit" element={<RequireAuth><StudentOnly>{app(<MarketFormPage key="edit" />)}</StudentOnly></RequireAuth>} />
@@ -78,12 +81,12 @@ root.render(
       <Route path="/chatpage" element={<RequireAuth>{appNoFooter(<ChatPage />)}</RequireAuth>} />
 
       {/* Housing */}
-      <Route path="/housing" element={<RequireAuth>{app(<HousingListPage mode="browse" key="browse" />)}</RequireAuth>} />
+      <Route path="/housing" element={app(<HousingListPage mode="browse" key="browse" />)} />
       <Route path="/housing/saved" element={<RequireAuth><StudentOnly>{app(<HousingListPage mode="saved" key="saved" />)}</StudentOnly></RequireAuth>} />
       <Route path="/housing/mine" element={<RequireAuth>{app(<MyHousingPage />)}</RequireAuth>} />
       <Route path="/housing/stays" element={<RequireAuth><StudentOnly>{app(<MyStaysPage />)}</StudentOnly></RequireAuth>} />
       <Route path="/housing/new" element={<RequireAuth>{app(<HousingFormPage key="new" />)}</RequireAuth>} />
-      <Route path="/housing/:id" element={<RequireAuth>{app(<HousingDetailPage />)}</RequireAuth>} />
+      <Route path="/housing/:id" element={app(<HousingDetailPage />)} />
       <Route path="/housing/:id/edit" element={<RequireAuth>{app(<HousingFormPage key="edit" />)}</RequireAuth>} />
 
       {/* Profiles */}

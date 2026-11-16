@@ -1,5 +1,5 @@
 import React from 'react';
-import { BRAND } from '../lib/brand';
+import { useBrand } from '../lib/brand';
 import './Logo.css';
 
 // The mark: a white anchor on an ink tile; its ring is raspberry (the one loud colour).
@@ -19,12 +19,15 @@ export const LogoMark = ({ size = 34 }) => (
 );
 
 // Mark + name. Colour and size come from the parent (font-size, color).
-// `name`: Sidro or Anchor (public pages pass the one for the chosen language).
-const Logo = ({ size = 34, hideWordOnPhone = false, name = BRAND }) => (
-    <span className={`brand-logo ${hideWordOnPhone ? 'brand-logo--compact' : ''}`}>
-        <LogoMark size={size} />
-        <span className="brand-word">{name}</span>
-    </span>
-);
+// The name follows the language (Sidro / Anchor) unless `name` says otherwise.
+const Logo = ({ size = 34, hideWordOnPhone = false, name }) => {
+    const brand = useBrand();
+    return (
+        <span className={`brand-logo ${hideWordOnPhone ? 'brand-logo--compact' : ''}`}>
+            <LogoMark size={size} />
+            <span className="brand-word">{name || brand}</span>
+        </span>
+    );
+};
 
 export default Logo;

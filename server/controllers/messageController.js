@@ -1,4 +1,4 @@
-const { openChat, chatHistory, readMessage } = require('../models/messageModels.js');
+const { openChat, chatHistory, readMessage, unreadByChat, countUnread, markChatRead } = require('../models/messageModels.js');
 const { ChatError, getChatForMember, sendChatMessage, userRoom } = require('../services/messageService');
 const { toId } = require('../lib/parse');
 const { toChatSummary } = require('../lib/dto');
@@ -42,9 +42,9 @@ async function getHistory(req, res) {
     const myId = req.user.id;
 
     try {
-        const chats = await chatHistory({ user1_id: myId });
+        const [chats, unread] = await Promise.all([chatHistory({ user1_id: myId }), unreadByChat(myId)]);
         // Newest conversation first: by the last message, or when it was opened
-        const list = chats.map(chat => toChatSummary(chat, myId))
+        const list = chats.map(chat => toChatSummary(chat, myId, unread[chat.id] || 0))
             .sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity));
         res.json(list);
     } catch (err) {
@@ -89,7 +89,39 @@ async function receiveMessages(req, res) {
     }
 };
 
+// How many messages are waiting for me (the badge on the Messages icon)
+async function unreadCount(req, res) {
+    try {
+        res.json({ count: await countUnread(req.user.id) });
+    } catch (err) {
+        req.log.error({ err }, 'failed to count unread messages');
+        res.status(500).json({ error: 'Failed to load messages' });
+    }
+}
+
+// I opened this chat: mark what was sent to me in it as read
+async function markRead(req, res) {
+    const chatId = toId(req.params.chat_id);
+    if (!chatId) return res.status(400).json({ error: 'Invalid chat' });
+
+    try {
+        const chat = await getChatForMember(chatId, req.user.id);
+        if (!chat) return res.status(404).json({ error: 'Chat not found' });
+
+        const marked = await markChatRead({ chat_id: chatId, user_id: req.user.id });
+        const count = await countUnread(req.user.id);
+        // my other tabs update their badge too
+        if (marked && req.io) req.io.to(userRoom(req.user.id)).emit('unread_changed', { count });
+        res.json({ count });
+    } catch (err) {
+        req.log.error({ err, chatId }, 'failed to mark chat read');
+        res.status(500).json({ error: 'Failed to load messages' });
+    }
+}
+
 module.exports = {
+    unreadCount,
+    markRead,
     createChat,
     getHistory,
     sendMessage,

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import AppNav from './components/AppNav.jsx';
 import SceneBackdrop from './components/SceneBackdrop.jsx';
@@ -6,6 +6,11 @@ import MarketCard from './Pages/marketplace/MarketCard.jsx';
 import MarketItemModal from './Pages/marketplace/MarketItemModal.jsx';
 import { SORTS, CATEGORIES, CONDITIONS } from './Pages/marketplace/marketOptions';
 import { apiRequest } from './lib/api';
+import { isLoggedIn } from './lib/auth';
+import { useT } from './lib/i18n';
+import GuestStrip from './components/GuestStrip.jsx';
+import SignUpPrompt from './components/SignUpPrompt.jsx';
+import { useLikeItem } from './Pages/marketplace/useLikeItem';
 import './Pages/housing/Housing.css';
 import './Pages/marketplace/Market.css';
 
@@ -44,6 +49,10 @@ const MarketplacePage = () => {
     const rest = useParams()['*'] || ''; // "12" on /marketplace/12
     const openId = /^\d+$/.test(rest) ? Number(rest) : null;
     const navigate = useNavigate();
+    const t = useT();
+    // Visitors without an account browse a trimmed list (no sellers) and are asked to join when they act
+    const guest = !isLoggedIn();
+    const [prompt, setPrompt] = useState('');
     const [params, setParams] = useSearchParams();
     const [result, setResult] = useState({ items: [], total: 0, page: 1, pages: 1 });
     const [loading, setLoading] = useState(true);
@@ -77,7 +86,7 @@ const MarketplacePage = () => {
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
-        apiRequest(`/api/listings/show_listings?${query}`).then(({ ok, data }) => {
+        apiRequest(`${guest ? '/api/public/market' : '/api/listings/show_listings'}?${query}`).then(({ ok, data }) => {
             if (cancelled) return;
             setLoading(false);
             if (!ok) { setError(data.error); return; }
@@ -93,7 +102,16 @@ const MarketplacePage = () => {
             setError('');
         });
         return () => { cancelled = true; };
-    }, [query]);
+    }, [query, guest]);
+
+    // The heart on a card (and in the item window) updates the list straight away
+    const applyLike = useCallback((id, on) => {
+        setResult(prev => ({ ...prev, items: prev.items.map(i => (i.id === id ? { ...i, is_saved: on } : i)) }));
+    }, []);
+    const likeItem = useLikeItem(applyLike);
+    const onLike = guest
+        ? () => setPrompt(t('Create a free account to like items and find them again later.'))
+        : likeItem;
 
     // Starts from the address as it is now, not as it was when this render
     // happened, so a delayed update never undoes a newer one. Any filter change
@@ -160,7 +178,8 @@ const MarketplacePage = () => {
             <AppNav />
             <SceneBackdrop />
             <main className="hs-page mk-page" ref={topRef}>
-                <h1 className="hs-visually-hidden">Marketplace</h1>
+                <h1 className="hs-visually-hidden">{t('Marketplace')}</h1>
+                {guest && <GuestStrip text={t('You’re browsing as a guest. Sign up to see who’s selling, read the details and message them.')} />}
 
                 <div className="mk-browse">
                     {/* ---- left: categories, condition, price ---- */}
@@ -172,12 +191,12 @@ const MarketplacePage = () => {
                             aria-controls="mk-side-form"
                             onClick={() => setFiltersOpen(open => !open)}
                         >
-                            Filters{sidebarCount ? ` (${sidebarCount})` : ''}
+                            {t('Filters')}{sidebarCount ? ` (${sidebarCount})` : ''}
                         </button>
-                        <form id="mk-side-form" className={`mk-side-form ${filtersOpen ? 'is-open' : ''}`} onSubmit={applyFilters} aria-label="Filters">
+                        <form id="mk-side-form" className={`mk-side-form ${filtersOpen ? 'is-open' : ''}`} onSubmit={applyFilters} aria-label={t('Filters')}>
                             <fieldset className="mk-side-group">
-                                <legend>Budget</legend>
-                                <label htmlFor="mk-max" className="mk-budget-label">Up to (€)</label>
+                                <legend>{t('Budget')}</legend>
+                                <label htmlFor="mk-max" className="mk-budget-label">{t('Up to (€)')}</label>
                                 <input
                                     id="mk-max"
                                     className="mk-budget-input"
@@ -190,37 +209,37 @@ const MarketplacePage = () => {
                             </fieldset>
 
                             <fieldset className="mk-side-group">
-                                <legend>Sort by</legend>
+                                <legend>{t('Sort by')}</legend>
                                 {Object.entries(SORTS).map(([value, label]) => (
                                     <label key={value} className="mk-check">
                                         <input type="radio" name="mk-sort" value={value} checked={draft.sort === value} onChange={() => setDraft(prev => ({ ...prev, sort: value }))} />
-                                        <span>{label}</span>
+                                        <span>{t(label)}</span>
                                     </label>
                                 ))}
                             </fieldset>
 
                             <fieldset className="mk-side-group">
-                                <legend>Categories</legend>
+                                <legend>{t('Categories')}</legend>
                                 {Object.entries(CATEGORIES).map(([value, label]) => (
                                     <label key={value} className="mk-check">
                                         <input type="checkbox" checked={draft.categories.includes(value)} onChange={() => toggleIn('categories', value)} />
-                                        <span>{label}</span>
+                                        <span>{t(label)}</span>
                                     </label>
                                 ))}
                             </fieldset>
 
                             <fieldset className="mk-side-group">
-                                <legend>Condition</legend>
+                                <legend>{t('Condition')}</legend>
                                 {Object.entries(CONDITIONS).map(([value, c]) => (
                                     <label key={value} className="mk-check">
                                         <input type="checkbox" checked={draft.conditions.includes(value)} onChange={() => toggleIn('conditions', value)} />
-                                        <span>{c.label}</span>
+                                        <span>{t(c.label)}</span>
                                     </label>
                                 ))}
                             </fieldset>
 
                             <div className="mk-side-actions">
-                                <button type="submit" className="hs-btn hs-btn--block" disabled={!changed}>Apply filters</button>
+                                <button type="submit" className="hs-btn hs-btn--block" disabled={!changed}>{t('Apply filters')}</button>
                                 {(sidebarCount > 0 || changed) && (
                                     <button
                                         type="button"
@@ -230,7 +249,7 @@ const MarketplacePage = () => {
                                             setFilters({ category: '', condition: '', min: '', max: '', sort: '' });
                                         }}
                                     >
-                                        Reset
+                                        {t('Reset')}
                                     </button>
                                 )}
                             </div>
@@ -238,14 +257,14 @@ const MarketplacePage = () => {
                     </aside>
 
                     {/* ---- right: search on top, then the items ---- */}
-                    <section className="mk-main" aria-label="Items for sale">
+                    <section className="mk-main" aria-label={t('Items for sale')}>
                         <div className="mk-search" role="search">
-                            <label htmlFor="mk-q" className="hs-visually-hidden">Search the marketplace</label>
+                            <label htmlFor="mk-q" className="hs-visually-hidden">{t('Search the marketplace')}</label>
                             <svg viewBox="0 0 24 24" aria-hidden="true" className="mk-search-icon"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>
                             <input
                                 id="mk-q"
                                 type="search"
-                                placeholder="Search books, bikes, furniture…"
+                                placeholder={t('Search books, bikes, furniture…')}
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
                             />
@@ -254,14 +273,14 @@ const MarketplacePage = () => {
                         <div className="hs-results-bar">
                             <p aria-live="polite">
                                 {loading
-                                    ? 'Loading…'
+                                    ? t('Loading…')
                                     : result.total === 0
-                                        ? 'No items'
+                                        ? t('No items')
                                         : result.pages > 1
-                                            ? `${from}–${to} of ${result.total} items`
-                                            : `${result.total} ${result.total === 1 ? 'item' : 'items'}`}
+                                            ? t('{from}–{to} of {total} items', { from, to, total: result.total })
+                                            : result.total === 1 ? t('1 item') : t('{n} items', { n: result.total })}
                                 {hasFilters && !loading && (
-                                    <button type="button" className="hs-link-btn" onClick={clearFilters}>Clear all</button>
+                                    <button type="button" className="hs-link-btn" onClick={clearFilters}>{t('Clear all')}</button>
                                 )}
                             </p>
                         </div>
@@ -272,28 +291,28 @@ const MarketplacePage = () => {
                             <div className="hs-empty mk-empty">
                                 {hasFilters ? (
                                     <>
-                                        <h2>Nothing matches yet</h2>
-                                        <p>Try another word, more categories or a bigger budget. New items are posted every day.</p>
-                                        <button type="button" className="hs-btn hs-btn--ghost" onClick={clearFilters}>Clear all</button>
+                                        <h2>{t('Nothing matches yet')}</h2>
+                                        <p>{t('Try another word, more categories or a bigger budget. New items are posted every day.')}</p>
+                                        <button type="button" className="hs-btn hs-btn--ghost" onClick={clearFilters}>{t('Clear all')}</button>
                                     </>
                                 ) : (
                                     <>
-                                        <h2>Nothing for sale yet</h2>
-                                        <p>Be the first: sell something you don’t need any more.</p>
-                                        <Link to="/marketplace/new" className="hs-btn">Sell an item</Link>
+                                        <h2>{t('Nothing for sale yet')}</h2>
+                                        <p>{t('Be the first: sell something you don’t need any more.')}</p>
+                                        <Link to="/marketplace/new" className="hs-btn">{t('Sell an item')}</Link>
                                     </>
                                 )}
                             </div>
                         )}
 
                         <div className={`mk-grid ${loading ? 'is-loading' : ''}`}>
-                            {result.items.map(item => <MarketCard key={item.id} item={item} search={search} />)}
+                            {result.items.map(item => <MarketCard key={item.id} item={item} search={search} onLike={onLike} />)}
                         </div>
 
                         {result.pages > 1 && (
-                            <nav className="mk-pager" aria-label="Pages">
+                            <nav className="mk-pager" aria-label={t('Pages')}>
                                 <button type="button" className="hs-btn hs-btn--ghost hs-btn--small" disabled={result.page <= 1} onClick={() => goToPage(result.page - 1)}>
-                                    Previous
+                                    {t('Previous')}
                                 </button>
                                 <ol>
                                     {pageList(result.page, result.pages).map((n, i) => (
@@ -305,7 +324,7 @@ const MarketplacePage = () => {
                                                         type="button"
                                                         className={n === result.page ? 'is-current' : ''}
                                                         aria-current={n === result.page ? 'page' : undefined}
-                                                        aria-label={`Page ${n}`}
+                                                        aria-label={t('Page {n}', { n })}
                                                         onClick={() => goToPage(n)}
                                                     >
                                                         {n}
@@ -315,7 +334,7 @@ const MarketplacePage = () => {
                                     ))}
                                 </ol>
                                 <button type="button" className="hs-btn hs-btn--ghost hs-btn--small" disabled={result.page >= result.pages} onClick={() => goToPage(result.page + 1)}>
-                                    Next
+                                    {t('Next')}
                                 </button>
                             </nav>
                         )}
@@ -323,7 +342,8 @@ const MarketplacePage = () => {
                 </div>
             </main>
 
-            {openId && <MarketItemModal id={openId} onClose={closeItem} />}
+            {openId && <MarketItemModal id={openId} onClose={closeItem} guest={guest} onLikeChange={applyLike} />}
+            {prompt && <SignUpPrompt reason={prompt} onClose={() => setPrompt('')} />}
         </div>
     );
 };

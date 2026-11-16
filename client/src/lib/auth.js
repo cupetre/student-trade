@@ -40,6 +40,8 @@ export function isLoggedIn() {
 
 export function logout() {
     try { localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
+    // the live connection and the unread badge belong to the account that just left
+    window.dispatchEvent(new Event('anchor:logout'));
 }
 
 // Every call to the API goes through window.fetch, so this one wrapper:

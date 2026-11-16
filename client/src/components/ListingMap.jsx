@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { TILE_URL, TILE_ATTRIBUTION } from '../lib/mapConfig';
+import { useT } from '../lib/i18n';
 import './LocationPicker.css';
 
 const pinIcon = L.divIcon({
@@ -21,6 +22,7 @@ const AREA_RADIUS_M = 300;
   (who gets exact_location from the server) sees their own pin.
 */
 const ListingMap = ({ location, exactLocation }) => {
+    const t = useT();
     const mapEl = useRef(null);
 
     useEffect(() => {
@@ -51,7 +53,7 @@ const ListingMap = ({ location, exactLocation }) => {
         return () => { observer.disconnect(); map.remove(); };
     }, [location, exactLocation]);
 
-    return <div ref={mapEl} className="hs-listing-map" role="region" aria-label="Map of the area" />;
+    return <div ref={mapEl} className="hs-listing-map" role="region" aria-label={t('Map of the area')} />;
 };
 
 export default ListingMap;

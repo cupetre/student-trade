@@ -29,38 +29,63 @@ function escapeHtml(value) {
         .replace(/"/g, '&quot;');
 }
 
-async function sendVerificationEmail({ email, fullname, token, role = 'student' }) {
-    const whatToConfirm = role === 'student' ? 'your university email' : 'your email address';
+// The email is written in the language the person used on the sign-up page
+// (Sidro in Slovenian, Anchor in English), like the password-reset email.
+const EMAIL_COPY = {
+    sl: {
+        brand: 'Sidro',
+        subject: 'Potrdite svoj račun Sidro',
+        hi: (name) => `Pozdravljeni, ${name}`,
+        fallbackName: 'pozdravljeni',
+        body: (student) => `Dobrodošli v Sidru! Potrdite ${student ? 'svoj univerzitetni e-naslov' : 'svoj e-naslov'}, da aktivirate račun.`,
+        button: 'Potrdi e-naslov',
+        paste: 'Ali to povezavo prilepite v brskalnik:',
+        expires: `Povezava velja ${TOKEN_TTL_HOURS} ur. Če računa niste ustvarili vi, to sporočilo prezrite.`,
+    },
+    en: {
+        brand: 'Anchor',
+        subject: 'Confirm your Anchor account',
+        hi: (name) => `Hi ${name}`,
+        fallbackName: 'there',
+        body: (student) => `Welcome to Anchor! Confirm ${student ? 'your university email' : 'your email address'} to activate your account.`,
+        button: 'Confirm my email',
+        paste: 'Or paste this link into your browser:',
+        expires: `This link expires in ${TOKEN_TTL_HOURS} hours. If you didn't create an account, you can ignore this email.`,
+    },
+};
+
+async function sendVerificationEmail({ email, fullname, token, role = 'student', lang = 'en' }) {
+    const c = EMAIL_COPY[lang] || EMAIL_COPY.en;
     const appUrl = (process.env.APP_URL || 'http://localhost:3131').replace(/\/+$/, '');
     const link = `${appUrl}/verify-email?token=${token}`;
-    const firstName = (fullname || '').trim().split(/\s+/)[0] || 'there';
-
-    const subject = 'Confirm your Anchor account';
+    const firstName = (fullname || '').trim().split(/\s+/)[0];
+    const hi = firstName ? c.hi(firstName) : c.hi(c.fallbackName);
+    const body = c.body(role === 'student');
 
     const text =
-`Hi ${firstName},
+`${hi},
 
-Welcome to Anchor! Confirm ${whatToConfirm} to activate your account:
+${body}
 
 ${link}
 
-This link expires in ${TOKEN_TTL_HOURS} hours. If you didn't create an account, you can ignore this email.
+${c.expires}
 
-Anchor`;
+${c.brand}`;
 
     const html = `
 <div style="font-family: Arial, Helvetica, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1f2937;">
-  <h2 style="color: #1B2A41; margin: 0 0 16px;">Anchor</h2>
-  <p>Hi ${escapeHtml(firstName)},</p>
-  <p>Welcome to Anchor! Confirm ${whatToConfirm} to activate your account.</p>
+  <h2 style="color: #1B2A41; margin: 0 0 16px;">${c.brand}</h2>
+  <p>${escapeHtml(hi)},</p>
+  <p>${body}</p>
   <p style="margin: 28px 0;">
-    <a href="${link}" style="background: #3C6E91; color: #ffffff; padding: 12px 22px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Confirm my email</a>
+    <a href="${link}" style="background: #3C6E91; color: #ffffff; padding: 12px 22px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">${c.button}</a>
   </p>
-  <p style="font-size: 13px; color: #6b7280;">Or paste this link into your browser:<br><a href="${link}" style="color: #3C6E91; word-break: break-all;">${link}</a></p>
-  <p style="font-size: 13px; color: #6b7280;">This link expires in ${TOKEN_TTL_HOURS} hours. If you didn't create an account, you can ignore this email.</p>
+  <p style="font-size: 13px; color: #6b7280;">${c.paste}<br><a href="${link}" style="color: #3C6E91; word-break: break-all;">${link}</a></p>
+  <p style="font-size: 13px; color: #6b7280;">${c.expires}</p>
 </div>`;
 
-    return sendEmail({ to: email, subject, html, text });
+    return sendEmail({ to: email, subject: c.subject, html, text });
 }
 
 module.exports = {

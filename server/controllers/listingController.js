@@ -6,15 +6,18 @@ const {
     findListing,
     findListingBasics,
     removeListing,
+    saveItem,
+    unsaveItem,
+    listSavedItems,
 } = require('../models/listingModels.js');
 const { listReviewsAbout, ratingSummary } = require('../models/reviewModels.js');
 const { openChat, addChatTopic } = require('../models/messageModels.js');
 const { sendChatMessage, userRoom } = require('../services/messageService');
 const { toId } = require('../lib/parse');
-const { toListingDto, toSellerDto, toReviewDto } = require('../lib/dto');
+const { toListingDto, toGuestItemDto, toSellerDto, toReviewDto } = require('../lib/dto');
 const { ageFrom } = require('../lib/profileValidation');
 const { locationFields } = require('../lib/location');
-const { readItem, readBrowseQuery, itemMessage, PAGE_SIZE, MAX_MESSAGE } = require('../lib/marketOptions');
+const { readItem, readBrowseQuery, itemMessage, STATUSES, PAGE_SIZE, MAX_MESSAGE } = require('../lib/marketOptions');
 
 // The columns an item form writes. `previous` keeps the public point when the pin didn't move.
 function itemData(value, previous) {
@@ -76,9 +79,11 @@ async function uploadListing(req, res) {
     }
 }
 
-// The Prisma query for the browse filters (exported for tests)
+// The Prisma query for the browse filters (exported for tests).
+// Only items still for sale; with a viewer, not their own items.
 function buildBrowse(filters, viewerId) {
-    const where = { owner_id: { not: viewerId } };
+    const where = { status: 'available' };
+    if (viewerId) where.owner_id = { not: viewerId };
     if (filters.search) {
         where.OR = [
             { title: { contains: filters.search, mode: 'insensitive' } },
@@ -108,7 +113,7 @@ function buildBrowse(filters, viewerId) {
 async function showListings(req, res) {
     const filters = readBrowseQuery(req.query);
     try {
-        const { items, total } = await searchListings(buildBrowse(filters, req.user.id));
+        const { items, total } = await searchListings({ ...buildBrowse(filters, req.user.id), viewerId: req.user.id });
         res.json({
             items: items.map(item => toListingDto(item)),
             total,
@@ -138,7 +143,7 @@ async function showListing(req, res) {
     if (!id) return res.status(400).json({ error: 'Invalid listing' });
 
     try {
-        const listing = await findListing(id);
+        const listing = await findListing(id, req.user.id);
         if (!listing) return res.status(404).json({ error: 'This item is no longer available.' });
 
         const [reviews, rating] = await Promise.all([
@@ -169,6 +174,8 @@ async function contactSeller(req, res) {
         const item = await findListingBasics(id);
         if (!item) return res.status(404).json({ error: 'This item is no longer available.' });
         if (item.owner_id === req.user.id) return res.status(400).json({ error: 'This is your own item' });
+        // a sold item can't start new first messages; the chat itself still opens
+        if (item.status === 'sold' && text) return res.status(400).json({ error: 'This item has been sold.' });
 
         const chatId = await openChat({ user1_id: req.user.id, user2_id: item.owner_id });
         await addChatTopic({ chat_id: chatId, market_item_id: item.id, started_by: req.user.id });
@@ -182,6 +189,102 @@ async function contactSeller(req, res) {
     } catch (err) {
         req.log.error({ err, listingId: id }, 'failed to contact seller');
         res.status(500).json({ error: 'Could not open the chat. Please try again.' });
+    }
+}
+
+// PATCH /api/listings/item/:listingId/status { status: 'sold' | 'available' }
+// The seller marks an item sold (it leaves the browse page) or puts it back.
+async function changeItemStatus(req, res) {
+    const id = toId(req.params.listingId);
+    if (!id) return res.status(400).json({ error: 'Invalid listing' });
+    const status = req.body?.status;
+    if (!STATUSES.includes(status)) return res.status(400).json({ error: 'Choose "sold" or "available".' });
+
+    try {
+        const result = await updateListing({
+            id,
+            owner_id: req.user.id,
+            data: { status, sold_at: status === 'sold' ? new Date() : null },
+        });
+        if (result.count === 0) return res.status(404).json({ error: 'Listing not found' });
+        req.log.info({ listingId: id, status }, 'listing status changed');
+        res.json({ message: status === 'sold' ? 'Marked as sold' : 'Back on the marketplace', status });
+    } catch (err) {
+        req.log.error({ err, listingId: id }, 'failed to change listing status');
+        res.status(500).json({ error: 'Failed to update listing' });
+    }
+}
+
+// POST / DELETE /api/listings/item/:listingId/save: like an item, or take the like back
+async function likeItem(req, res) {
+    const id = toId(req.params.listingId);
+    if (!id) return res.status(400).json({ error: 'Invalid listing' });
+    try {
+        const item = await findListingBasics(id);
+        if (!item) return res.status(404).json({ error: 'This item is no longer available.' });
+        if (item.owner_id === req.user.id) return res.status(400).json({ error: 'This is your own item' });
+        await saveItem(req.user.id, id);
+        res.json({ is_saved: true });
+    } catch (err) {
+        req.log.error({ err, listingId: id }, 'failed to like item');
+        res.status(500).json({ error: 'Could not save this item. Please try again.' });
+    }
+}
+
+async function unlikeItem(req, res) {
+    const id = toId(req.params.listingId);
+    if (!id) return res.status(400).json({ error: 'Invalid listing' });
+    try {
+        await unsaveItem(req.user.id, id);
+        res.json({ is_saved: false });
+    } catch (err) {
+        req.log.error({ err, listingId: id }, 'failed to unlike item');
+        res.status(500).json({ error: 'Could not save this item. Please try again.' });
+    }
+}
+
+// GET /api/listings/saved: the items I liked
+async function showSavedItems(req, res) {
+    try {
+        const items = await listSavedItems(req.user.id);
+        res.json(items.map(item => toListingDto(item)));
+    } catch (err) {
+        req.log.error({ err }, 'failed to load liked items');
+        res.status(500).json({ error: 'Failed to load listings' });
+    }
+}
+
+// ---------- visitors without an account (see /api/public) ----------
+
+// GET /api/public/market?...: the same filters as the browse page, trimmed items
+async function showListingsPublic(req, res) {
+    const filters = readBrowseQuery(req.query);
+    try {
+        const { items, total } = await searchListings(buildBrowse(filters, null));
+        res.json({
+            items: items.map(toGuestItemDto),
+            total,
+            page: filters.page,
+            pages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+            page_size: PAGE_SIZE,
+        });
+    } catch (err) {
+        req.log.error({ err }, 'failed to load public listings');
+        res.status(500).json({ error: 'Failed to load listings' });
+    }
+}
+
+// GET /api/public/market/:listingId: one item without the seller, the description or the map
+async function showListingPublic(req, res) {
+    const id = toId(req.params.listingId);
+    if (!id) return res.status(400).json({ error: 'Invalid listing' });
+    try {
+        const listing = await findListing(id, null);
+        if (!listing) return res.status(404).json({ error: 'This item is no longer available.' });
+        res.json(toGuestItemDto(listing));
+    } catch (err) {
+        req.log.error({ err, listingId: id }, 'failed to load public listing');
+        res.status(500).json({ error: 'Failed to load this item' });
     }
 }
 
@@ -210,6 +313,12 @@ module.exports = {
     showListing,
     contactSeller,
     deleteListing,
+    changeItemStatus,
+    likeItem,
+    unlikeItem,
+    showSavedItems,
+    showListingsPublic,
+    showListingPublic,
     // exported for tests
     buildBrowse,
 };

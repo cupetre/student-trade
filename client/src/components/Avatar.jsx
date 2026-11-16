@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../lib/i18n';
 import './Avatar.css';
 
 // Shows the user's photo when there is one, otherwise a colored circle
@@ -29,12 +30,13 @@ function isUsableSrc(src) {
 }
 
 const Avatar = ({ src, name, size = 40, className = '' }) => {
+    const t = useT();
     // Remember which URL failed to load, so a new src gets a fresh try
     const [failedSrc, setFailedSrc] = useState(null);
 
     const showImage = isUsableSrc(src) && failedSrc !== src;
     const dimensions = { width: size, height: size };
-    const label = name || 'User';
+    const label = name || t('User');
 
     if (showImage) {
         return (

@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { apiRequest } from '../lib/api';
 import { TILE_URL, TILE_ATTRIBUTION, SLOVENIA_VIEW, SLOVENIA_BOUNDS, cityCentre } from '../lib/mapConfig';
+import { useT } from '../lib/i18n';
 import './LocationPicker.css';
 
 // Our own pin (Leaflet's default marker images don't survive the Vite build)
@@ -27,11 +28,15 @@ const JUMP = { animate: false };
   The parent can call ref.findIfEmpty() when the address fields lose focus.
 */
 const LocationPicker = forwardRef(({ street, city, postalCode, value, onChange, error }, ref) => {
+    // The status line is kept as its English text and translated where it is shown
+    const t = useT();
     const mapEl = useRef(null);
     const mapRef = useRef(null);
     const markerRef = useRef(null);
     const onChangeRef = useRef(onChange);
     useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+    const tRef = useRef(t); // the map is set up once; this keeps its texts in the current language
+    useEffect(() => { tRef.current = t; }, [t]);
 
     const [status, setStatus] = useState({ tone: '', text: '' });
     const [finding, setFinding] = useState(false);
@@ -78,7 +83,7 @@ const LocationPicker = forwardRef(({ street, city, postalCode, value, onChange, 
         }
         const position = [value.latitude, value.longitude];
         if (!markerRef.current) {
-            markerRef.current = L.marker(position, { icon: pinIcon, draggable: true, keyboard: false, title: 'Drag to move the pin' }).addTo(map);
+            markerRef.current = L.marker(position, { icon: pinIcon, draggable: true, keyboard: false, title: tRef.current('Drag to move the pin') }).addTo(map);
             markerRef.current.on('dragend', () => {
                 const p = markerRef.current.getLatLng();
                 place(p.lat, p.lng, 'pin');
@@ -124,30 +129,30 @@ const LocationPicker = forwardRef(({ street, city, postalCode, value, onChange, 
 
     return (
         <div className={`loc ${error ? 'has-error' : ''}`} role="group" aria-labelledby="loc-title" aria-describedby="loc-hint">
-            <p className="loc-title" id="loc-title">Where is it on the map? <span className="hs-optional">(recommended)</span></p>
+            <p className="loc-title" id="loc-title">{t('Where is it on the map?')} <span className="hs-optional">{t('(recommended)')}</span></p>
             <p className="hs-hint" id="loc-hint">
-                Students see an area of about 200 m around the pin, not the exact building. The street is shown on the listing as before.
+                {t('Students see an area of about 200 m around the pin, not the exact building. The street is shown on the listing as before.')}
             </p>
 
             <div className="loc-actions">
                 <button type="button" className="hs-btn hs-btn--small" onClick={() => find()} disabled={!canFind || finding}>
-                    {finding ? 'Looking…' : value ? 'Find the address again' : 'Find the address on the map'}
+                    {finding ? t('Looking…') : value ? t('Find the address again') : t('Find the address on the map')}
                 </button>
-                <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" onClick={pinCentre}>Pin the middle of the map</button>
+                <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" onClick={pinCentre}>{t('Pin the middle of the map')}</button>
                 {value && (
                     <button type="button" className="hs-link-btn" onClick={() => { onChangeRef.current(null); setStatus({ tone: '', text: 'Pin removed.' }); }}>
-                        Remove pin
+                        {t('Remove pin')}
                     </button>
                 )}
             </div>
-            {!canFind && !value && <p className="hs-hint loc-note">Fill in the street and city above, then find it on the map, or click the map yourself.</p>}
+            {!canFind && !value && <p className="hs-hint loc-note">{t('Fill in the street and city above, then find it on the map, or click the map yourself.')}</p>}
 
-            <div className="loc-map" ref={mapEl} aria-label="Map. Use the arrow keys to move it, + and − to zoom." />
+            <div className="loc-map" ref={mapEl} aria-label={t('Map. Use the arrow keys to move it, + and − to zoom.')} />
 
             <p className={`loc-status loc-status--${status.tone || 'plain'}`} role="status">
-                {status.text || (value
-                    ? 'Drag the pin to the right building, or click the map to move it.'
-                    : 'No pin yet. If you skip this, we place it from the address when you save.')}
+                {status.text ? t(status.text) : (value
+                    ? t('Drag the pin to the right building, or click the map to move it.')
+                    : t('No pin yet. If you skip this, we place it from the address when you save.'))}
             </p>
             {error && <p className="hs-field-error" role="alert">{error}</p>}
         </div>

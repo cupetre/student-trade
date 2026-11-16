@@ -89,8 +89,67 @@ test('a chat lists what it is about: items and listings, gone ones dropped', () 
     };
     const summary = toChatSummary(chat, 1);
     assert.equal(summary.topics.length, 2);
-    assert.deepEqual(summary.topics[0], { kind: 'market', id: 7, title: 'Desk chair', price: 15, photo: 'a.jpg', city: 'Koper', owner_id: 2, since: chat.topics[0].created_at });
+    assert.deepEqual(summary.topics[0], { kind: 'market', id: 7, title: 'Desk chair', price: 15, photo: 'a.jpg', city: 'Koper', owner_id: 2, since: chat.topics[0].created_at, status: 'available' });
     assert.equal(summary.topics[1].kind, 'housing');
     assert.equal(summary.topics[1].photo, 'r.jpg');
     assert.equal(summary.topics[1].price, 320);
+});
+
+test('browse only shows items still for sale; guests see everyone, members not their own', () => {
+    const member = buildBrowse(readBrowseQuery({}), 5);
+    assert.equal(member.where.status, 'available');
+    assert.deepEqual(member.where.owner_id, { not: 5 });
+    const guest = buildBrowse(readBrowseQuery({}), null);
+    assert.equal(guest.where.status, 'available');
+    assert.equal(guest.where.owner_id, undefined);
+});
+
+test('liked and sold show on an item; old rows without a status count as available', () => {
+    const base = { id: 1, owner_id: 2, title: 'Lamp', price: '4.00' };
+    assert.equal(toListingDto({ ...base, savedBy: [{ user_id: 5 }] }).is_saved, true);
+    assert.equal(toListingDto({ ...base, savedBy: [] }).is_saved, false);
+    assert.equal(toListingDto(base).status, 'available');
+    assert.equal(toListingDto({ ...base, status: 'sold' }).status, 'sold');
+    assert.equal('savedBy' in toListingDto({ ...base, savedBy: [] }), false, 'the raw rows are not sent');
+});
+
+test('visitors without an account get items without people, text or a map', () => {
+    const { toGuestItemDto } = require('../lib/dto');
+    const dto = toGuestItemDto({
+        id: 1, owner_id: 2, title: 'Lamp', price: '4.00', photo: 'l.jpg', category: 'home', condition: 'good', city: 'Koper',
+        date: new Date(), description: 'Call me', pickup_area: 'Dorm 3', latitude: 45.5, longitude: 13.7, public_latitude: 45.51, public_longitude: 13.71,
+        owner: { id: 2, fullname: 'Žiga Kranjc', profile_picture: 'z.jpg' },
+    });
+    assert.equal(dto.price, 4);
+    assert.equal(dto.guest, true);
+    for (const hidden of ['owner_id', 'owner', 'owner_name', 'description', 'pickup_area', 'latitude', 'longitude', 'location', 'exact_location']) {
+        assert.equal(hidden in dto, false, `${hidden} stays private`);
+    }
+});
+
+test('visitors without an account get places without the owner, the description or the street', () => {
+    const { toGuestHousingDto } = require('../lib/dto');
+    const dto = toGuestHousingDto({
+        id: 3, owner_id: 9, title: 'Room near FAMNIT', description: 'Ring the second bell', street: 'Glagoljaška 8', postal_code: '6000',
+        city: 'Koper', neighbourhood: 'Center', rent_per_person: '320.00', deposit: '320.00', utilities_estimate: null,
+        latitude: 45.5481, longitude: 13.7302, public_latitude: 45.549, public_longitude: 13.731, location_source: 'pin',
+        video_tour_url: 'https://example.com/v', languages: ['sl'], amenities: ['wifi'], status: 'active',
+        photos: [{ id: 1, url: 'r.jpg', position: 0, listing_id: 3 }],
+        owner: { id: 9, fullname: 'Marko Novak', profile_picture: 'm.jpg', role: 'landlord', landlord_status: 'approved' },
+        savedBy: [],
+    });
+    assert.equal(dto.rent_per_person, 320);
+    assert.deepEqual(dto.owner, { verified_landlord: true, is_student: false }, 'only whether the owner is checked');
+    assert.deepEqual(dto.location, { latitude: 45.549, longitude: 13.731, approximate: true }, 'the moved point, never the pin');
+    assert.deepEqual(dto.amenities, ['wifi']);
+    for (const hidden of ['owner_id', 'description', 'street', 'postal_code', 'latitude', 'longitude', 'video_tour_url', 'exact_location', 'languages']) {
+        assert.equal(hidden in dto, false, `${hidden} stays private`);
+    }
+});
+
+test('a chat in the list says how many messages are unread', () => {
+    const { toChatSummary } = require('../lib/dto');
+    const chat = { id: 4, user1_id: 1, user2_id: 2, date: new Date(), user1: { id: 1 }, user2: { id: 2, fullname: 'Žiga' }, messages: [], topics: [] };
+    assert.equal(toChatSummary(chat, 1, 3).unread, 3);
+    assert.equal(toChatSummary(chat, 1).unread, 0);
 });

@@ -12,6 +12,27 @@
   --page-max: 1480px;
   --page-pad: 20px;
 
+  /* Nordic Stone: the only place colours are written as hex codes. The names
+     used inside each area (--hs-*, --an-*, --lp-*, --auth-*, --pn-*) point here. */
+  --c-ink: #1B2A41;            /* text, dark bands */
+  --c-cream: #FAF7F0;          /* page background */
+  --c-paper: #FFFFFF;          /* cards */
+  --c-stone: #DDD4C5;          /* lines, quiet surfaces */
+  --c-stone-soft: #EEE8DD;     /* notices, dividers */
+  --c-blue: #3C6E91;           /* main buttons, links */
+  --c-blue-dark: #2F5875;
+  --c-blue-light: #D5E3EC;     /* chips, selected rows */
+  --c-muted: #5D6470;
+  --c-attention: #C2305A;      /* raspberry: selected nav, focus, sign up */
+  --c-attention-dark: #A82650;
+  --c-attention-soft: #F6E3E9;
+
+  /* One corner scale for the app: photos and listing/item pages, then cards,
+     panels, buttons and fields, then pop-up windows. */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;

@@ -6,11 +6,13 @@ import { Stars } from '../../components/Stars.jsx';
 import { apiRequest } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
 import { TENANCY_STATUS } from '../../lib/housingOptions';
+import { useT } from '../../lib/i18n';
 
 
 // Owner's view of who lives at one listing. Adding a tenant needs the
 // tenant to confirm; after that both sides can review each other.
 const TenantsPanel = ({ listing }) => {
+    const t = useT();
     const [tenants, setTenants] = useState([]);
     const [candidates, setCandidates] = useState([]);
     const [selected, setSelected] = useState('');
@@ -21,13 +23,13 @@ const TenantsPanel = ({ listing }) => {
     const [busy, setBusy] = useState(false);
 
     const load = useCallback(async () => {
-        const [t, c] = await Promise.all([
+        const [list, c] = await Promise.all([
             apiRequest(`/api/housing/listings/${listing.id}/tenants`),
             apiRequest(`/api/housing/listings/${listing.id}/tenant-candidates`),
         ]);
         setLoading(false);
-        if (!t.ok) { setError(t.data.error); return; }
-        setTenants(t.data);
+        if (!list.ok) { setError(list.data.error); return; }
+        setTenants(list.data);
         setCandidates(c.ok ? c.data : []);
     }, [listing.id]);
 
@@ -59,54 +61,54 @@ const TenantsPanel = ({ listing }) => {
         const { ok, data } = await apiRequest(`/api/housing/tenancies/${tenancy.id}/review`, { method: 'POST', body: input });
         if (!ok) return { ok, error: data.error };
         setReviewingId(null);
-        setNotice('Review saved.');
+        setNotice(t('Review saved.'));
         load();
         return { ok };
     };
 
     return (
         <div className="hs-tenants">
-            <h3>Tenants</h3>
-            <p className="hs-hint">Add the people who live here. Once they confirm, you can review each other: tenants review you and the place, you review them.</p>
+            <h3>{t('Tenants')}</h3>
+            <p className="hs-hint">{t('Add the people who live here. Once they confirm, you can review each other: tenants review you and the place, you review them.')}</p>
 
             {error && <div className="hs-alert hs-alert--error" role="alert">{error}</div>}
             {notice && <div className="hs-alert hs-alert--success" role="status">{notice}</div>}
-            {loading && <p className="hs-muted">Loading…</p>}
+            {loading && <p className="hs-muted">{t('Loading…')}</p>}
 
             {tenants.length > 0 && (
                 <ul className="hs-tenant-list">
-                    {tenants.map(t => {
-                        const status = TENANCY_STATUS[t.status] || { label: t.status, tone: 'muted' };
+                    {tenants.map(tenant => {
+                        const status = TENANCY_STATUS[tenant.status] || { label: tenant.status, tone: 'muted' };
                         return (
-                            <li key={t.id}>
+                            <li key={tenant.id}>
                                 <div className="hs-tenant-row">
-                                    <Link to={`/users/${t.student.id}`} className="hs-tenant-person">
-                                        <Avatar src={resolveMediaUrl(t.student.profile_picture)} name={t.student.fullname} size={34} />
-                                        <strong>{t.student.fullname}</strong>
+                                    <Link to={`/users/${tenant.student.id}`} className="hs-tenant-person">
+                                        <Avatar src={resolveMediaUrl(tenant.student.profile_picture)} name={tenant.student.fullname} size={34} />
+                                        <strong>{tenant.student.fullname}</strong>
                                     </Link>
-                                    <span className={`hs-status hs-status--${status.tone}`}>{status.label}</span>
-                                    {t.my_review && <span className="hs-tenant-myreview"><Stars value={t.my_review.rating} size={13} /> your review</span>}
+                                    <span className={`hs-status hs-status--${status.tone}`}>{t(status.label)}</span>
+                                    {tenant.my_review && <span className="hs-tenant-myreview"><Stars value={tenant.my_review.rating} size={13} /> {t('your review')}</span>}
                                     <div className="hs-tenant-actions">
-                                        {t.can_review && (
-                                            <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" onClick={() => setReviewingId(reviewingId === t.id ? null : t.id)}>
-                                                {t.my_review ? 'Edit review' : 'Review tenant'}
+                                        {tenant.can_review && (
+                                            <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" onClick={() => setReviewingId(reviewingId === tenant.id ? null : tenant.id)}>
+                                                {tenant.my_review ? t('Edit review') : t('Review tenant')}
                                             </button>
                                         )}
-                                        {t.status === 'confirmed' && (
-                                            <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" disabled={busy} onClick={() => change(t, 'end')}>Moved out</button>
+                                        {tenant.status === 'confirmed' && (
+                                            <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" disabled={busy} onClick={() => change(tenant, 'end')}>{t('Moved out')}</button>
                                         )}
-                                        {(t.status === 'pending' || t.status === 'declined') && (
-                                            <button type="button" className="hs-btn hs-btn--small hs-btn--text" disabled={busy} onClick={() => change(t, 'cancel')}>Remove</button>
+                                        {(tenant.status === 'pending' || tenant.status === 'declined') && (
+                                            <button type="button" className="hs-btn hs-btn--small hs-btn--text" disabled={busy} onClick={() => change(tenant, 'cancel')}>{t('Remove')}</button>
                                         )}
                                     </div>
                                 </div>
-                                {reviewingId === t.id && (
+                                {reviewingId === tenant.id && (
                                     <ReviewForm
-                                        initial={t.my_review}
-                                        prompt={`How was ${t.student.fullname.split(' ')[0]} as a tenant?`}
-                                        placeholder="Paid on time? Took care of the place? Easy to live with?"
+                                        initial={tenant.my_review}
+                                        prompt={t('How was {name} as a tenant?', { name: tenant.student.fullname.split(' ')[0] })}
+                                        placeholder={t('Paid on time? Took care of the place? Easy to live with?')}
                                         onCancel={() => setReviewingId(null)}
-                                        onSubmit={(input) => review(t, input)}
+                                        onSubmit={(input) => review(tenant, input)}
                                     />
                                 )}
                             </li>
@@ -118,17 +120,17 @@ const TenantsPanel = ({ listing }) => {
             <div className="hs-tenant-add">
                 {candidates.length > 0 ? (
                     <>
-                        <label htmlFor={`tenant-${listing.id}`} className="hs-label">Add a tenant</label>
+                        <label htmlFor={`tenant-${listing.id}`} className="hs-label">{t('Add a tenant')}</label>
                         <div className="hs-tenant-add-row">
                             <select id={`tenant-${listing.id}`} value={selected} onChange={(e) => setSelected(e.target.value)}>
-                                <option value="">Choose someone you’ve talked to…</option>
+                                <option value="">{t('Choose someone you’ve talked to…')}</option>
                                 {candidates.map(p => <option key={p.id} value={p.id}>{p.fullname}</option>)}
                             </select>
-                            <button type="button" className="hs-btn hs-btn--small" disabled={!selected || busy} onClick={addTenant}>Add</button>
+                            <button type="button" className="hs-btn hs-btn--small" disabled={!selected || busy} onClick={addTenant}>{t('Add')}</button>
                         </div>
                     </>
                 ) : !loading && (
-                    <p className="hs-hint">People appear here once you’ve chatted with them on Anchor.</p>
+                    <p className="hs-hint">{t('People appear here once you’ve chatted with them on Anchor.')}</p>
                 )}
             </div>
         </div>

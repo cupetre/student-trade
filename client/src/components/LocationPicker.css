@@ -4,7 +4,7 @@
     margin-top: 6px;
     padding: 16px;
     border: 1px solid var(--hs-border, #DDD4C5);
-    border-radius: 14px;
+    border-radius: var(--radius);
     background: var(--hs-bg, #FAF7F0);
 }
 .loc.has-error { border-color: #b42318; }
@@ -16,7 +16,7 @@
 
 .loc-map {
     height: 320px;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     border: 1px solid var(--hs-border, #DDD4C5);
     overflow: hidden;
     background: #EEEAE2;

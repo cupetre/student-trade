@@ -69,7 +69,7 @@
 .mk-area-map {
     height: 280px;
     border: 1px solid var(--hs-border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
     background: #EEEAE2;
     z-index: 0;
@@ -112,7 +112,7 @@
     padding: 16px;
     background: #fff;
     border: 1px solid var(--hs-border);
-    border-radius: 6px;
+    border-radius: var(--radius);
 }
 .mk-side-group { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .mk-side-group legend { padding: 0; margin-bottom: 8px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--hs-muted); }
@@ -123,7 +123,7 @@
     min-height: 34px;
     padding: 2px 6px;
     margin: 0 -6px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.95rem;
     cursor: pointer;
 }
@@ -140,7 +140,7 @@
     height: 40px;
     padding: 0 12px;
     border: 1px solid var(--hs-border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     background: #fff;
     color: var(--hs-text);
     font: inherit;
@@ -160,7 +160,7 @@
     min-height: 50px;
     padding: 10px 14px 10px 44px;
     border: 1px solid var(--hs-border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     background: #fff;
     color: var(--hs-text);
     font-size: 1rem;
@@ -178,14 +178,14 @@
 @media (max-width: 1360px) { .mk-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 1120px) { .mk-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-.mk-empty { background: rgba(255, 255, 255, 0.85); border-radius: 6px; }
+.mk-empty { background: rgba(255, 255, 255, 0.85); border-radius: var(--radius); }
 
 /* ---------- card: title | price, photo, seller (same order as the item window) ---------- */
 
 .mk-card {
     background: #fff;
     border: 1px solid var(--hs-border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     overflow: hidden;
     transition: box-shadow 0.15s, border-color 0.15s;
 }
@@ -243,7 +243,7 @@
     height: 40px;
     padding: 0 8px;
     border: 1px solid var(--hs-border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     background: #fff;
     color: var(--hs-text);
     font: inherit;
@@ -277,7 +277,7 @@
     background: #FAF7F0; /* the app's beige page colour */
     color: var(--hs-text, #1B2A41);
     border: 1px solid #DDD4C5;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 2px 6px rgba(27, 42, 65, 0.12), 0 24px 70px rgba(27, 42, 65, 0.38);
     animation: mk-rise 200ms ease-out;
     text-align: left;
@@ -328,7 +328,7 @@
     height: min(460px, 52vh); /* kept compact so the details show without much scrolling */
     background: #EEEAE2;
     border: 1px solid #E6DFD3;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
 }
 .mk-modal-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -346,7 +346,7 @@
     margin: 0 0 12px;
     background: #fff;
     border: 1px solid #E6DFD3;
-    border-radius: 6px;
+    border-radius: var(--radius);
 }
 .mk-facts > div { padding: 12px 14px; border-left: 1px solid #EEE8DD; }
 .mk-facts > div:first-child { border-left: 0; }
@@ -355,7 +355,7 @@
 .mk-facts dd small { font-weight: 400; font-size: 0.8rem; color: var(--hs-muted); }
 
 /* seller (in the left column) */
-.mk-seller { padding: 16px; background: #fff; border: 1px solid #E6DFD3; border-radius: 6px; }
+.mk-seller { padding: 16px; background: #fff; border: 1px solid #E6DFD3; border-radius: var(--radius); }
 .mk-seller-heading { margin: 0 0 12px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--hs-muted); }
 .mk-seller-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid #EEE8DD; }
 .mk-seller-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -375,11 +375,11 @@
     gap: 10px;
     padding: 16px;
     border: 1px solid #E6DFD3;
-    border-radius: 6px;
+    border-radius: var(--radius);
     background: #fff;
 }
 .mk-contact h3 { margin: 0; font-size: 1.05rem; font-weight: 600; }
-.mk-contact-pref { margin: 0; padding: 10px 12px; border-radius: 4px; background: var(--hs-brand-soft); color: var(--hs-brand-dark); font-size: 0.86rem; line-height: 1.45; }
+.mk-contact-pref { margin: 0; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--hs-brand-soft); color: var(--hs-brand-dark); font-size: 0.86rem; line-height: 1.45; }
 .mk-contact-pref strong { font-weight: 600; }
 .mk-contact textarea {
     width: 100%;
@@ -387,18 +387,18 @@
     min-height: 110px;
     padding: 10px 12px;
     border: 1px solid var(--hs-border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     background: #FAF7F0;
     color: var(--hs-text);
     line-height: 1.45;
     resize: vertical;
 }
 .mk-contact textarea:focus { outline: none; border-color: var(--hs-brand); background: #fff; box-shadow: 0 0 0 3px rgba(60, 110, 145, 0.18); }
-.mk-contact-sent { padding: 12px; border-radius: 4px; background: var(--hs-good-bg); color: var(--hs-good); font-size: 0.92rem; }
+.mk-contact-sent { padding: 12px; border-radius: var(--radius-sm); background: var(--hs-good-bg); color: var(--hs-good); font-size: 0.92rem; }
 .mk-contact-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .mk-contact .hs-hint, .mk-contact .hs-alert { margin: 0; }
 
-.mk-map-card { padding: 14px; background: #fff; border: 1px solid #E6DFD3; border-radius: 6px; }
+.mk-map-card { padding: 14px; background: #fff; border: 1px solid #E6DFD3; border-radius: var(--radius-sm); }
 .mk-map-card h3 { margin: 0 0 4px; font-size: 1rem; font-weight: 600; }
 .mk-map-place { display: flex; align-items: center; gap: 5px; margin: 0 0 10px; font-size: 0.9rem; color: var(--hs-muted); }
 .mk-modal-map .hs-listing-map { height: 220px; }
@@ -428,3 +428,67 @@
 .mk-form-page .hs-btn { font-weight: 600; }
 .mk-form-page .mk-card-price { font-weight: 700; }
 .mk-form-page .mk-card-title { font-weight: 600; }
+
+/* ---------- liked and sold ---------- */
+
+.mk-heart { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.mk-heart.is-on { fill: var(--c-attention); stroke: var(--c-attention); }
+
+.mk-card { position: relative; }
+/* the heart sits on the photo's top right corner (the photo starts under the title row) */
+.mk-card-like {
+    position: absolute;
+    top: 46px;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--c-stone);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--c-ink);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.mk-card:hover .mk-card-like, .mk-card-like:focus-visible, .mk-card-like.is-on { opacity: 1; }
+.mk-card-like:hover { border-color: var(--c-attention); color: var(--c-attention); }
+.mk-card-like:focus-visible { outline: 3px solid var(--c-attention); outline-offset: 2px; }
+@media (hover: none) { .mk-card-like { opacity: 1; } }
+
+.mk-card-sold, .mk-sold-tag {
+    padding: 3px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--c-ink);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.mk-card-sold { position: absolute; left: 10px; bottom: 10px; }
+.mk-card.is-sold .mk-card-media img { filter: grayscale(0.7); opacity: 0.75; }
+.mk-sold-tag { flex: none; align-self: center; }
+
+.mk-like-btn { gap: 8px; }
+.mk-like-btn.is-on { color: var(--c-attention-dark); border-color: var(--c-attention); }
+
+/* visitors without an account */
+.mk-modal-locked {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border: 1px dashed var(--c-stone);
+    border-radius: var(--radius);
+    color: var(--c-muted);
+}
+.mk-join p { margin: 0; color: var(--c-muted); line-height: 1.5; }
+.mk-join .mk-join-main { background: var(--c-attention); border-color: var(--c-attention); color: #fff; }
+.mk-join .mk-join-main:hover { background: var(--c-attention-dark); border-color: var(--c-attention-dark); }
+
+/* My items: sold ones are quieter */
+.hs-mine-item.is-sold .hs-mine-thumb img { filter: grayscale(0.7); opacity: 0.75; }
+
+.mk-grid--wide { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+@media (max-width: 640px) { .mk-grid--wide { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

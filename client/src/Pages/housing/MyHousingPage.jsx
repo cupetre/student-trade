@@ -7,12 +7,14 @@ import TenantsPanel from './TenantsPanel.jsx';
 import { apiRequest } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
 import { useCurrentUser } from '../../lib/useCurrentUser';
+import { useT } from '../../lib/i18n';
 import {
     LISTING_TYPES, STATUSES, OWNER_STATUS_CHANGES, STATUS_ACTIONS, formatEuro, formatDate, spotsText,
 } from '../../lib/housingOptions';
 import './Housing.css';
 
 const MyHousingPage = () => {
+    const t = useT();
     const location = useLocation();
     const navigate = useNavigate();
     const { user } = useCurrentUser();
@@ -49,7 +51,7 @@ const MyHousingPage = () => {
         setBusyId(null);
         if (!ok) { setError(data.error); return; }
         setListings(prev => prev.map(l => (l.id === listing.id ? { ...l, status } : l)));
-        setFlash(`“${listing.title}” is now ${STATUSES[status].label.toLowerCase()}.`);
+        setFlash(t('“{title}” is now {status}.', { title: listing.title, status: t(STATUSES[status].label).toLowerCase() }));
     };
 
     const deleteListing = async (listing) => {
@@ -60,7 +62,7 @@ const MyHousingPage = () => {
         setConfirmDeleteId(null);
         if (!ok) { setError(data.error); return; }
         setListings(prev => prev.filter(l => l.id !== listing.id));
-        setFlash(`“${listing.title}” was deleted.`);
+        setFlash(t('“{title}” was deleted.', { title: listing.title }));
     };
 
     const landlordPending = user?.role === 'landlord' && user.landlord_status !== 'approved';
@@ -70,29 +72,29 @@ const MyHousingPage = () => {
             <AppNav /><SceneBackdrop />
             <main className="hs-page">
                 <header className="hs-head hs-head--bar">
-                    <h1>My listings</h1>
+                    <h1>{t('My listings')}</h1>
                     <HousingLinks />
                 </header>
 
                 {landlordPending && (
                     <div className="hs-alert hs-alert--info" role="status">
-                        Your landlord account is being reviewed. You can post places as soon as it’s approved.
+                        {t('Your landlord account is being reviewed. You can post places as soon as it’s approved.')}
                     </div>
                 )}
                 {flash && <div className="hs-alert hs-alert--success" role="status">{flash}</div>}
                 {error && <div className="hs-alert hs-alert--error" role="alert">{error}</div>}
 
-                {loading && <p className="hs-muted">Loading…</p>}
+                {loading && <p className="hs-muted">{t('Loading…')}</p>}
 
                 {!loading && listings.length === 0 && !error && (
                     <div className="hs-empty">
-                        <h2>You haven’t posted anything yet</h2>
+                        <h2>{t('You haven’t posted anything yet')}</h2>
                         <p>
                             {user?.role === 'landlord'
-                                ? 'Post your first room or flat. It takes about five minutes.'
-                                : 'Moving out, or looking for a flatmate? Post it and students will message you.'}
+                                ? t('Post your first room or flat. It takes about five minutes.')
+                                : t('Moving out, or looking for a flatmate? Post it and students will message you.')}
                         </p>
-                        {!landlordPending && <Link to="/housing/new" className="hs-btn">Post a place</Link>}
+                        {!landlordPending && <Link to="/housing/new" className="hs-btn">{t('Post a place')}</Link>}
                     </div>
                 )}
 
@@ -111,12 +113,12 @@ const MyHousingPage = () => {
 
                                 <div className="hs-mine-info">
                                     <div className="hs-mine-top">
-                                        <span className={`hs-status hs-status--${status.tone}`}>{status.label}</span>
-                                        <span className="hs-muted">{LISTING_TYPES[listing.listing_type]?.badge}</span>
+                                        <span className={`hs-status hs-status--${status.tone}`}>{t(status.label)}</span>
+                                        <span className="hs-muted">{t(LISTING_TYPES[listing.listing_type]?.badge)}</span>
                                     </div>
                                     <Link to={`/housing/${listing.id}`} className="hs-mine-title">{listing.title}</Link>
                                     <p className="hs-muted">
-                                        {formatEuro(listing.rent_per_person)} / person · {spotsText(listing)} · {listing.city} · from {formatDate(listing.available_from)}
+                                        {formatEuro(listing.rent_per_person)}{t(' / person')} · {spotsText(listing, t)} · {listing.city} · {t('from {date}', { date: formatDate(listing.available_from, t) })}
                                     </p>
                                 </div>
 
@@ -124,25 +126,25 @@ const MyHousingPage = () => {
                                     <button type="button" className={`hs-btn hs-btn--small ${openTenantsId === listing.id ? '' : 'hs-btn--ghost'}`}
                                         aria-expanded={openTenantsId === listing.id}
                                         onClick={() => setOpenTenantsId(openTenantsId === listing.id ? null : listing.id)}>
-                                        Tenants
+                                        {t('Tenants')}
                                     </button>
                                     {listing.status !== 'archived' && (
-                                        <Link to={`/housing/${listing.id}/edit`} className="hs-btn hs-btn--small hs-btn--ghost">Edit</Link>
+                                        <Link to={`/housing/${listing.id}/edit`} className="hs-btn hs-btn--small hs-btn--ghost">{t('Edit')}</Link>
                                     )}
                                     {actions.map(next => (
                                         <button key={next} type="button" className="hs-btn hs-btn--small hs-btn--ghost" disabled={busy}
                                             onClick={() => changeStatus(listing, next)}>
-                                            {STATUS_ACTIONS[next]}
+                                            {t(STATUS_ACTIONS[next])}
                                         </button>
                                     ))}
                                     {confirmDeleteId === listing.id ? (
                                         <span className="hs-confirm">
-                                            Delete for good?
-                                            <button type="button" className="hs-btn hs-btn--small hs-btn--danger" disabled={busy} onClick={() => deleteListing(listing)}>Delete</button>
-                                            <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" onClick={() => setConfirmDeleteId(null)}>Cancel</button>
+                                            {t('Delete for good?')}
+                                            <button type="button" className="hs-btn hs-btn--small hs-btn--danger" disabled={busy} onClick={() => deleteListing(listing)}>{t('Delete')}</button>
+                                            <button type="button" className="hs-btn hs-btn--small hs-btn--ghost" onClick={() => setConfirmDeleteId(null)}>{t('Cancel')}</button>
                                         </span>
                                     ) : (
-                                        <button type="button" className="hs-btn hs-btn--small hs-btn--text" onClick={() => setConfirmDeleteId(listing.id)}>Delete</button>
+                                        <button type="button" className="hs-btn hs-btn--small hs-btn--text" onClick={() => setConfirmDeleteId(listing.id)}>{t('Delete')}</button>
                                     )}
                                 </div>
                                 {openTenantsId === listing.id && <TenantsPanel listing={listing} />}

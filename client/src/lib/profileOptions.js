@@ -1,4 +1,7 @@
-// Labels for student profile values (server copy: server/lib/profileOptions.js)
+// Labels for student profile values (server copy: server/lib/profileOptions.js).
+// English here; pages show them through t(...) (lib/i18n.js).
+import { en } from './i18n';
+
 
 export const COUNTRY_CODES = (
     'AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ '
@@ -10,27 +13,37 @@ export const COUNTRY_CODES = (
     + 'UM US UY UZ VA VC VE VG VI VN VU WF WS XK YE YT ZA ZM ZW'
 ).split(' ');
 
-let regionNames = null;
-try {
-    regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
-} catch {
-    // very old browsers: fall back to the code
+// Country names come from the browser, in the chosen language ('en' or 'sl')
+const regionNames = {};
+function namesFor(lang) {
+    if (!(lang in regionNames)) {
+        try { regionNames[lang] = new Intl.DisplayNames([lang], { type: 'region' }); }
+        catch { regionNames[lang] = null; } // very old browsers: fall back to the code
+    }
+    return regionNames[lang];
 }
 
-export function countryName(code) {
+export function countryName(code, lang = 'en') {
     if (!code) return '';
     if (code === 'XK') return 'Kosovo';
-    try { return regionNames?.of(code) || code; } catch { return code; }
+    try { return namesFor(lang)?.of(code) || code; } catch { return code; }
 }
 
 // Countries sorted by name, with the most common ones for Slovenian universities first
 const TOP = ['SI', 'HR', 'BA', 'RS', 'MK', 'ME', 'XK', 'AL', 'IT', 'AT', 'DE'];
-export const COUNTRY_OPTIONS = [
-    ...TOP.map(code => ({ code, name: countryName(code) })),
-    ...COUNTRY_CODES.filter(c => !TOP.includes(c))
-        .map(code => ({ code, name: countryName(code) }))
-        .sort((a, b) => a.name.localeCompare(b.name)),
-];
+const countryLists = {};
+export function countryOptions(lang = 'en') {
+    if (!countryLists[lang]) {
+        countryLists[lang] = [
+            ...TOP.map(code => ({ code, name: countryName(code, lang) })),
+            ...COUNTRY_CODES.filter(c => !TOP.includes(c))
+                .map(code => ({ code, name: countryName(code, lang) }))
+                .sort((a, b) => a.name.localeCompare(b.name, lang)),
+        ];
+    }
+    return countryLists[lang];
+}
+export const COUNTRY_OPTIONS = countryOptions('en');
 
 export const LANGUAGES = {
     sl: 'Slovenian', en: 'English', mk: 'Macedonian', hr: 'Croatian', sr: 'Serbian', bs: 'Bosnian',
@@ -87,9 +100,9 @@ export const STAY_LENGTHS = {
     negotiable: { label: 'Open to negotiate', hint: 'we can agree on the length' },
 };
 
-export function stayLabel(p) {
+export function stayLabel(p, t = en) {
     const option = p && STAY_LENGTHS[p.stay_length];
-    return option ? `${option.label} (${option.hint})` : '';
+    return option ? `${t(option.label)} (${t(option.hint)})` : '';
 }
 
 // What a profile needs before contacting homeowners, in the order of the form
@@ -102,8 +115,8 @@ export const REQUIRED_LABELS = {
     study_level: 'Level of study',
 };
 
-export function studyLine(p) {
+export function studyLine(p, t = en) {
     if (!p) return '';
-    const parts = [STUDY_LEVELS[p.study_level], p.faculty || p.university].filter(Boolean);
+    const parts = [t(STUDY_LEVELS[p.study_level]), p.faculty || p.university].filter(Boolean);
     return parts.join(' · ');
 }

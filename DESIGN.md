@@ -55,11 +55,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 
 **Contrast:** body text must pass 4.5:1. All pairs above were checked; muted text fails on beige, so don't put it there.
 
-**Where the values live today** (duplicated — see Open items):
-- `client/src/Pages/LandingPage.css` → `--lp-*` variables
-- `client/src/components/AppNav.css` → `--an-*`
-- `client/src/Pages/housing/Housing.css` → `--hs-*`
-- `client/src/Pages/SettleInPage.css`, `App.css`, `ChatPage.css`, `ProfilePage.css` → hard-coded
+**Where the values live:** one place, `client/src/index.css` (`:root`, the `--c-*` variables: `--c-ink`, `--c-cream`, `--c-paper`, `--c-stone`, `--c-stone-soft`, `--c-blue`, `--c-blue-dark`, `--c-blue-light`, `--c-muted`, `--c-attention`, `--c-attention-dark`, `--c-attention-soft`). The older per-area names (`--lp-*`, `--an-*`, `--hs-*`, `--auth-*`, `--pn-*`) still exist but only point at these, so a colour is changed in one place. New CSS uses `--c-*` directly. A few files still have hex codes written inline (same palette); move them over when you touch them.
 
 ---
 
@@ -69,7 +65,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 - **Body:** system font stack (`system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif`), 15–18px, line-height ~1.5.
 - **Eyebrows / kickers:** 13–14px, bold, uppercase, letter-spacing 0.08em, steel blue.
 - **Page width:** every logged-in page uses the same container: `max-width: var(--page-max)` (1480px) with `var(--page-pad)` (20px) side padding, both set once in `client/src/index.css`. Use `.hs-page` (or those two variables) for any new page; never give a page its own max-width. Narrow content (text, forms) limits itself inside the page, so the page edges never move when switching pages.
-- **Corners:** buttons and inputs 10–12px; cards 14–24px; tags and pills fully round.
+- **Corners:** one scale for the app, set in `client/src/index.css`: `--radius-sm` 4px (photos, maps, the listing and item pages), `--radius` 6px (cards, panels, buttons, fields), `--radius-lg` 8px (pop-up windows and menus). Tags, pills, avatars and round icon buttons stay fully round; chat bubbles keep their own shape. The landing and login pages keep their softer, larger corners.
 - **Touch targets:** at least 44px for anything clickable (icon buttons included).
 - **Focus:** 3px raspberry outline, 2px offset, on every interactive element.
 - **Motion:** short and calm (150–450ms). Everything respects `prefers-reduced-motion` (no animation, chat demo shows all messages at once).
@@ -247,7 +243,7 @@ Housing listings have a map location; the Marketplace doesn't need one.
 - **Hidden until sign-up:** seller/landlord names and profiles, full description, reviews, exact address.
 - **Actions that ask for sign-up:** Message, Save, Post, Apply. The prompt explains why (only verified students can contact people) and brings them back to the same listing after confirming their email.
 
-**Built today:** only the landing page and the auth pages are public. "Browse places" / "Browse items" send guests to log in (with a note saying why). Public browsing needs public listing endpoints with trimmed data on the server.
+**Built:** `/marketplace`, `/marketplace/:id`, `/housing` and `/housing/:id` open without an account. They read from `/api/public/market` and `/api/public/housing` (rate-limited per network), which send trimmed records built field by field in `server/lib/dto.js` (`toGuestItemDto`, `toGuestHousingDto`): no names or profiles, no description, no street, no exact pin (housing keeps the area circle), only whether the owner is a verified landlord. A guest sees a slim strip on top ("You’re browsing as a guest…"), the top bar shows Marketplace / Housing, SL | EN, Log in and Sign up, and Message / Like / "I’m interested" open a "Join to continue" window (`components/SignUpPrompt.jsx`). The page they were on is remembered in the browser (`lib/returnTo.js`, 24 hours), so after sign-up, email confirmation and log-in they land back on the same listing. Everything else still needs an account.
 
 ---
 
@@ -286,18 +282,11 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 
 ## 9. Open items
 
-- [ ] **Public browsing** for guests (section 6) — server endpoints + guest views + sign-up prompt.
-- [ ] **Unread messages** — the chat list marks new messages only while the page is open. A real unread count (and a badge on the Messages icon) needs a "read" time on messages on the server.
-- [ ] **Old stylesheet** `client/src/App.css` is no longer loaded by any page; delete it when convenient.
-- [ ] **Marketplace categories and city** — the item model has none, so there is no category filter or location on cards yet. Needs a server change.
-- [ ] **Saved items** and **"Sold" status** on the marketplace — today sellers delete sold items. Needs a server change.
-- [ ] **One set of colour variables** for the whole app instead of four copies (section 2).
 - [ ] **Name for Settle In** in both languages.
 - [ ] **Native-speaker check** of the Slovenian landing and auth copy.
 - [ ] **Real photos** for the three landing columns.
 - [ ] **Partner logos** once organisations agree.
-- [ ] **Logged-in pages are English only** (and have no language switch) — decide on Slovenian for the app.
-- [ ] **Server messages and the confirmation email are English only.**
+- [ ] **Native-speaker check of the app’s Slovenian** (`client/src/lib/sl.js`, about 950 lines, written without one). Also still English: the first message the server writes for a contact ("About your “Desk chair”: …", the housing interest message).
 - [ ] **Sidro / Anchor:** check the .si/.com domains and trademarks before it's final. "Anchor" is a common name for other products, so the English name especially needs a check.
 - [ ] **Map provider before launch:** the map uses OpenStreetMap's free tiles and geocoder, which are best-effort and can block heavy users. Switch to a paid plan or self-hosted tiles before public launch (two settings, see "Maps").
 - [ ] **More listing details** (floor, heating types, appliances, outdoor space, parking, energy class, itemised costs, room details, house rules, nearby…): the full list with proposed fields and filters is in `HOUSING_FIELDS.md`.
@@ -308,6 +297,11 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 
 ## 10. Change log
 
+- **2026-11-16** — Clean-up: one colour source (`--c-*` in `index.css`, the per-area names point at it) and one corner scale (`--radius-sm` 4 / `--radius` 6 / `--radius-lg` 8) across housing, marketplace, messages and profiles. Deleted `App.css`, `MarketDetailPage.jsx`, `MarketTabs.jsx`, `HousingTabs.jsx`.
+- **2026-11-16** — Unread messages: `Message.read_at` (needs `npx prisma db push`; old messages count as read), `GET /api/messages/unread_count`, `POST /api/messages/read/:chat_id`. Raspberry count on the Messages icon and per chat; opening a chat reads it. One live connection for the whole app (`lib/socket.js`), shared by the Messages page and the badge (`lib/unread.js`).
+- **2026-11-16** — Marketplace: **Sold** (`ListingItem.status`, `PATCH /api/listings/item/:id/status`; sold items leave Browse, stay in My items, liked items and chats) and **Liked items** (`SavedItem` table, heart on cards and in the item window, `/marketplace/liked`, and in the Liked column of Messages next to liked places).
+- **2026-11-16** — Guests can browse the marketplace and housing (section 6).
+- **2026-11-16** — Slovenian for the whole app. `lib/i18n.js`: `const t = useT(); t('English text', { name })`; the English text is the key, Slovenian is in `lib/sl.js`, anything missing stays English. SL | EN in the account menu (and in the bar for guests); the logo, tab titles, dates and country names follow it. Server messages are translated in one place (`lib/api.js`). The confirmation email follows the language of the sign-up page. Checking mode: `localStorage.i18nDebug = '1'` lists texts without a Slovenian entry in the console. New text: always through `t()`, and add the Slovenian line to `sl.js`.
 - **2026-11-10** — Messages has no footer and never scrolls as a page (top bar + page = window height); only the chat list, the messages and the side cards scroll. Marketplace cards: the photo runs edge to edge across the card, same height as before.
 - **2026-11-10** — Marketplace sidebar order: Budget (one plain "Up to (€)" box, empty = no limit; the From box is gone), Sort by (newest, oldest, price low→high, high→low), Categories, Condition; all applied with Apply filters. Card photos get a 1px stone border. Item window: no city in the title row; title, price and description start on the photo's left edge; "Posted …" sits next to the price; facts are Condition · Category · Pick-up; Report this item is at the bottom of the right column. Messages: every contact through an item or a place is recorded (new ChatTopic table, `npx prisma db push`); the open chat shows "About this chat" cards above Liked listings on wide screens, and an "About: …" bar under the chat header on narrower ones.
 - **2026-11-10** — Marketplace: Public Sans; left sidebar (categories, condition, budget; apply to filter) with search on top; 5 × 10 grid, cards ordered title | price, photo, seller; Browse / My items tabs removed; item window 1360px, beige, 70 / 30 with the message box and map on the right. Server: several categories / conditions and a min–max price at once, 50 a page.

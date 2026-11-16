@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { TILE_URL, TILE_ATTRIBUTION, SLOVENIA_VIEW, cityCentre } from '../lib/mapConfig';
+import { useT } from '../lib/i18n';
 import './LocationPicker.css';
 
 const pinIcon = L.divIcon({
@@ -23,11 +24,14 @@ const JUMP = { animate: false }; // Leaflet crashes if the page closes mid-anima
   value: { latitude, longitude } or null.
 */
 const AreaPicker = ({ city, value, onChange }) => {
+    const t = useT();
     const mapEl = useRef(null);
     const mapRef = useRef(null);
     const markerRef = useRef(null);
     const onChangeRef = useRef(onChange);
     useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+    const tRef = useRef(t); // the map is set up once; this keeps its texts in the current language
+    useEffect(() => { tRef.current = t; }, [t]);
 
     // Create the map once
     useEffect(() => {
@@ -54,7 +58,7 @@ const AreaPicker = ({ city, value, onChange }) => {
         }
         const position = [value.latitude, value.longitude];
         if (!markerRef.current) {
-            markerRef.current = L.marker(position, { icon: pinIcon, draggable: true, keyboard: false, title: 'Drag to move the pin' }).addTo(map);
+            markerRef.current = L.marker(position, { icon: pinIcon, draggable: true, keyboard: false, title: tRef.current('Drag to move the pin') }).addTo(map);
             markerRef.current.on('dragend', () => {
                 const p = markerRef.current.getLatLng();
                 if (inSlovenia(p.lat, p.lng)) onChangeRef.current({ latitude: round6(p.lat), longitude: round6(p.lng) });
@@ -74,14 +78,14 @@ const AreaPicker = ({ city, value, onChange }) => {
 
     return (
         <div className="mk-area">
-            <div ref={mapEl} className="mk-area-map" role="region" aria-label="Map: click where people can pick it up" />
+            <div ref={mapEl} className="mk-area-map" role="region" aria-label={t('Map: click where people can pick it up')} />
             <div className="mk-area-foot">
                 <p className="hs-hint">
                     {value
-                        ? 'Pin placed. Buyers see a circle around the area, never the exact spot.'
-                        : 'Click roughly where people can pick it up. Optional.'}
+                        ? t('Pin placed. Buyers see a circle around the area, never the exact spot.')
+                        : t('Click roughly where people can pick it up. Optional.')}
                 </p>
-                {value && <button type="button" className="hs-link-btn" onClick={() => onChange(null)}>Remove pin</button>}
+                {value && <button type="button" className="hs-link-btn" onClick={() => onChange(null)}>{t('Remove pin')}</button>}
             </div>
         </div>
     );

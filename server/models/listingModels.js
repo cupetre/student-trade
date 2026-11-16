@@ -2,6 +2,12 @@ const prisma = require('../lib/prisma');
 
 const OWNER_PUBLIC = { select: { id: true, fullname: true, profile_picture: true } };
 
+// Only this viewer's "liked" row, to know whether the heart is filled.
+// Guests (no viewer) get no row at all.
+function likedBy(viewerId) {
+    return { where: { user_id: viewerId ?? -1 }, select: { user_id: true } };
+}
+
 async function updateListing({ id, owner_id, data }) {
     return prisma.listingItem.updateMany({ where: { id, owner_id }, data });
 }
@@ -11,9 +17,9 @@ async function addListing(data) {
 }
 
 // Browse: everyone else's items, filtered, one page at a time
-async function searchListings({ where, orderBy, skip, take }) {
+async function searchListings({ where, orderBy, skip, take, viewerId }) {
     const [items, total] = await Promise.all([
-        prisma.listingItem.findMany({ where, orderBy, skip, take, include: { owner: OWNER_PUBLIC } }),
+        prisma.listingItem.findMany({ where, orderBy, skip, take, include: { owner: OWNER_PUBLIC, savedBy: likedBy(viewerId) } }),
         prisma.listingItem.count({ where }),
     ]);
     return { items, total };
@@ -28,10 +34,11 @@ async function fetchMyListings({ owner_id }) {
 }
 
 // One item with what the item window shows about the seller
-async function findListing(id) {
+async function findListing(id, viewerId) {
     return prisma.listingItem.findUnique({
         where: { id },
         include: {
+            savedBy: likedBy(viewerId),
             owner: {
                 select: {
                     id: true, fullname: true, profile_picture: true, role: true,
@@ -46,12 +53,35 @@ async function findListing(id) {
 async function findListingBasics(id) {
     return prisma.listingItem.findUnique({
         where: { id },
-        select: { id: true, owner_id: true, title: true, latitude: true, longitude: true, public_latitude: true, public_longitude: true },
+        select: { id: true, owner_id: true, title: true, status: true, latitude: true, longitude: true, public_latitude: true, public_longitude: true },
     });
 }
 
 async function removeListing({ id, owner_id }) {
     return prisma.listingItem.deleteMany({ where: { id, owner_id } });
+}
+
+// Liked items: liking twice is fine, un-liking something that isn't liked too
+async function saveItem(user_id, item_id) {
+    return prisma.savedItem.upsert({
+        where: { user_id_item_id: { user_id, item_id } },
+        create: { user_id, item_id },
+        update: {},
+    });
+}
+
+async function unsaveItem(user_id, item_id) {
+    return prisma.savedItem.deleteMany({ where: { user_id, item_id } });
+}
+
+// What I liked, newest like first (sold ones stay in the list, marked as sold)
+async function listSavedItems(user_id) {
+    const rows = await prisma.savedItem.findMany({
+        where: { user_id },
+        orderBy: { created_at: 'desc' },
+        include: { item: { include: { owner: OWNER_PUBLIC, savedBy: likedBy(user_id) } } },
+    });
+    return rows.map(row => row.item);
 }
 
 module.exports = {
@@ -62,4 +92,7 @@ module.exports = {
     findListing,
     findListingBasics,
     removeListing,
+    saveItem,
+    unsaveItem,
+    listSavedItems,
 };

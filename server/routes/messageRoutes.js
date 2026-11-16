@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { createChat, getHistory, sendMessage, receiveMessages } = require('../controllers/messageController.js');
+const { createChat, getHistory, sendMessage, receiveMessages, unreadCount, markRead } = require('../controllers/messageController.js');
 const { authenticationToken } = require('../configs/authConfig');
 
 router.post('/create_chat', authenticationToken, createChat);
 router.get('/get_history', authenticationToken, getHistory);
 router.post('/send_messages', authenticationToken, sendMessage);
 router.get('/receive_messages/:chat_id', authenticationToken, receiveMessages);
+router.get('/unread_count', authenticationToken, unreadCount);
+router.post('/read/:chat_id', authenticationToken, markRead);
 
 module.exports = router;

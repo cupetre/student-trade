@@ -1,21 +1,31 @@
 // Shared bits for the marketplace pages (browse, item, sell, my items)
-export { formatEuro } from '../../lib/housingOptions';
+import { en, localeFor } from '../../lib/i18n';
 
-// "Today", "Yesterday", "3 days ago", "2 weeks ago", else the date
-export function postedAgo(value) {
+import { formatEuro } from '../../lib/housingOptions';
+
+export { formatEuro };
+
+// "Today", "Yesterday", "3 days ago", "2 weeks ago", else the date.
+// Pass the page's translator (useT) to get it in the chosen language.
+export function postedAgo(value, t = en) {
     if (!value) return '';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
     const days = Math.floor((Date.now() - date.getTime()) / 86400000);
-    if (days <= 0) return 'Today';
-    if (days === 1) return 'Yesterday';
-    if (days < 7) return `${days} days ago`;
+    if (days <= 0) return t('Today');
+    if (days === 1) return t('Yesterday');
+    if (days < 7) return t('{n} days ago', { n: days });
     if (days < 35) {
         const weeks = Math.round(days / 7);
-        return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+        return weeks === 1 ? t('1 week ago') : t('{n} weeks ago', { n: weeks });
     }
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return date.toLocaleDateString(localeFor(t.lang), { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+// "Free" for 0, "€12" otherwise; "€–" while the sell form is still empty
+export const priceText = (price, t = en) => (price !== '' && price !== undefined && price !== null
+    ? (Number(price) === 0 ? t('Free') : formatEuro(price))
+    : '€–');
 
 export const SORTS = {
     newest: 'Newest first',

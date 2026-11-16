@@ -14,7 +14,7 @@
 .mp-card {
     background: #fff;
     border: 1px solid var(--hs-border);
-    border-radius: 18px;
+    border-radius: var(--radius);
     padding: 22px;
 }
 
@@ -102,7 +102,7 @@
     align-items: center;
     gap: 10px;
     padding: 12px 12px;
-    border-radius: 12px;
+    border-radius: var(--radius);
     color: var(--hs-text);
     font-weight: 600;
     text-decoration: none;

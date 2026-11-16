@@ -5,17 +5,17 @@
    Palette: "Nordic Stone" — steel blue, stone beige, off-white, raspberry for attention. */
 
 .lp {
-    --lp-ink: #1B2A41;          /* text, dark bands, footer */
-    --lp-cream: #FAF7F0;        /* page background (off-white) */
-    --lp-paper: #FFFFFF;        /* navbar, cards, alternate sections */
-    --lp-beige: #DDD4C5;        /* stone beige: lines, quiet surfaces */
-    --lp-blue: #3C6E91;         /* steel blue: main buttons, links */
-    --lp-blue-dark: #2F5875;
-    --lp-light: #D5E3EC;        /* chips, info, chat section */
-    --lp-attention: #C2305A;    /* raspberry: sign up, partner, "new" — use sparingly */
-    --lp-attention-dark: #A82650;
-    --lp-on-attention: #FFFFFF; /* text on the attention colour */
-    --lp-muted: #5D6470;
+    --lp-ink: var(--c-ink);          /* text, dark bands, footer */
+    --lp-cream: var(--c-cream);        /* page background (off-white) */
+    --lp-paper: var(--c-paper);        /* navbar, cards, alternate sections */
+    --lp-beige: var(--c-stone);        /* stone beige: lines, quiet surfaces */
+    --lp-blue: var(--c-blue);         /* steel blue: main buttons, links */
+    --lp-blue-dark: var(--c-blue-dark);
+    --lp-light: var(--c-blue-light);        /* chips, info, chat section */
+    --lp-attention: var(--c-attention);    /* raspberry: sign up, partner, "new" — use sparingly */
+    --lp-attention-dark: var(--c-attention-dark);
+    --lp-on-attention: var(--c-paper); /* text on the attention colour */
+    --lp-muted: var(--c-muted);
     --lp-on-dark: #D9E1EA;
     --lp-error: #B42318;
     --lp-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;

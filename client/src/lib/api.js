@@ -1,4 +1,25 @@
 import { getValidToken } from './auth';
+import { getLanguage } from './language';
+import { translate } from './i18n';
+
+// The server answers in English. Its messages (error, message, and the per-field
+// messages of a form) are put into the chosen language here, once, for every
+// page: they are looked up in lib/sl.js like any other text. A message that
+// isn't in there stays English.
+function localise(data) {
+    const lang = getLanguage();
+    if (lang === 'en' || !data || typeof data !== 'object') return data;
+    if (typeof data.error === 'string') data.error = translate(lang, data.error);
+    if (typeof data.message === 'string') data.message = translate(lang, data.message);
+    if (data.fields && typeof data.fields === 'object') {
+        for (const key of Object.keys(data.fields)) {
+            if (typeof data.fields[key] === 'string') data.fields[key] = translate(lang, data.fields[key]);
+        }
+    }
+    return data;
+}
+
+const OFFLINE = "Can't reach the server. Check your connection and try again.";
 
 // Small wrapper around fetch for JSON endpoints.
 // It never throws: it always resolves to { ok, status, data }, and data.error
@@ -11,14 +32,15 @@ export async function postJson(url, body) {
         response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
+            // every public form says which language the page is in (the emails follow it)
+            body: JSON.stringify({ language: getLanguage(), ...body }),
         });
     } catch {
         // fetch only throws when the request never got a response at all
         return {
             ok: false,
             status: 0,
-            data: { error: "Can't reach the server. Check your connection and try again." },
+            data: localise({ error: OFFLINE }),
         };
     }
 
@@ -34,6 +56,7 @@ export async function postJson(url, body) {
             ? 'Something went wrong on our side. Please try again in a moment.'
             : 'Request failed. Please try again.';
     }
+    localise(data);
     // On server errors, show the request id so it can be found in the server log
     if (response.status >= 500 && data.requestId && !String(data.error).includes(data.requestId)) {
         data.error = `${data.error} (ref ${data.requestId})`;
@@ -65,7 +88,7 @@ export async function apiRequest(url, { method = 'GET', body, formData } = {}) {
         return {
             ok: false,
             status: 0,
-            data: { error: "Can't reach the server. Check your connection and try again." },
+            data: localise({ error: OFFLINE }),
         };
     }
 
@@ -81,6 +104,7 @@ export async function apiRequest(url, { method = 'GET', body, formData } = {}) {
             ? 'Something went wrong on our side. Please try again in a moment.'
             : 'Request failed. Please try again.';
     }
+    localise(data);
     // On server errors, show the request id so it can be found in the server log
     if (response.status >= 500 && data.requestId && !String(data.error).includes(data.requestId)) {
         data.error = `${data.error} (ref ${data.requestId})`;

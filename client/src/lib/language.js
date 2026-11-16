@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-// Site language for the public pages (landing, login, register, email confirmation).
+// Site language, for the public pages and the app (logged-in pages go through lib/i18n.js).
 // Slovenian is the default: Slovenian law (ZJRS) requires websites aimed at
 // customers in Slovenia to be in Slovenian. The choice is shared by every
 // component that uses this hook and remembered in the browser.
@@ -17,6 +17,11 @@ function readSaved() {
 
 let current = readSaved();
 const listeners = new Set();
+
+// The language right now, for code that isn't a component (the API helper, the error page)
+export function getLanguage() {
+    return current;
+}
 
 export function useLanguage() {
     const [lang, setLangState] = useState(current);

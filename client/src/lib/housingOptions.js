@@ -1,5 +1,7 @@
 // Labels for the values the backend accepts (see server/lib/housingOptions.js).
-// Keep both files in sync when adding a new option.
+// Keep both files in sync when adding a new option. The labels are English;
+// pages show them through t(...) (lib/i18n.js), which finds the Slovenian in lib/sl.js.
+import { en, localeFor } from './i18n';
 
 export const LISTING_TYPES = {
     rental: { label: 'For rent', badge: 'For rent', help: 'A room or place you rent out as the owner or agency.' },
@@ -54,6 +56,7 @@ export const CITY_SUGGESTIONS = [
 
 export const MAX_PHOTOS = 12;
 
+// The date and spots helpers take the page's translator (useT) to speak the chosen language
 export function formatEuro(value) {
     if (value === null || value === undefined || value === '') return '';
     const n = Number(value);
@@ -61,11 +64,11 @@ export function formatEuro(value) {
 }
 
 // "2026-10-01T00:00:00.000Z" -> "1 Oct 2026"
-export function formatDate(value) {
+export function formatDate(value, t = en) {
     if (!value) return '';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    return date.toLocaleDateString(localeFor(t.lang), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 }
 
 // For <input type="date">: "2026-10-01T00:00:00.000Z" -> "2026-10-01"
@@ -73,12 +76,12 @@ export function toDateInput(value) {
     return value ? String(value).slice(0, 10) : '';
 }
 
-export function spotsText(listing) {
+export function spotsText(listing, t = en) {
     const open = listing.spots_open ?? listing.spots_total;
     const total = listing.spots_total;
     if (!total) return '';
-    if (total === 1) return open > 0 ? '1 spot' : 'No spots left';
-    return `${open} of ${total} spots open`;
+    if (total === 1) return open > 0 ? t('1 spot') : t('No spots left');
+    return t('{open} of {total} spots open', { open, total });
 }
 
 // What the owner can switch a listing to from each status (same table as the server)

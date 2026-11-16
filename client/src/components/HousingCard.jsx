@@ -2,10 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { LISTING_TYPES, PROPERTY_TYPES, FURNISHING, formatEuro, formatDate, spotsText } from '../lib/housingOptions';
 import { resolveMediaUrl } from '../lib/media';
+import { useT } from '../lib/i18n';
 
 // One housing listing as a card. `preview` renders it without links
 // (used next to the listing form to show how the card will look).
 const HousingCard = ({ listing, onToggleSave, preview = false, photoUrl }) => {
+    const t = useT();
     const photo = photoUrl || resolveMediaUrl(listing.photos?.[0]?.url);
     const type = LISTING_TYPES[listing.listing_type];
     const href = `/housing/${listing.id}`;
@@ -19,7 +21,7 @@ const HousingCard = ({ listing, onToggleSave, preview = false, photoUrl }) => {
                         <svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-8Z" /></svg>
                     </div>
                 )}
-            {type && <span className={`hs-badge hs-badge--${listing.listing_type}`}>{type.badge}</span>}
+            {type && <span className={`hs-badge hs-badge--${listing.listing_type}`}>{t(type.badge)}</span>}
         </>
     );
 
@@ -27,24 +29,24 @@ const HousingCard = ({ listing, onToggleSave, preview = false, photoUrl }) => {
         <>
             <div className="hs-card-price">
                 {formatEuro(listing.rent_per_person) || '€–'}
-                <span> / person / month</span>
+                <span>{t(' / person / month')}</span>
             </div>
-            <h3 className="hs-card-title">{listing.title || 'Your listing title'}</h3>
+            <h3 className="hs-card-title">{listing.title || t('Your listing title')}</h3>
             <p className="hs-card-type">
-                {PROPERTY_TYPES[listing.property_type] || 'Type of place'}
-                {listing.spots_total ? ` · ${spotsText(listing)}` : ''}
+                {t(PROPERTY_TYPES[listing.property_type] || 'Type of place')}
+                {listing.spots_total ? ` · ${spotsText(listing, t)}` : ''}
             </p>
             <p className="hs-card-meta">
                 {[
                     listing.city,
-                    FURNISHING[listing.furnishing],
-                    listing.available_from && `From ${formatDate(listing.available_from)}`,
+                    t(FURNISHING[listing.furnishing]),
+                    listing.available_from && t('From {date}', { date: formatDate(listing.available_from, t) }),
                 ].filter(Boolean).join(' · ')}
             </p>
             {(listing.address_registration_allowed || listing.utilities_included) && (
                 <div className="hs-card-tags">
-                    {listing.address_registration_allowed && <span className="hs-tag hs-tag--good">Address registration</span>}
-                    {listing.utilities_included && <span className="hs-tag">Bills included</span>}
+                    {listing.address_registration_allowed && <span className="hs-tag hs-tag--good">{t('Address registration')}</span>}
+                    {listing.utilities_included && <span className="hs-tag">{t('Bills included')}</span>}
                 </div>
             )}
         </>
@@ -67,7 +69,7 @@ const HousingCard = ({ listing, onToggleSave, preview = false, photoUrl }) => {
                     type="button"
                     className={`hs-heart ${listing.is_saved ? 'is-saved' : ''}`}
                     aria-pressed={Boolean(listing.is_saved)}
-                    aria-label={listing.is_saved ? 'Remove from saved' : 'Save this place'}
+                    aria-label={listing.is_saved ? t('Remove from liked listings') : t('Like this place')}
                     onClick={() => onToggleSave(listing)}
                 >
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" /></svg>
