@@ -325,6 +325,7 @@
 .mk-modal-titlerow h2 { margin: 0; font-size: clamp(1.3rem, 2.2vw, 1.7rem); font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; min-width: 0; overflow-wrap: anywhere; }
 
 .mk-modal-photo {
+    position: relative; /* for the previous / next buttons */
     height: min(460px, 52vh); /* kept compact so the details show without much scrolling */
     background: #EEEAE2;
     border: 1px solid #E6DFD3;
@@ -333,6 +334,8 @@
 }
 .mk-modal-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .mk-modal-photo .hs-card-noimg { width: 100%; height: 100%; }
+.mk-modal-thumbs { padding-top: 8px; }
+.mk-modal-thumbs button { flex-basis: 72px; height: 54px; }
 
 .mk-modal-pricerow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 16px 0 10px; }
 .mk-modal-price { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; }

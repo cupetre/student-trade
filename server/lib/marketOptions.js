@@ -16,6 +16,7 @@ const CONDITIONS = ['new', 'like_new', 'good', 'fair', 'worn'];
 const CONTACT_PREFERENCES = ['message', 'message_then_call', 'message_then_meet'];
 
 const PAGE_SIZE = 50;
+const MAX_ITEM_PHOTOS = 10;
 const STATUSES = ['available', 'sold']; // 5 per row, 10 rows
 const MAX_TITLE = 255;
 const MAX_DESCRIPTION = 5000;
@@ -90,6 +91,6 @@ function itemMessage(item, text) {
 }
 
 module.exports = {
-    CATEGORIES, CONDITIONS, CONTACT_PREFERENCES, STATUSES, PAGE_SIZE, MAX_MESSAGE,
+    CATEGORIES, CONDITIONS, CONTACT_PREFERENCES, STATUSES, PAGE_SIZE, MAX_MESSAGE, MAX_ITEM_PHOTOS,
     readItem, readBrowseQuery, itemMessage,
 };

@@ -24,6 +24,7 @@ import LikedItemsPage from './Pages/marketplace/LikedItemsPage.jsx';
 import StudentProfilePage from './Pages/profile/StudentProfilePage.jsx';
 import PublicProfilePage from './Pages/profile/PublicProfilePage.jsx';
 import SettleInPage from './Pages/SettleInPage.jsx';
+import LegalPage from './Pages/LegalPage.jsx';
 import { RequireAuth, PublicOnly, HomeSwitch, StudentOnly } from './components/RouteGuards.jsx';
 import { installFetchWrapper } from './lib/auth';
 import { appLog } from './lib/logger';
@@ -92,6 +93,10 @@ root.render(
       {/* Profiles */}
       <Route path="/profile/student" element={<RequireAuth><StudentOnly>{app(<StudentProfilePage />)}</StudentOnly></RequireAuth>} />
       <Route path="/users/:id" element={<RequireAuth>{app(<PublicProfilePage />)}</RequireAuth>} />
+
+      {/* Privacy policy and terms: open to everyone */}
+      <Route path="/privacy" element={app(<LegalPage kind="privacy" />)} />
+      <Route path="/terms" element={app(<LegalPage kind="terms" />)} />
 
       {/* Login and register: logged-in users are sent to the app instead */}
       <Route path="/login" element={<PublicOnly>{slide(STEP.login, <Login />)}</PublicOnly>} />

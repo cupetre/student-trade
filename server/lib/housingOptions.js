@@ -31,7 +31,7 @@ const OWNER_STATUS_CHANGES = {
 };
 
 // Most photos a listing can have
-const MAX_HOUSING_PHOTOS = 12;
+const MAX_HOUSING_PHOTOS = 20;
 
 module.exports = {
     MAX_HOUSING_PHOTOS,

@@ -81,6 +81,37 @@ async function loginUserData({ email }) {
     return prisma.user.findUnique({ where: { email } });
 }
 
+// Only what the password checks need
+async function findUserPassword(id) {
+    return prisma.user.findUnique({ where: { id }, select: { id: true, email: true, role: true, hashedpassword: true } });
+}
+
+// Deletes the account and, through the database's cascades, everything that
+// belongs to it: items, places and their photos, likes, chats and messages,
+// reviews written and received, reports, stays, the rental profile.
+async function deleteUser(id) {
+    return prisma.user.delete({ where: { id } });
+}
+
+// Every photo the account uploaded (profile, items, places), so they can be
+// removed from storage once the account is gone
+async function listUserPhotoUrls(id) {
+    const user = await prisma.user.findUnique({
+        where: { id },
+        select: {
+            profile_picture: true,
+            listings: { select: { photo: true, photos: { select: { url: true } } } },
+            housingListings: { select: { photos: { select: { url: true } } } },
+        },
+    });
+    if (!user) return [];
+    return [
+        user.profile_picture,
+        ...user.listings.flatMap(item => [item.photo, ...item.photos.map(p => p.url)]),
+        ...user.housingListings.flatMap(place => place.photos.map(p => p.url)),
+    ].filter(Boolean);
+}
+
 async function viewInformation(owner_id) {
     return prisma.user.findUnique({
         where: { id: owner_id },
@@ -120,6 +151,9 @@ async function setNewPassword({ id, password }) {
 }
 
 module.exports = {
+    findUserPassword,
+    deleteUser,
+    listUserPhotoUrls,
     setPasswordResetToken,
     findUserByResetTokenHash,
     setNewPassword,

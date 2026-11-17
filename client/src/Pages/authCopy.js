@@ -42,6 +42,13 @@ export const authCopy = {
             newHere: 'Prvič tukaj?', createStudent: 'Ustvarite študentski račun',
             havePlace: 'Oddajate prostor?', createLandlord: 'Ustvarite račun za najemodajalce',
         },
+        agree: {
+            before: 'Z ustvarjanjem računa se strinjate s ',
+            terms: 'pogoji uporabe',
+            middle: ' in ',
+            privacy: 'pravilnikom o zasebnosti',
+            after: '.',
+        },
         register: {
             title: 'Ustvari študentski račun',
             subtitle: 'En račun za Bivanje, Tržnico in vse, kar prihaja.',
@@ -168,6 +175,13 @@ export const authCopy = {
             forgot: 'Forgot your password?',
             newHere: 'New here?', createStudent: 'Create a student account',
             havePlace: 'Renting out a place?', createLandlord: 'Create a landlord account',
+        },
+        agree: {
+            before: 'By creating an account you agree to the ',
+            terms: 'terms of use',
+            middle: ' and the ',
+            privacy: 'privacy policy',
+            after: '.',
         },
         register: {
             title: 'Create your student account',

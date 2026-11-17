@@ -35,35 +35,41 @@ function singleImageUpload(folder) {
 const upload1 = singleImageUpload('profiles');
 const upload2 = singleImageUpload('listings');
 
-// Housing photos: images only, max 8 MB each, max 12 per request.
+// Several photos at once (housing: 20, marketplace items: 10), images only, max 8 MB each
 const { MAX_HOUSING_PHOTOS } = require('../lib/housingOptions');
+const { MAX_ITEM_PHOTOS } = require('../lib/marketOptions');
 
-const housingUpload = multer({
-    storage: multerS3({
-        s3,
-        bucket: process.env.AWS_BUCKET_NAME,
-        contentType: multerS3.AUTO_CONTENT_TYPE, // so browsers show the image instead of downloading it
-        key: function (req, file, cb) {
-            const ext = path.extname(file.originalname || '').toLowerCase().replace(/[^.a-z0-9]/g, '');
-            cb(null, `housing/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
-        },
-    }),
-    limits: { fileSize: 8 * 1024 * 1024, files: MAX_HOUSING_PHOTOS },
-    fileFilter: imageOnly,
-});
-
-// Turns upload problems into a clear 400 answer instead of a generic 500
-function uploadHousingPhotos(req, res, next) {
-    housingUpload.array('photos', MAX_HOUSING_PHOTOS)(req, res, (err) => {
-        if (!err) return next();
-        const message =
-            err.code === 'LIMIT_FILE_SIZE' ? 'Each photo can be at most 8 MB'
-            : err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE' ? `You can upload at most ${MAX_HOUSING_PHOTOS} photos at once`
-            : err.code === 'BAD_TYPE' ? 'Photos must be JPG, PNG or WebP'
-            : 'Photo upload failed. Please try again.';
-        if (req.log) req.log.warn({ err }, 'housing photo upload rejected');
-        res.status(400).json({ error: message, fields: { photos: message } });
+function photosUpload(folder, max) {
+    const upload = multer({
+        storage: multerS3({
+            s3,
+            bucket: process.env.AWS_BUCKET_NAME,
+            contentType: multerS3.AUTO_CONTENT_TYPE, // so browsers show the image instead of downloading it
+            key: function (req, file, cb) {
+                const ext = path.extname(file.originalname || '').toLowerCase().replace(/[^.a-z0-9]/g, '');
+                cb(null, `${folder}/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
+            },
+        }),
+        limits: { fileSize: 8 * 1024 * 1024, files: max },
+        fileFilter: imageOnly,
     });
+
+    // Turns upload problems into a clear 400 answer instead of a generic 500
+    return function uploadPhotos(req, res, next) {
+        upload.array('photos', max)(req, res, (err) => {
+            if (!err) return next();
+            const message =
+                err.code === 'LIMIT_FILE_SIZE' ? 'Each photo can be at most 8 MB'
+                : err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE' ? `You can upload at most ${max} photos at once`
+                : err.code === 'BAD_TYPE' ? 'Photos must be JPG, PNG or WebP'
+                : 'Photo upload failed. Please try again.';
+            if (req.log) req.log.warn({ err }, `${folder} photo upload rejected`);
+            res.status(400).json({ error: message, fields: { photos: message } });
+        });
+    };
 }
 
-module.exports = { upload1, upload2, uploadHousingPhotos, MAX_HOUSING_PHOTOS };
+const uploadHousingPhotos = photosUpload('housing', MAX_HOUSING_PHOTOS);
+const uploadItemPhotos = photosUpload('listings', MAX_ITEM_PHOTOS);
+
+module.exports = { upload1, upload2, uploadHousingPhotos, uploadItemPhotos, MAX_HOUSING_PHOTOS };

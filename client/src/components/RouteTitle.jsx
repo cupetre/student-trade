@@ -14,6 +14,8 @@ const PUBLIC_TITLES = [
     ['/verify-email', { sl: 'Potrdite e-naslov', en: 'Confirm your email' }],
     ['/forgot-password', { sl: 'Pozabljeno geslo', en: 'Forgot password' }],
     ['/reset-password', { sl: 'Novo geslo', en: 'New password' }],
+    ['/privacy', { sl: 'Pravilnik o zasebnosti', en: 'Privacy policy' }],
+    ['/terms', { sl: 'Pogoji uporabe', en: 'Terms of use' }],
 ];
 
 const APP_TITLES = [

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppNav from '../../components/AppNav.jsx';
 import SceneBackdrop from '../../components/SceneBackdrop.jsx';
@@ -6,7 +6,7 @@ import { apiRequest } from '../../lib/api';
 import { resolveMediaUrl } from '../../lib/media';
 import { useCurrentUser } from '../../lib/useCurrentUser';
 import MarketCard from './MarketCard.jsx';
-import { MAX_TITLE, MAX_DESCRIPTION, MAX_PHOTO_MB, MAX_PICKUP, CATEGORIES, CONDITIONS, CONTACT_PREFERENCES } from './marketOptions';
+import { MAX_TITLE, MAX_DESCRIPTION, MAX_PHOTO_MB, MAX_ITEM_PHOTOS, MAX_PICKUP, CATEGORIES, CONDITIONS, CONTACT_PREFERENCES } from './marketOptions';
 import { CITY_SUGGESTIONS } from '../../lib/housingOptions';
 import { useT } from '../../lib/i18n';
 
@@ -42,8 +42,10 @@ const MarketFormPage = () => {
         category: '', condition: '', city: '', pickup_area: '', contact_preference: 'message',
     });
     const [point, setPoint] = useState(null); // pick-up pin { latitude, longitude }
-    const [existingPhoto, setExistingPhoto] = useState(null);
-    const [photo, setPhoto] = useState(null); // { file, url }
+    // Photos: the ones already saved (editing) and new ones picked here; the first one is the cover
+    const [existingPhotos, setExistingPhotos] = useState([]); // { id, url }
+    const [removedIds, setRemovedIds] = useState([]);
+    const [newPhotos, setNewPhotos] = useState([]); // { file, url }
     const [errors, setErrors] = useState({});
     const [formError, setFormError] = useState('');
     const [loading, setLoading] = useState(editing);
@@ -70,14 +72,19 @@ const MarketFormPage = () => {
                 contact_preference: data.contact_preference || 'message',
             });
             setPoint(data.exact_location || null);
-            setExistingPhoto(resolveMediaUrl(data.photo));
+            setExistingPhotos(Array.isArray(data.photos) ? data.photos : (data.photo ? [{ id: -1, url: data.photo }] : []));
             setOwnerId(data.owner_id);
         });
         return () => { cancelled = true; };
     }, [editing, id]);
 
-    // Free the preview image when it's replaced or the page closes
-    useEffect(() => () => { if (photo) URL.revokeObjectURL(photo.url); }, [photo]);
+    // Free the preview images when the page closes
+    const newPhotosRef = useRef(newPhotos);
+    newPhotosRef.current = newPhotos;
+    useEffect(() => () => newPhotosRef.current.forEach(p => URL.revokeObjectURL(p.url)), []);
+
+    const keptPhotos = existingPhotos.filter(p => !removedIds.includes(p.id));
+    const photoCount = keptPhotos.length + newPhotos.length;
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -86,14 +93,29 @@ const MarketFormPage = () => {
         if (formError) setFormError('');
     };
 
-    const handleFile = (e) => {
-        const file = e.target.files?.[0];
-        e.target.value = '';
-        if (!file) return;
-        if (!PHOTO_TYPES.includes(file.type)) { setErrors(prev => ({ ...prev, photo: t('Use a JPG, PNG or WebP photo.') })); return; }
-        if (file.size > MAX_PHOTO_MB * 1024 * 1024) { setErrors(prev => ({ ...prev, photo: t('The photo can be at most {n} MB.', { n: MAX_PHOTO_MB }) })); return; }
-        setErrors(prev => ({ ...prev, photo: '' }));
-        setPhoto({ file, url: URL.createObjectURL(file) });
+    const handleFiles = (e) => {
+        const files = Array.from(e.target.files || []);
+        e.target.value = ''; // so picking the same file again still triggers onChange
+        const room = MAX_ITEM_PHOTOS - photoCount;
+        const problems = [];
+        const accepted = [];
+        for (const file of files) {
+            if (!PHOTO_TYPES.includes(file.type)) { problems.push(t('{file}: only JPG, PNG or WebP', { file: file.name })); continue; }
+            if (file.size > MAX_PHOTO_MB * 1024 * 1024) { problems.push(t('{file}: larger than {n} MB', { file: file.name, n: MAX_PHOTO_MB })); continue; }
+            if (accepted.length >= room) { problems.push(t('Only {n} photos per item', { n: MAX_ITEM_PHOTOS })); break; }
+            accepted.push({ file, url: URL.createObjectURL(file) });
+        }
+        setNewPhotos(prev => [...prev, ...accepted]);
+        setErrors(prev => ({ ...prev, photo: problems.join(' · ') }));
+    };
+    const removeNewPhoto = (index) => {
+        setNewPhotos(prev => {
+            URL.revokeObjectURL(prev[index].url);
+            return prev.filter((_, i) => i !== index);
+        });
+    };
+    const toggleExistingPhoto = (photoId) => {
+        setRemovedIds(prev => (prev.includes(photoId) ? prev.filter(x => x !== photoId) : [...prev, photoId]));
     };
 
     const validate = () => {
@@ -126,7 +148,8 @@ const MarketFormPage = () => {
             data.append('latitude', String(point.latitude));
             data.append('longitude', String(point.longitude));
         }
-        if (photo) data.append('photo', photo.file);
+        if (editing && removedIds.length) data.append('remove_photo_ids', removedIds.join(','));
+        newPhotos.forEach(p => data.append('photos', p.file));
 
         setSubmitting(true);
         const { ok, data: result } = await apiRequest(
@@ -159,7 +182,7 @@ const MarketFormPage = () => {
         );
     }
 
-    const previewPhoto = photo?.url || existingPhoto;
+    const previewPhoto = keptPhotos[0] ? resolveMediaUrl(keptPhotos[0].url) : newPhotos[0]?.url;
     const preview = { ...form, owner_name: user?.fullname, owner_profile_picture: user?.profile_picture, date: new Date().toISOString() };
 
     return (
@@ -247,19 +270,31 @@ const MarketFormPage = () => {
                         </fieldset>
 
                         <fieldset>
-                            <legend>{t('Photo')}</legend>
-                            <p className="hs-hint hs-hint--block">{t('One photo (JPG, PNG or WebP, max {n} MB). Items with a photo sell much faster.', { n: MAX_PHOTO_MB })}</p>
-                            <div className="hs-photo-grid mk-photo-single">
-                                {previewPhoto && (
-                                    <div className="hs-photo">
-                                        <img src={previewPhoto} alt="" />
-                                        {photo && <button type="button" onClick={() => setPhoto(null)}>{existingPhoto ? t('Undo') : t('Remove')}</button>}
+                            <legend>{t('Photos')}</legend>
+                            <p className="hs-hint hs-hint--block">{t('Up to {max} photos (JPG, PNG or WebP, max {n} MB each). The first one is the cover. Items with photos sell much faster.', { max: MAX_ITEM_PHOTOS, n: MAX_PHOTO_MB })}</p>
+                            <div className="hs-photo-grid">
+                                {existingPhotos.map(p => {
+                                    const removed = removedIds.includes(p.id);
+                                    return (
+                                        <div key={p.id} className={`hs-photo ${removed ? 'is-removed' : ''}`}>
+                                            <img src={resolveMediaUrl(p.url)} alt="" />
+                                            <button type="button" onClick={() => toggleExistingPhoto(p.id)}>{removed ? t('Undo') : t('Remove')}</button>
+                                        </div>
+                                    );
+                                })}
+                                {newPhotos.map((p, index) => (
+                                    <div key={p.url} className="hs-photo hs-photo--new">
+                                        <img src={p.url} alt="" />
+                                        <button type="button" onClick={() => removeNewPhoto(index)}>{t('Remove')}</button>
                                     </div>
+                                ))}
+                                {photoCount < MAX_ITEM_PHOTOS && (
+                                    <label className="hs-photo-add">
+                                        <input type="file" accept={PHOTO_TYPES.join(',')} multiple onChange={handleFiles} />
+                                        <span>{photoCount ? t('+ Add photos') : t('+ Add a photo')}</span>
+                                        <small>{photoCount} / {MAX_ITEM_PHOTOS}</small>
+                                    </label>
                                 )}
-                                <label className="hs-photo-add">
-                                    <input type="file" accept={PHOTO_TYPES.join(',')} onChange={handleFile} />
-                                    <span>{previewPhoto ? t('Replace photo') : t('+ Add a photo')}</span>
-                                </label>
                             </div>
                             {errors.photo && <p className="hs-field-error" role="alert">{errors.photo}</p>}
                         </fieldset>

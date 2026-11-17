@@ -41,6 +41,7 @@ const MarketItemModal = ({ id, onClose, guest = false, onLikeChange }) => {
     const [item, setItem] = useState(null);
     const [loadError, setLoadError] = useState('');
 
+    const [photoIndex, setPhotoIndex] = useState(0);
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(null); // chat id after a message went out
@@ -68,6 +69,7 @@ const MarketItemModal = ({ id, onClose, guest = false, onLikeChange }) => {
         setLoadError('');
         setSent(null);
         setMessage('');
+        setPhotoIndex(0);
         apiRequest(guest ? `/api/public/market/${id}` : `/api/listings/item/${id}`).then(({ ok, data }) => {
             if (cancelled) return;
             if (ok) setItem(data); else setLoadError(data.error || t('This item is no longer available.'));
@@ -167,7 +169,11 @@ const MarketItemModal = ({ id, onClose, guest = false, onLikeChange }) => {
         setReportError(data.error);
     };
 
-    const photo = item && resolveMediaUrl(item.photo);
+    // All photos (cover first); an item without the list still has its cover
+    const photos = item ? (item.photos?.length ? item.photos : item.photo ? [{ id: 0, url: item.photo }] : []) : [];
+    const shownIndex = Math.min(photoIndex, Math.max(photos.length - 1, 0));
+    const photo = photos[shownIndex] && resolveMediaUrl(photos[shownIndex].url);
+    const step = (by) => setPhotoIndex(i => (i + by + photos.length) % photos.length);
     const place = item && [item.pickup_area, item.city].filter(Boolean).join(', ');
     const condition = item && CONDITIONS[item.condition];
     const contactPref = item && CONTACT_PREFERENCES[item.contact_preference || 'message'];
@@ -200,8 +206,25 @@ const MarketItemModal = ({ id, onClose, guest = false, onLikeChange }) => {
                                 {sold && <span className="mk-sold-tag">{t('Sold')}</span>}
                             </div>
                             <div className="mk-modal-photo">
-                                {photo ? <img src={photo} alt={item.title} /> : <NoPhoto />}
+                                {photo ? <img src={photo} alt={photos.length > 1 ? t('Photo {n} of {total}', { n: shownIndex + 1, total: photos.length }) : item.title} /> : <NoPhoto />}
+                                {photos.length > 1 && (
+                                    <>
+                                        <button type="button" className="hs-gallery-nav hs-gallery-nav--prev" aria-label={t('Previous photo')} onClick={() => step(-1)}>‹</button>
+                                        <button type="button" className="hs-gallery-nav hs-gallery-nav--next" aria-label={t('Next photo')} onClick={() => step(1)}>›</button>
+                                        <span className="hs-gallery-count">{shownIndex + 1} / {photos.length}</span>
+                                    </>
+                                )}
                             </div>
+                            {photos.length > 1 && (
+                                <div className="hs-thumbs mk-modal-thumbs">
+                                    {photos.map((p, index) => (
+                                        <button key={p.id ?? p.url} type="button" className={index === shownIndex ? 'is-current' : ''}
+                                            onClick={() => setPhotoIndex(index)} aria-label={t('Show photo {n}', { n: index + 1 })} aria-pressed={index === shownIndex}>
+                                            <img src={resolveMediaUrl(p.url)} alt="" loading="lazy" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
 
                             <div className="mk-modal-pricerow">
                                 <p className="mk-modal-price">{priceText(item.price, t)}</p>

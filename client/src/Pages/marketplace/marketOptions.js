@@ -109,4 +109,5 @@ export const MAX_TITLE = 255;
 export const MAX_DESCRIPTION = 5000;
 export const MAX_MESSAGE = 1000;
 export const MAX_PICKUP = 120;
-export const MAX_PHOTO_MB = 10;
+export const MAX_PHOTO_MB = 8;
+export const MAX_ITEM_PHOTOS = 10; // server: lib/marketOptions.js

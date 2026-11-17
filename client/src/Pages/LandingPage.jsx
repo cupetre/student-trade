@@ -701,6 +701,8 @@ const LandingPage = () => {
                         <a href="#lane-settle">{t.nav.settle}</a>
                         <a href="#partners">{t.nav.partners}</a>
                         <Link to="/login">{t.nav.login}</Link>
+                        <Link to="/privacy">{t.footer.privacy}</Link>
+                        <Link to="/terms">{t.footer.terms}</Link>
                     </span>
                 </div>
             </footer>

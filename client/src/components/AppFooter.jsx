@@ -62,6 +62,10 @@ const AppFooter = () => {
             <div className="app-footer-bottom">
                 <div className="app-footer-inner app-footer-inner--bottom">
                     <span>© {year} Anchor · Sidro</span>
+                    <span className="app-footer-legal">
+                        <Link to="/privacy">{t('Privacy policy')}</Link>
+                        <Link to="/terms">{t('Terms of use')}</Link>
+                    </span>
                     <span>{t('Verified students and checked landlords only.')}</span>
                 </div>
             </div>

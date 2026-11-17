@@ -54,7 +54,7 @@ export const CITY_SUGGESTIONS = [
     'Celje', 'Kranj', 'Novo mesto', 'Ptuj', 'Velenje', 'Murska Sobota', 'Domžale', 'Kamnik',
 ];
 
-export const MAX_PHOTOS = 12;
+export const MAX_PHOTOS = 20;
 
 // The date and spots helpers take the page's translator (useT) to speak the chosen language
 export function formatEuro(value) {

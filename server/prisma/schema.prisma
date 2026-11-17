@@ -66,7 +66,7 @@ model ListingItem {
   title       String   @db.VarChar(255)
   description String?
   price       Decimal  @db.Decimal(10, 2)
-  photo       String?  @db.VarChar(500)
+  photo       String?  @db.VarChar(500) // the cover: always the first of `photos` (kept for lists and chats)
   date        DateTime @default(now()) // when it was posted
 
   category           String  @default("other") @db.VarChar(30)    // furniture | books | electronics | kitchen | home | clothing | bikes | sports | music | other
@@ -92,10 +92,24 @@ model ListingItem {
   reports    Report[]
   chatTopics ChatTopic[]
   savedBy    SavedItem[]
+  photos     ItemPhoto[]
 
   @@index([category])
   @@index([date])
   @@index([status])
+}
+
+// Photos of a marketplace item (up to 10, same idea as HousingPhoto).
+// position 0 is the cover, copied into ListingItem.photo.
+model ItemPhoto {
+  id         Int         @id @default(autoincrement())
+  item_id    Int
+  item       ListingItem @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  url        String      @db.VarChar(500)
+  position   Int         @default(0) @db.SmallInt
+  created_at DateTime    @default(now())
+
+  @@index([item_id])
 }
 
 // A marketplace item someone liked (same idea as SavedListing for housing)

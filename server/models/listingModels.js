@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma');
 
 const OWNER_PUBLIC = { select: { id: true, fullname: true, profile_picture: true } };
+const PHOTOS = { orderBy: [{ position: 'asc' }, { id: 'asc' }], select: { id: true, url: true, position: true } };
 
 // Only this viewer's "liked" row, to know whether the heart is filled.
 // Guests (no viewer) get no row at all.
@@ -12,8 +13,43 @@ async function updateListing({ id, owner_id, data }) {
     return prisma.listingItem.updateMany({ where: { id, owner_id }, data });
 }
 
-async function addListing(data) {
-    return prisma.listingItem.create({ data });
+// A new item with its photos (the first one is also the cover in `photo`)
+async function addListing(data, photoUrls = []) {
+    return prisma.listingItem.create({
+        data: {
+            ...data,
+            photo: photoUrls[0] || null,
+            photos: { create: photoUrls.map((url, position) => ({ url, position })) },
+        },
+        include: { photos: PHOTOS },
+    });
+}
+
+// Edits an item: removes the chosen photos, adds the new ones at the end and
+// keeps the cover (`photo`) equal to the first photo left. One transaction.
+async function updateItemWithPhotos({ id, owner_id, data, removePhotoIds = [], newPhotoUrls = [] }) {
+    return prisma.$transaction(async (tx) => {
+        const item = await tx.listingItem.findFirst({ where: { id, owner_id }, select: { id: true } });
+        if (!item) return { count: 0 };
+        if (removePhotoIds.length) await tx.itemPhoto.deleteMany({ where: { item_id: id, id: { in: removePhotoIds } } });
+        const left = await tx.itemPhoto.findMany({ where: { item_id: id }, ...PHOTOS });
+        const start = left.reduce((max, p) => Math.max(max, p.position), -1) + 1;
+        if (newPhotoUrls.length) {
+            await tx.itemPhoto.createMany({ data: newPhotoUrls.map((url, i) => ({ item_id: id, url, position: start + i })) });
+        }
+        const cover = left[0]?.url || newPhotoUrls[0] || null;
+        await tx.listingItem.update({ where: { id }, data: { ...data, photo: cover } });
+        return { count: 1 };
+    });
+}
+
+// Items posted before photos had their own table have only `photo`: give it a row,
+// so it can be kept or removed like the others
+async function movePhotoToTable(item) {
+    if (!item || !item.photo) return null;
+    const existing = await prisma.itemPhoto.count({ where: { item_id: item.id } });
+    if (existing) return null;
+    return prisma.itemPhoto.create({ data: { item_id: item.id, url: item.photo, position: 0 } });
 }
 
 // Browse: everyone else's items, filtered, one page at a time
@@ -39,6 +75,7 @@ async function findListing(id, viewerId) {
         where: { id },
         include: {
             savedBy: likedBy(viewerId),
+            photos: PHOTOS,
             owner: {
                 select: {
                     id: true, fullname: true, profile_picture: true, role: true,
@@ -53,7 +90,11 @@ async function findListing(id, viewerId) {
 async function findListingBasics(id) {
     return prisma.listingItem.findUnique({
         where: { id },
-        select: { id: true, owner_id: true, title: true, status: true, latitude: true, longitude: true, public_latitude: true, public_longitude: true },
+        select: {
+            id: true, owner_id: true, title: true, status: true, photo: true,
+            latitude: true, longitude: true, public_latitude: true, public_longitude: true,
+            photos: PHOTOS,
+        },
     });
 }
 
@@ -95,4 +136,6 @@ module.exports = {
     saveItem,
     unsaveItem,
     listSavedItems,
+    updateItemWithPhotos,
+    movePhotoToTable,
 };

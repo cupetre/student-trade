@@ -67,3 +67,6 @@
     .app-footer-inner { grid-template-columns: 1fr; gap: 22px; padding-top: 28px; }
     .app-footer-inner--bottom { flex-direction: column; }
 }
+
+.app-footer-legal { display: inline-flex; gap: 16px; }
+.app-footer-legal a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }

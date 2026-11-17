@@ -153,3 +153,16 @@ test('a chat in the list says how many messages are unread', () => {
     assert.equal(toChatSummary(chat, 1, 3).unread, 3);
     assert.equal(toChatSummary(chat, 1).unread, 0);
 });
+
+test('an item sends all its photos, cover first; older items with only a cover still show it', () => {
+    const base = { id: 1, owner_id: 2, title: 'Lamp', price: '4.00', photo: 'a.jpg' };
+    const many = toListingDto({ ...base, photos: [{ id: 3, url: 'a.jpg', position: 0, item_id: 1 }, { id: 4, url: 'b.jpg', position: 1, item_id: 1 }] });
+    assert.deepEqual(many.photos, [{ id: 3, url: 'a.jpg', position: 0 }, { id: 4, url: 'b.jpg', position: 1 }]);
+    assert.deepEqual(toListingDto({ ...base, photos: [] }).photos, [{ id: -1, url: 'a.jpg', position: 0 }], 'the old cover, removable as -1');
+    assert.equal('photos' in toListingDto(base), false, 'the browse grid only needs the cover');
+});
+
+test('photo limits: 10 per item, 20 per place', () => {
+    assert.equal(require('../lib/marketOptions').MAX_ITEM_PHOTOS, 10);
+    assert.equal(require('../lib/housingOptions').MAX_HOUSING_PHOTOS, 20);
+});

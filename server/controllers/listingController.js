@@ -9,6 +9,8 @@ const {
     saveItem,
     unsaveItem,
     listSavedItems,
+    updateItemWithPhotos,
+    movePhotoToTable,
 } = require('../models/listingModels.js');
 const { listReviewsAbout, ratingSummary } = require('../models/reviewModels.js');
 const { openChat, addChatTopic } = require('../models/messageModels.js');
@@ -17,7 +19,18 @@ const { toId } = require('../lib/parse');
 const { toListingDto, toGuestItemDto, toSellerDto, toReviewDto } = require('../lib/dto');
 const { ageFrom } = require('../lib/profileValidation');
 const { locationFields } = require('../lib/location');
-const { readItem, readBrowseQuery, itemMessage, STATUSES, PAGE_SIZE, MAX_MESSAGE } = require('../lib/marketOptions');
+const { readItem, readBrowseQuery, itemMessage, STATUSES, PAGE_SIZE, MAX_MESSAGE, MAX_ITEM_PHOTOS } = require('../lib/marketOptions');
+
+const uploadedUrls = (req) => (req.files || []).map(file => file.location).filter(Boolean);
+
+// "remove_photo_ids" comes as "3,7" or a JSON list from the form
+function readIds(value) {
+    let list = value;
+    if (typeof value === 'string') {
+        try { list = JSON.parse(value); } catch { list = value.split(','); }
+    }
+    return (Array.isArray(list) ? list : [list]).map(v => Number(v)).filter(n => Number.isInteger(n) && (n > 0 || n === -1));
+}
 
 // The columns an item form writes. `previous` keeps the public point when the pin didn't move.
 function itemData(value, previous) {
@@ -41,15 +54,32 @@ async function editListing(req, res) {
         const previous = await findListingBasics(id);
         if (!previous || previous.owner_id !== req.user.id) return res.status(404).json({ error: 'Listing not found' });
 
-        const result = await updateListing({
+        // Photos: remove the ones the seller took off, add the new ones at the end (10 at most)
+        let removeIds = readIds(req.body.remove_photo_ids);
+        const newPhotoUrls = uploadedUrls(req);
+        let photoIds = previous.photos.map(p => p.id);
+        if (!photoIds.length && previous.photo) {
+            // an older item with its photo only in `photo`: id -1 means "that one"
+            if (removeIds.includes(-1)) {
+                await updateListing({ id, owner_id: req.user.id, data: { photo: null } });
+            } else {
+                const row = await movePhotoToTable(previous);
+                if (row) photoIds = [row.id];
+            }
+        }
+        removeIds = removeIds.filter(photoId => photoIds.includes(photoId));
+        const photoCount = photoIds.length - removeIds.length + newPhotoUrls.length;
+        if (photoCount > MAX_ITEM_PHOTOS) {
+            const error = `An item can have at most ${MAX_ITEM_PHOTOS} photos`;
+            return res.status(400).json({ error, fields: { photos: error } });
+        }
+
+        const result = await updateItemWithPhotos({
             id,
             owner_id: req.user.id,
-            data: {
-                ...itemData(input.value, previous),
-                // Only replace the photo when a new one was uploaded; undefined
-                // tells Prisma to leave the existing photo alone.
-                photo: req.file ? req.file.location : undefined,
-            },
+            data: itemData(input.value, previous),
+            removePhotoIds: removeIds,
+            newPhotoUrls,
         });
         if (result.count === 0) return res.status(404).json({ error: 'Listing not found' });
 
@@ -69,8 +99,7 @@ async function uploadListing(req, res) {
         const listing = await addListing({
             owner_id: req.user.id,
             ...itemData(input.value, null),
-            photo: req.file ? req.file.location : null,
-        });
+        }, uploadedUrls(req));
         req.log.info({ listingId: listing.id }, 'listing created');
         res.status(201).json({ message: 'Listing created', listing: toListingDto(listing, { viewerId: req.user.id }) });
     } catch (err) {

@@ -4,7 +4,7 @@ const {
     editListing, uploadListing, showListings, showMyListings, showListing, contactSeller, deleteListing,
     changeItemStatus, likeItem, unlikeItem, showSavedItems,
 } = require('../controllers/listingController');
-const { upload2 } = require('../configs/multerConfig');
+const { uploadItemPhotos } = require('../configs/multerConfig');
 const { authenticationToken } = require('../configs/authConfig');
 const { createRateLimiter } = require('../lib/rateLimit');
 
@@ -16,8 +16,9 @@ const contactLimiter = createRateLimiter({
     message: 'Too many messages in a short time. Please wait a little and try again.',
 });
 
-router.put('/edit_listing',authenticationToken, upload2.single('photo'), editListing);
-router.post('/upload_listing', authenticationToken, upload2.single('photo'), uploadListing);
+// Login first, then the upload: nobody can push files to S3 without an account
+router.put('/edit_listing', authenticationToken, uploadItemPhotos, editListing);
+router.post('/upload_listing', authenticationToken, uploadItemPhotos, uploadListing);
 router.get('/show_listings', authenticationToken, showListings);
 router.get('/fetch_my_listings', authenticationToken, showMyListings);
 router.get('/saved', authenticationToken, showSavedItems);

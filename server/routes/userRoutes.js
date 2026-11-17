@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { authenticationToken } = require('../configs/authConfig');
-const { editProfile, registerUser, registerLandlord, loginUser, viewProfile, verifyEmail, resendVerification, requestPasswordReset, resetPassword } = require('../controllers/userController');
+const {
+    editProfile, registerUser, registerLandlord, loginUser, viewProfile, verifyEmail, resendVerification,
+    requestPasswordReset, resetPassword, changePassword, deleteAccount,
+} = require('../controllers/userController');
 const { upload1 } = require('../configs/multerConfig');
 const { getMyStudentProfile, updateMyStudentProfile, getPublicProfile } = require('../controllers/profileController');
 const { createRateLimiter } = require('../lib/rateLimit');
@@ -35,6 +38,13 @@ const verifyLimiter = createRateLimiter({
     message: 'Too many attempts. Please wait a few minutes.',
 });
 
+// Password checks on a logged-in account: limited per account, so a borrowed
+// laptop can't be used to guess the current password
+const accountLimiter = createRateLimiter({
+    windowMs: FIFTEEN_MINUTES, max: 10, keyFn: (req) => `account:${req.user && req.user.id}`,
+    message: 'Too many attempts. Please wait a few minutes.',
+});
+
 router.post('/register', registerLimiter, registerUser);
 router.post('/register-landlord', registerLimiter, registerLandlord);
 router.post('/login', loginLimiter, loginUser);
@@ -44,6 +54,8 @@ router.post('/forgot-password', forgotLimiter, requestPasswordReset);
 router.post('/reset-password', verifyLimiter, resetPassword);
 router.put('/edit_profile', authenticationToken, upload1.single('profilePicture'), editProfile);
 router.get('/fetch_profile', authenticationToken, viewProfile);
+router.put('/me/password', authenticationToken, accountLimiter, changePassword);
+router.delete('/me', authenticationToken, accountLimiter, deleteAccount);
 router.get('/me/student-profile', authenticationToken, getMyStudentProfile);
 router.put('/me/student-profile', authenticationToken, updateMyStudentProfile);
 router.get('/:id/public', authenticationToken, getPublicProfile);

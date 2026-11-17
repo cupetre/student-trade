@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import AppNav from '../components/AppNav.jsx';
 import Avatar from '../components/Avatar.jsx';
 import ReviewList from '../components/ReviewList.jsx';
+import AccountSettings from '../components/AccountSettings.jsx';
 import { RatingSummary } from '../components/Stars.jsx';
 import { apiRequest } from '../lib/api';
 import { resolveMediaUrl } from '../lib/media';
@@ -249,6 +250,9 @@ const ProfilePage = () => {
                                     ? t('No reviews yet. Tenants can review you once they’ve stayed in one of your places.')
                                     : t('No reviews yet. After you buy, sell or rent here, people can review you from your conversation.')} />
                         </section>
+
+                        {/* ---- password, delete account ---- */}
+                        <AccountSettings />
                     </div>
 
                     {/* ---- shortcuts ---- */}

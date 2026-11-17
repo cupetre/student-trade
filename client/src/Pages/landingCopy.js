@@ -277,7 +277,7 @@ export const copy = {
                 consent: 'Za nadaljevanje potrdite soglasje.',
             },
         },
-        footer: { made: 'Ustvarili študenti v Kopru, Slovenija.' },
+        footer: { made: 'Ustvarili študenti v Kopru, Slovenija.', privacy: 'Zasebnost', terms: 'Pogoji uporabe' },
     },
 
     en: {
@@ -550,6 +550,6 @@ export const copy = {
                 consent: 'Please agree to be contacted to continue.',
             },
         },
-        footer: { made: 'Made by students in Koper, Slovenia.' },
+        footer: { made: 'Made by students in Koper, Slovenia.', privacy: 'Privacy', terms: 'Terms' },
     },
 };

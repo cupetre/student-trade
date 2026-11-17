@@ -9,10 +9,12 @@
 function toListingDto(listing, options) {
     if (!listing) return listing;
     const viewerId = options && typeof options === 'object' ? options.viewerId : undefined;
-    const { owner, savedBy, latitude, longitude, public_latitude, public_longitude, ...rest } = listing;
+    const { owner, savedBy, photos, latitude, longitude, public_latitude, public_longitude, ...rest } = listing;
     const isOwner = viewerId !== undefined && viewerId === listing.owner_id;
     return {
         ...rest,
+        // all photos, the cover first; only sent when they were loaded (one item, not the browse grid)
+        ...(photos !== undefined ? { photos: itemPhotos(listing) } : {}),
         status: rest.status || 'available',
         is_saved: Array.isArray(savedBy) && savedBy.length > 0, // did the viewer like it
         price: rest.price === undefined || rest.price === null ? rest.price : Number(rest.price),
@@ -31,6 +33,15 @@ function toListingDto(listing, options) {
 // fields they send (instead of removing some), so a new column is private until
 // someone adds it here on purpose.
 
+// An item's photos. Items from before the photos table have only `photo`;
+// that one is sent with id -1 (the edit form can still remove it).
+function itemPhotos(listing) {
+    if (Array.isArray(listing.photos) && listing.photos.length) {
+        return listing.photos.map(photo => ({ id: photo.id, url: photo.url, position: photo.position }));
+    }
+    return listing.photo ? [{ id: -1, url: listing.photo, position: 0 }] : [];
+}
+
 function toGuestItemDto(listing) {
     if (!listing) return listing;
     return {
@@ -38,6 +49,7 @@ function toGuestItemDto(listing) {
         title: listing.title,
         price: listing.price === undefined || listing.price === null ? listing.price : Number(listing.price),
         photo: listing.photo || null,
+        ...(listing.photos !== undefined ? { photos: itemPhotos(listing) } : {}),
         category: listing.category,
         condition: listing.condition || null,
         city: listing.city || null,

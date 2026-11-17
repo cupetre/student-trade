@@ -377,3 +377,7 @@
 @media (prefers-reduced-motion: reduce) {
     .auth-spinner { animation-duration: 2s; }
 }
+
+/* "By creating an account you agree to the terms and the privacy policy" */
+.auth-agree { margin: 4px 0 0; font-size: 0.85rem; line-height: 1.5; color: var(--auth-muted, #5D6470); }
+.auth-agree a { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }

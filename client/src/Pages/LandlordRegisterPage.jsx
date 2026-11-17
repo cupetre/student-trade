@@ -132,6 +132,10 @@ const LandlordRegisterPage = () => {
                     {error('repeatPassword')}
                 </div>
 
+                <p className="auth-agree">
+                    {t.agree.before}<Link to="/terms" target="_blank" rel="noopener">{t.agree.terms}</Link>{t.agree.middle}<Link to="/privacy" target="_blank" rel="noopener">{t.agree.privacy}</Link>{t.agree.after}
+                </p>
+
                 <button type="submit" className="auth-submit" disabled={submitting}>
                     {submitting && <span className="auth-spinner" aria-hidden="true" />}
                     {submitting ? t.landlord.submitting : t.landlord.submit}

@@ -11,7 +11,11 @@ const {
     setPasswordResetToken,
     findUserByResetTokenHash,
     setNewPassword,
+    findUserPassword,
+    deleteUser,
+    listUserPhotoUrls,
 } = require('../models/userModels.js');
+const { deleteStoredFiles } = require('../lib/storage');
 const { createResetToken, sendPasswordResetEmail, RESET_COOLDOWN_SECONDS } = require('../lib/passwordReset');
 const {
     hashToken,
@@ -343,7 +347,71 @@ async function resetPassword(req, res) {
     }
 }
 
+// ---------- account settings ----------
+
+// PUT /api/users/me/password { current_password, new_password }
+async function changePassword(req, res) {
+    const current = req.body && req.body.current_password;
+    const next = req.body && req.body.new_password;
+    if (typeof current !== 'string' || !current) {
+        return res.status(400).json({ error: 'Enter your current password', field: 'current_password' });
+    }
+    // bcrypt only uses the first 72 bytes (same rule as sign-up)
+    if (typeof next !== 'string' || next.length < 8 || next.length > 72) {
+        return res.status(400).json({ error: 'Password must be between 8 and 72 characters', field: 'new_password' });
+    }
+    if (next === current) {
+        return res.status(400).json({ error: 'The new password must be different from the current one', field: 'new_password' });
+    }
+
+    try {
+        const user = await findUserPassword(req.user.id);
+        if (!user) return res.status(404).json({ error: 'Account not found' });
+        if (!(await bcrypt.compare(current, user.hashedpassword))) {
+            req.log.info({ userId: user.id }, 'password change: wrong current password');
+            return res.status(400).json({ error: 'Your current password is not right', field: 'current_password' });
+        }
+        await setNewPassword({ id: user.id, password: next });
+        req.log.info({ userId: user.id }, 'password changed');
+        res.json({ message: 'Your password was changed.' });
+    } catch (err) {
+        req.log.error({ err }, 'password change failed');
+        res.status(500).json({ error: 'Could not change the password. Please try again.' });
+    }
+}
+
+// DELETE /api/users/me { password }
+// The password is asked again, so a borrowed laptop can't delete someone's account.
+async function deleteAccount(req, res) {
+    const password = req.body && req.body.password;
+    if (typeof password !== 'string' || !password) {
+        return res.status(400).json({ error: 'Enter your password to confirm', field: 'password' });
+    }
+
+    try {
+        const user = await findUserPassword(req.user.id);
+        if (!user) return res.status(404).json({ error: 'Account not found' });
+        if (user.role === 'admin') return res.status(400).json({ error: 'Admin accounts can’t be deleted here.' });
+        if (!(await bcrypt.compare(password, user.hashedpassword))) {
+            req.log.info({ userId: user.id }, 'account deletion: wrong password');
+            return res.status(400).json({ error: 'Your password is not right', field: 'password' });
+        }
+        const photoUrls = await listUserPhotoUrls(user.id);
+        await deleteUser(user.id);
+        // the id only: the email is gone with the account
+        req.log.info({ userId: user.id, role: user.role, photos: photoUrls.length }, 'account deleted');
+        res.json({ message: 'Your account was deleted.' });
+        // then its photos leave storage (after answering: it doesn't need to wait)
+        deleteStoredFiles(photoUrls).catch(() => {});
+    } catch (err) {
+        req.log.error({ err }, 'account deletion failed');
+        res.status(500).json({ error: 'Could not delete the account. Please try again.' });
+    }
+}
+
 module.exports = {
+    changePassword,
+    deleteAccount,
     requestPasswordReset,
     resetPassword,
     editProfile,
