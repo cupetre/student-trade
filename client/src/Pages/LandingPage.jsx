@@ -17,7 +17,7 @@ import './LandingPage.css';
 const COLUMNS = [
     { key: 'housing', num: '01', img: housingImg, to: '/housing' },
     { key: 'market', num: '02', img: marketImg, to: '/marketplace' },
-    { key: 'settle', num: '03', img: settleImg, anchor: '#inside' },
+    { key: 'settle', num: '03', img: settleImg, to: '/settle-in/guides' },
 ];
 
 // What is actually available today, per row of the "What's inside" lanes.
@@ -25,7 +25,7 @@ const COLUMNS = [
 const LANE_STATUS = {
     housing: ['live', 'live', 'live', 'live'],
     market: ['live', 'live', 'live', 'soon'],
-    settle: ['soon', 'soon', 'soon', 'soon'],
+    settle: ['soon', 'live', 'soon', 'soon'],
 };
 
 // Organisations that have agreed to be shown as partners: { name, logo, url }.

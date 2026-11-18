@@ -38,15 +38,6 @@
 .app-footer-col a { color: #fff; text-decoration: none; }
 .app-footer-col a:hover { text-decoration: underline; }
 .app-footer a:focus-visible { outline: 3px solid #C2305A; outline-offset: 2px; border-radius: 2px; }
-.app-footer-soon {
-    margin-left: 6px;
-    padding: 0 7px;
-    border: 1px dashed #6B7A8F;
-    border-radius: 999px;
-    font-size: 0.7rem;
-    color: #9AA6B6;
-}
-
 .app-footer-bottom { border-top: 1px solid rgba(255, 255, 255, 0.1); }
 .app-footer-inner--bottom {
     display: flex;

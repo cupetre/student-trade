@@ -31,7 +31,7 @@ const AppFooter = () => {
                     <h2>{t('Platforms')}</h2>
                     <Link to="/housing">{t('Housing')}</Link>
                     {!landlord && <Link to="/marketplace">{t('Marketplace')}</Link>}
-                    {!landlord && !guest && <Link to="/settle-in">{t('Settle In')} <span className="app-footer-soon">{t('Soon')}</span></Link>}
+                    {!landlord && <Link to="/settle-in">{t('Settle In')}</Link>}
                 </nav>
 
                 {guest ? (

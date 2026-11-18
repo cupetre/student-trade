@@ -19,6 +19,7 @@ const rrRoutes = require('./routes/rrRoutes.js');
 const messageRoutes = require('./routes/messageRoutes.js');
 const publicRoutes = require('./routes/publicRoutes.js');
 const housingRoutes = require('./routes/housingRoutes.js');
+const settleRoutes = require('./routes/settleRoutes.js');
 
 const socketLog = logger.createLogger('socket');
 
@@ -115,6 +116,7 @@ app.use('/api/rr', rrRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/housing', housingRoutes);
+app.use('/api/settle', settleRoutes);
 app.use('/uploads', express.static('uploads'));
 
 // Health check for monitoring/uptime tools: is the API up and can it reach the database?

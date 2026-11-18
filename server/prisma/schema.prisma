@@ -56,6 +56,8 @@ model User {
   studentProfile   StudentProfile?
   tenanciesAsLandlord Tenancy[]   @relation("TenancyLandlord")
   tenanciesAsStudent  Tenancy[]   @relation("TenancyStudent")
+  settleProfile       SettleProfile?
+  checklistItems      ChecklistItem[]
 }
 
 // A marketplace item for sale (lists in lib/marketOptions.js)
@@ -384,4 +386,82 @@ model Tenancy {
   @@unique([listing_id, student_id])
   @@index([student_id])
   @@index([landlord_id])
+}
+
+// ---------- Settle In ----------
+
+// What a student tells Settle In on their first visit. The checklist is built
+// from it (lib/settleRules.js), and deadlines count from its dates.
+model SettleProfile {
+  user_id          Int       @id
+  user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  passport_country String    @db.VarChar(2)   // ISO code, e.g. "MK"
+  city             String    @db.VarChar(100) // where they study
+  university       String?   @db.VarChar(150)
+  accommodation    String    @default("not_yet") @db.VarChar(20) // dorm | private | not_yet
+  arrival_date     DateTime? @db.Date
+  permit_date      DateTime? @db.Date          // when they got the residence permit (asked when they tick that step)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @default(now()) @updatedAt
+}
+
+// One guide = one step on the checklist. Written in the admin editor
+// (/settle-in/admin), never hard-coded, so it can be kept up to date.
+model Guide {
+  id              Int       @id @default(autoincrement())
+  slug            String    @unique @db.VarChar(80)  // address: /settle-in/guides/<slug>
+  topic           String    @db.VarChar(20)          // documents | health | money | work | phone | transport | food | housing | everyday
+  phase           String    @db.VarChar(20)          // before | first_week | first_month | later
+  position        Int       @default(0) @db.SmallInt // order inside the phase
+  city            String?   @db.VarChar(100)         // empty = every city
+  applies_to      String[]  @default([])             // all must hold: eu | non_eu | slovenian | dorm | private | not_yet | country:MK
+  depends_on      String[]  @default([])             // slugs of steps that come first
+  deadline_anchor String?   @db.VarChar(20)          // arrival_date | permit_date
+  deadline_days   Int?      @db.SmallInt
+  asks_date       String?   @db.VarChar(20)          // ticking it asks for this date (arrival_date | permit_date)
+  // { en: { title, summary, bring[], steps[], cost, time, where { name, address, hours, map_url }, mistakes[] }, sl: {...}, mk: {...} }
+  content         Json
+  sources         Json      @default("[]")           // [{ title, url }]
+  last_checked    DateTime  @db.Date
+  status          String    @default("draft") @db.VarChar(10) // draft | live
+  updated_by      Int?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @default(now()) @updatedAt
+
+  checklistItems ChecklistItem[]
+
+  @@index([status])
+}
+
+// A step a student ticked off (done) or said isn't for them (skipped).
+// No row = still to do.
+model ChecklistItem {
+  user_id  Int
+  guide_id Int
+  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  guide    Guide    @relation(fields: [guide_id], references: [id], onDelete: Cascade)
+  status   String   @db.VarChar(10) // done | skipped
+  done_at  DateTime @default(now())
+
+  @@id([user_id, guide_id])
+}
+
+// A number for the cost of living calculator, with its source. Rent comes
+// from live housing listings instead; these cover everything else.
+model CostItem {
+  id           Int      @id @default(autoincrement())
+  city         String?  @db.VarChar(100) // empty = every city
+  category     String   @db.VarChar(20)  // rent | food | transport | phone | extras
+  option       String   @db.VarChar(30)  // e.g. food: boni | cook | mixed
+  low          Int                       // euros per month
+  typical      Int
+  high         Int
+  label        Json                      // { en, sl }
+  source_title String   @db.VarChar(150)
+  source_url   String   @db.VarChar(500)
+  last_checked DateTime @db.Date
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now()) @updatedAt
+
+  @@unique([city, category, option])
 }

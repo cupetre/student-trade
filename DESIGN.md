@@ -2,7 +2,7 @@
 
 The rules for how Sidro (Anchor in English) looks, reads and behaves. Check this before building a page; update it whenever a rule changes (in the same commit as the code).
 
-_Last updated: 2 November 2026_
+_Last updated: 18 November 2026_
 
 ---
 
@@ -18,7 +18,7 @@ A student platform for Slovenia (starting in Koper / University of Primorska, th
 |---|---|---|
 | **Housing** | Rooms, flats, sublets, "roommate wanted". Every listing is checked by a person before it goes live. Students message landlords with their rental profile attached. | Live |
 | **Marketplace** | Second-hand furniture, books, tech, bikes between students. | Live |
-| **Settle In** (SL: _Udomači se_, name not final) | Student deals, help with documents (address registration, residence permit), bank/SIM/transport, guide to Slovenia, community. | Coming soon (placeholder page) |
+| **Settle In** (SL: _Udomači se_, name not final) | A personal first-months checklist built from guides (residence permit, address, health insurance, tax number, bank, student work, boni), the guides themselves, a cost of living calculator. Later: deals, Q&A, organisations and events, faculty boards, the paid Coming to Slovenia service. | Live in part (checklist, guides, cost of living) |
 
 Shared across all three: in-app messaging (phone number stays private), verified profiles and reviews, reporting.
 
@@ -154,7 +154,14 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 
 **Empty states** — say what's missing and give the next step ("You haven't posted anything yet" + Post a place).
 
-**"Coming soon" pages** — list what's coming with Soon tags and link back to what already works (see `SettleInPage.jsx`).
+**"Coming soon" parts** — show them with a Soon tag and don't link them, so nobody lands on an empty page (the Settle In tab row and its side card do this).
+
+**Settle In (`/settle-in`, `si-`)** — Public Sans for text, Bricolage for headings. A tab row under the top bar: **Start · Guides · Cost of living · Deals (Soon) · Community (Soon) · My faculty (Soon)**, plus **Editor** for admins. The current tab is ink with a steel-blue underline (raspberry stays for the one urgent thing).
+- **Start:** guests see what Settle In is, the guides and Sign up. First visit: four questions (passport country, city, university, where you'll live, arrival date), filled in from the rental profile where it can. After that: progress line, the **Next step** card (ink, large) and the checklist by phase (Before you arrive · First week · First month · Later). Each step: a tick box, the title (opens the guide), a short summary, its deadline, "After: …" when it waits on other steps, and "Not for me". Ticking the residence permit asks for the date you got it; address registration's deadline counts from that. The open step with the nearest deadline (7 days or less) is the one raspberry chip. Side column: Cost of living, what's coming.
+- **Guides:** search and topic chips (in the address), cards with topic, phase, city and the date last checked. **A guide:** steps (numbered), what it costs, how long, common mistakes, sources with "the official page wins". Right column: your checklist box (Mark as done / Undo), What to bring (ticks remembered in this browser), Where (address, hours, map link). A translation with only a title and summary shows the rest in English, with a note.
+- **Cost of living:** pick a city, then a choice per category (where you live, how you eat, how you get around, phone, extras); each has an amount you can overwrite. Rent is the median of live listings in that city (3 or more, plus the bills estimate when bills aren't included); everything else comes from cost numbers entered in the Editor, each with a source. No number = the student types one. Total, a bar by category, and the residence-permit minimum next to it. Everything is in the address, so a link shares the estimate.
+- **Editor (`/settle-in/admin`, admins):** guides (status draft / live, who it's for, city, order, what comes first, deadline rule, the date to ask for, text in English / Slovenian / Macedonian, sources) and cost numbers. A live guide needs a source. The editor stays in English.
+- **Rules live on the server** (`server/lib/settleRules.js`): who a guide applies to (`eu`, `non_eu`, `foreign`, `slovenian`, `private`, `dorm`, `not_yet`, `country:MK`; all must hold), deadlines, the next step, and the checks on what people send. First guides: `server/db/settleSeed.js`, loaded with `node scripts/seed-settle.js` (never overwrites without `--force`).
 
 **CSS class prefixes** — Vite loads all CSS globally, so each area uses its own prefix:
 `lp-` landing · `pn-` public top bar · `appnav-` logged-in top bar · `auth-` log in / sign up / confirmation · `brand-` logo · `hs-` housing and profile pages · `si-` Settle In · `mk-` marketplace additions · `ch-` messages · `mp-` my profile · `loc-` map pin picker.
@@ -165,7 +172,7 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 
 **Top bar (logged in)**
 - Left: logo → the user's home (students `/marketplace`, landlords `/housing/mine`).
-- Students: platform switch **Marketplace · Housing · Settle In (Soon)** in the exact middle of the bar, bold words with no background; the current one turns raspberry (the one place raspberry is used for navigation, so it is easy to see which platform you are on).
+- Students: platform switch **Marketplace · Housing · Settle In** in the exact middle of the bar, bold words with no background; the current one turns raspberry (the one place raspberry is used for navigation, so it is easy to see which platform you are on).
 - Landlords: no switch, a "Housing · for landlords" tag instead.
 - Right: context button (**Sell an item** on the marketplace, **Post a place** on housing, none elsewhere) · Messages icon · account menu.
 - Account menu: My profile · Rental profile (students) · How others see me · _Marketplace:_ My items (students) · _Housing:_ My places · Saved places (students) · My stays (students) · Log out.
@@ -212,7 +219,9 @@ Steel blue, stone beige and off-white, with **raspberry** as the one loud colour
 | `/marketplace/:id`, `/marketplace/new`, `/marketplace/mine`, `/marketplace/:id/edit` | students | Item page · Sell an item · My items · Edit (owner only) |
 | `/housing`, `/housing/:id`, `/housing/mine`, `/housing/new`, `/housing/:id/edit` | students + landlords | |
 | `/housing/saved`, `/housing/stays` | students | |
-| `/settle-in` | students | Placeholder until built |
+| `/settle-in` | students + guests | Start: checklist (guests: sign-up version). Landlords go to `/housing/mine` |
+| `/settle-in/guides`, `/settle-in/guides/:slug`, `/settle-in/cost` | students + guests | Guides and cost of living |
+| `/settle-in/admin` | admins | Guide and cost number editor |
 | `/profile/student` (rental profile) | students | See "Rental profile" below |
 | `/chatpage`, `/profilepage`, `/users/:id` | students + landlords | |
 | `/login`, `/register`, `/register/landlord` | logged out | Logged-in users go to `/` |
@@ -294,12 +303,15 @@ Illustrations in `client/src/assets/landing/` are placeholders. Replace with rea
 - [ ] **Map provider before launch:** the map uses OpenStreetMap's free tiles and geocoder, which are best-effort and can block heavy users. Switch to a paid plan or self-hosted tiles before public launch (two settings, see "Maps").
 - [ ] **More listing details** (floor, heating types, appliances, outdoor space, parking, energy class, itemised costs, room details, house rules, nearby…): the full list with proposed fields and filters is in `HOUSING_FIELDS.md`.
 - [ ] **Maps, next steps:** approximate-area map on each listing page, then a map view in Housing → Browse (rectangle search, price labels, grouping), then "minutes to your faculty".
+- [ ] **Settle In content:** enter cost numbers (dorm, food, transport, phone, extras) with sources in the Editor; finish the SIM card and Buses and trains drafts; full Slovenian (and Macedonian) text of the guides; guides for EU students and for Ljubljana and Maribor. Re-check every guide before each semester.
+- [ ] **Incoming students** (people not yet enrolled, without a university email): planned account type for Settle In and Coming to Slovenia; first decide whether they may message landlords.
 - [ ] **Different experience per account type** — no account / student / landlord (next round).
 
 ---
 
 ## 10. Change log
 
+- **2026-11-18** — **Settle In, first part.** Start page with a personal checklist, Guides, Cost of living, and an Editor for admins (section 4, "Settle In"). New tables `SettleProfile`, `Guide`, `ChecklistItem`, `CostItem` (needs `npx prisma db push`), API under `/api/settle` (guides and cost open to guests, rate-limited; admin routes check the role), 14 new tests. Ten first guides for Koper and students from North Macedonia (including getting documents translated by a court interpreter, which comes before the residence permit), each with sources (`node scripts/seed-settle.js`); SIM card and Buses and trains are drafts. Settle In lost its Soon tag in the top bar and footer; the landing page's Settle In column opens the guides and its Documents row is Live.
 - **2026-11-17** — Account basics. My profile → **Account**: change password (`PUT /api/users/me/password`, needs the current one) and delete account (`DELETE /api/users/me`, asks for the password; the database cascades remove items, places, photos rows, likes, chats and messages, reviews, reports, stays and the rental profile; the account's photos are then removed from S3 by `server/lib/storage.js`). Both limited to 10 tries / 15 min per account. **Privacy policy** (`/privacy`) and **Terms of use** (`/terms`) in SL and EN (`client/src/Pages/legalCopy.js`), linked from the app footer, the landing footer and both sign-up forms ("By creating an account you agree to…").
 - **2026-11-17** — Photos: marketplace items take up to **10** (new `ItemPhoto` table, needs `npx prisma db push`; `ListingItem.photo` stays as the cover = first photo; older items keep working and move their photo into the table the first time they're edited). Item window has a gallery (arrows, count, thumbnails). Housing listings now take up to **20** photos. Both 8 MB per photo (the item limit used to be 5 MB on the server and 10 MB in the form).
 - **2026-11-16** — Clean-up: one colour source (`--c-*` in `index.css`, the per-area names point at it) and one corner scale (`--radius-sm` 4 / `--radius` 6 / `--radius-lg` 8) across housing, marketplace, messages and profiles. Deleted `App.css`, `MarketDetailPage.jsx`, `MarketTabs.jsx`, `HousingTabs.jsx`.

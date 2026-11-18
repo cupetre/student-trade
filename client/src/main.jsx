@@ -24,6 +24,10 @@ import LikedItemsPage from './Pages/marketplace/LikedItemsPage.jsx';
 import StudentProfilePage from './Pages/profile/StudentProfilePage.jsx';
 import PublicProfilePage from './Pages/profile/PublicProfilePage.jsx';
 import SettleInPage from './Pages/SettleInPage.jsx';
+import GuidesPage from './Pages/settle/GuidesPage.jsx';
+import GuidePage from './Pages/settle/GuidePage.jsx';
+import CostPage from './Pages/settle/CostPage.jsx';
+import SettleAdminPage from './Pages/settle/SettleAdminPage.jsx';
 import LegalPage from './Pages/LegalPage.jsx';
 import { RequireAuth, PublicOnly, HomeSwitch, StudentOnly } from './components/RouteGuards.jsx';
 import { installFetchWrapper } from './lib/auth';
@@ -75,7 +79,12 @@ root.render(
       <Route path="/marketplace/new" element={<RequireAuth><StudentOnly>{app(<MarketFormPage key="new" />)}</StudentOnly></RequireAuth>} />
       <Route path="/marketplace/mine" element={<RequireAuth><StudentOnly>{app(<MyItemsPage />)}</StudentOnly></RequireAuth>} />
       <Route path="/marketplace/:id/edit" element={<RequireAuth><StudentOnly>{app(<MarketFormPage key="edit" />)}</StudentOnly></RequireAuth>} />
-      <Route path="/settle-in" element={<RequireAuth><StudentOnly>{app(<SettleInPage />)}</StudentOnly></RequireAuth>} />
+      {/* Settle In: the start page, guides and cost calculator are open to guests (the start page shows guests a sign-up version) */}
+      <Route path="/settle-in" element={<StudentOnly>{app(<SettleInPage />)}</StudentOnly>} />
+      <Route path="/settle-in/guides" element={<StudentOnly>{app(<GuidesPage />)}</StudentOnly>} />
+      <Route path="/settle-in/guides/:slug" element={<StudentOnly>{app(<GuidePage />)}</StudentOnly>} />
+      <Route path="/settle-in/cost" element={<StudentOnly>{app(<CostPage />)}</StudentOnly>} />
+      <Route path="/settle-in/admin" element={<RequireAuth>{app(<SettleAdminPage />)}</RequireAuth>} />
 
       {/* The rest of the app: only for logged-in users, everyone else goes to /login */}
       <Route path="/profilepage" element={<RequireAuth>{app(<Profile />)}</RequireAuth>} />

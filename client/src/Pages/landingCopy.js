@@ -32,7 +32,7 @@ export const copy = {
                 tagline: 'Ugodnosti, dokumenti in vodnik po novem mestu.',
                 desc: 'Študentski popusti lokalnih trgovin, pomoč pri prijavi prebivališča in dokumentih po korakih ter seznam opravil za prvi mesec v Sloveniji.',
                 points: ['Študentske ugodnosti', 'Dokumenti', 'Vodnik po mestu', 'Skupnost'],
-                cta: 'Poglej, kaj prihaja',
+                cta: 'Poglej vodnike',
             },
         },
         trust: [
@@ -306,7 +306,7 @@ export const copy = {
                 tagline: 'Deals, documents and a guide to your new city.',
                 desc: 'Student discounts from local shops, step-by-step help with address registration and residence papers, and a first-month checklist for Slovenia.',
                 points: ['Student deals', 'Documents', 'City guide', 'Community'],
-                cta: "See what's coming",
+                cta: 'See the guides',
             },
         },
         trust: [

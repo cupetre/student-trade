@@ -17,7 +17,7 @@ import './AppNav.css';
 const PLATFORMS = [
     { key: 'market', to: '/marketplace', label: 'Marketplace' },
     { key: 'housing', to: '/housing', label: 'Housing' },
-    { key: 'settle', to: '/settle-in', label: 'Settle In', soon: true },
+    { key: 'settle', to: '/settle-in', label: 'Settle In' },
 ];
 
 function platformFor(pathname) {
